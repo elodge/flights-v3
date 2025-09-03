@@ -33,6 +33,8 @@ export function Header() {
     loadSelectedArtist()
   }, [pathname])
 
+
+
   const updateSelectedArtistName = useCallback((artistId: string) => {
     const artist = artists.find(a => a.id === artistId)
     setSelectedArtistName(artist?.name || 'All Artists')
@@ -81,6 +83,15 @@ export function Header() {
 
 
   const handleArtistSelect = (artistId: string | null) => {
+    // Update local state immediately for instant UI feedback
+    setSelectedArtistId(artistId)
+    if (artistId && artists.length > 0) {
+      updateSelectedArtistName(artistId)
+    } else {
+      setSelectedArtistName('All Artists')
+    }
+    
+    // Update URL and cookie
     clientUtils.setSelectedArtistId(artistId, router)
   }
 
