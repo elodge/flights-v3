@@ -18,6 +18,8 @@ import Link from 'next/link'
 import { createServerClient } from '@/lib/supabase-server'
 import { getServerUser } from '@/lib/auth'
 import { Database } from '@/lib/database.types'
+import { getSelectedArtistIdServer } from '@/lib/employeeArtist'
+import { cookies } from 'next/headers'
 
 type TourWithStats = Database['public']['Tables']['projects']['Row'] & {
   artists: {
@@ -39,14 +41,14 @@ type TourWithStats = Database['public']['Tables']['projects']['Row'] & {
   }
 }
 
-async function getEmployeeTours(): Promise<TourWithStats[]> {
+async function getEmployeeTours(artistId?: string | null): Promise<TourWithStats[]> {
   const user = await getServerUser()
   if (!user || user.role === 'client') return []
 
   const supabase = await createServerClient()
 
   // Get all tours/events for employees (no RLS restriction)
-  const { data: tours } = await supabase
+  let query = supabase
     .from('projects')
     .select(`
       *,
@@ -64,7 +66,13 @@ async function getEmployeeTours(): Promise<TourWithStats[]> {
       )
     `)
     .eq('is_active', true)
-    .order('created_at', { ascending: false })
+
+  // Apply artist filter if provided
+  if (artistId) {
+    query = query.eq('artist_id', artistId)
+  }
+
+  const { data: tours } = await query.order('created_at', { ascending: false })
 
   if (!tours) return []
 
@@ -99,8 +107,24 @@ async function getEmployeeTours(): Promise<TourWithStats[]> {
  * <EmployeePortalPage />
  * ```
  */
-export default async function EmployeePortalPage() {
-  const tours = await getEmployeeTours()
+export default async function EmployeePortalPage({ 
+  searchParams 
+}: { 
+  searchParams: { [key: string]: string | string[] | undefined } 
+}) {
+  // Get selected artist from URL params or cookies
+  const selectedArtistId = getSelectedArtistIdServer(
+    new URLSearchParams(searchParams as Record<string, string>), 
+    cookies()
+  )
+  
+  const tours = await getEmployeeTours(selectedArtistId)
+  
+  // Get artist name for display if filtering
+  let selectedArtistName: string | null = null
+  if (selectedArtistId && tours.length > 0) {
+    selectedArtistName = tours[0].artists.name
+  }
   
   // Group tours by artist
   const toursByArtist = tours.reduce((acc, tour) => {
@@ -124,6 +148,17 @@ export default async function EmployeePortalPage() {
         <p className="text-muted-foreground">
           Manage flights, tours, events, and crew coordination across all artists
         </p>
+        {selectedArtistName && (
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="gap-2">
+              <Eye className="h-3 w-3" />
+              Viewing: {selectedArtistName}
+            </Badge>
+            <Link href="/a" className="text-xs text-muted-foreground hover:text-foreground">
+              Clear filter
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Stats Overview */}

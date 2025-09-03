@@ -14,6 +14,11 @@ import { getServerUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import { BookingQueue } from '@/components/employee/booking-queue'
+import { getSelectedArtistIdServer } from '@/lib/employeeArtist'
+import { cookies } from 'next/headers'
+import { Badge } from '@/components/ui/badge'
+import { Eye } from 'lucide-react'
+import Link from 'next/link'
 
 interface Selection {
   id: string
@@ -71,16 +76,15 @@ interface QueueData {
  * 
  * @returns Promise<QueueData> Queue selections with related data
  */
-async function getQueueSelections(): Promise<QueueData> {
+async function getQueueSelections(artistId?: string | null): Promise<QueueData> {
   const supabase = await createServerClient()
   
-  const { data: selections, error } = await supabase
+  let query = supabase
     .from('selections')
     .select(`
       id,
       passenger_id,
       option_id,
-      selection_type,
       status,
       created_at,
       passenger:tour_personnel!passenger_id (
@@ -123,7 +127,14 @@ async function getQueueSelections(): Promise<QueueData> {
       )
     `)
     .not('status', 'eq', 'expired')
-    .order('created_at', { ascending: false })
+
+  // Apply artist filter through join if provided
+  if (artistId) {
+    // Filter through the nested relationship
+    query = query.eq('leg.project.artist_id', artistId)
+  }
+
+  const { data: selections, error } = await query.order('created_at', { ascending: false })
 
   if (error) {
     console.error('Error fetching queue selections:', error)
@@ -148,7 +159,11 @@ async function getQueueSelections(): Promise<QueueData> {
  * 
  * @returns JSX.Element Booking queue interface
  */
-export default async function BookingQueuePage() {
+export default async function BookingQueuePage({ 
+  searchParams 
+}: { 
+  searchParams: { [key: string]: string | string[] | undefined } 
+}) {
   // Check authentication and role
   const user = await getServerUser()
   
@@ -160,20 +175,48 @@ export default async function BookingQueuePage() {
     redirect('/c')
   }
 
-  // Fetch queue data
-  const queueData = await getQueueSelections()
+  // Get selected artist from URL params or cookies
+  const selectedArtistId = getSelectedArtistIdServer(
+    new URLSearchParams(searchParams as Record<string, string>), 
+    cookies()
+  )
+
+  // Fetch queue data with optional artist filtering
+  const queueData = await getQueueSelections(selectedArtistId)
+  
+  // Get artist name for display if filtering
+  let selectedArtistName: string | null = null
+  if (selectedArtistId && queueData.selections.length > 0) {
+    selectedArtistName = queueData.selections[0].leg.project.artist.name
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Booking Queue</h1>
           <p className="text-muted-foreground">
             Process client selections, manage holds, and create tickets
           </p>
+          {selectedArtistName && (
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="gap-2">
+                <Eye className="h-3 w-3" />
+                Filtered by: {selectedArtistName}
+              </Badge>
+              <Link href="/a/queue" className="text-xs text-muted-foreground hover:text-foreground">
+                Show all artists
+              </Link>
+            </div>
+          )}
+          {!selectedArtistName && queueData.totalCount > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Showing selections from all artists
+            </p>
+          )}
         </div>
         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-          <span>{queueData.totalCount} selections pending</span>
+          <span>{queueData.totalCount} selections {selectedArtistName ? `for ${selectedArtistName}` : 'pending'}</span>
         </div>
       </div>
 

@@ -6,12 +6,72 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Bell, ChevronDown, LogOut, Plane } from 'lucide-react'
 import { useUser } from '@/hooks/use-auth'
 import { usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { clientUtils } from '@/lib/employeeArtist'
 export function Header() {
   const { user, profile, role, loading, signOut } = useUser()
   const pathname = usePathname()
+  const [artists, setArtists] = useState<Array<{id: string, name: string}>>([])
+  const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null)
+  const [selectedArtistName, setSelectedArtistName] = useState<string>('All Artists')
 
   const handleSignOut = async () => {
     await signOut()
+  }
+
+  // Load artists when user is available and is employee
+  useEffect(() => {
+    if (user && ['agent', 'admin'].includes(role || '')) {
+      fetchArtists()
+      loadSelectedArtist()
+    }
+  }, [user, role])
+
+  // Load current selection from URL/cookie
+  useEffect(() => {
+    loadSelectedArtist()
+  }, [pathname])
+
+  const fetchArtists = async () => {
+    try {
+      const response = await fetch('/api/artists')
+      if (response.ok) {
+        const artistData = await response.json()
+        setArtists(artistData)
+      }
+    } catch (error) {
+      console.error('Failed to fetch artists:', error)
+    }
+  }
+
+  const loadSelectedArtist = () => {
+    // Check URL parameter first
+    const urlParams = new URLSearchParams(window.location.search)
+    const urlArtistId = urlParams.get('artist')
+    
+    if (urlArtistId) {
+      setSelectedArtistId(urlArtistId)
+      updateSelectedArtistName(urlArtistId)
+    } else {
+      // Fall back to cookie
+      const cookieArtistId = clientUtils.getSelectedArtistId()
+      if (cookieArtistId) {
+        setSelectedArtistId(cookieArtistId)
+        updateSelectedArtistName(cookieArtistId)
+      } else {
+        setSelectedArtistId(null)
+        setSelectedArtistName('All Artists')
+      }
+    }
+  }
+
+  const updateSelectedArtistName = (artistId: string) => {
+    const artist = artists.find(a => a.id === artistId)
+    setSelectedArtistName(artist?.name || 'All Artists')
+  }
+
+  const handleArtistSelect = (artistId: string | null) => {
+    clientUtils.setSelectedArtistId(artistId)
   }
 
   const getUserInitials = () => {
@@ -43,17 +103,35 @@ export function Header() {
         </div>
         
         <div className="flex flex-1 items-center space-x-3">
-          {/* Artist Selector - Only show when authenticated */}
-          {user && (
+          {/* Artist Selector - Only show when authenticated as employee */}
+          {user && ['agent', 'admin'].includes(role || '') && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-9 w-[200px] justify-between border border-border/50 hover:border-border hover:bg-accent/50">
-                  <span className="text-sm font-medium">Select Artist</span>
-                  <ChevronDown className="h-4 w-4 opacity-50" />
+                  <span className="text-sm font-medium truncate">{selectedArtistName}</span>
+                  <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-[200px]">
-                <DropdownMenuItem disabled>No artists available</DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => handleArtistSelect(null)}
+                  className={selectedArtistId === null ? 'bg-accent' : ''}
+                >
+                  All Artists
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {artists.map(artist => (
+                  <DropdownMenuItem 
+                    key={artist.id}
+                    onClick={() => handleArtistSelect(artist.id)}
+                    className={selectedArtistId === artist.id ? 'bg-accent' : ''}
+                  >
+                    {artist.name}
+                  </DropdownMenuItem>
+                ))}
+                {artists.length === 0 && (
+                  <DropdownMenuItem disabled>No artists available</DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
