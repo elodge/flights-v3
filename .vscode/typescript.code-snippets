@@ -1,0 +1,84 @@
+{
+  "JSDoc Function": {
+    "prefix": ["jsdoc", "/**"],
+    "body": [
+      "/**",
+      " * ${1:Function description}",
+      " * ",
+      " * @description ${2:Detailed description of what this function does}",
+      " * ",
+      " * @param ${3:paramName} - ${4:Parameter description}",
+      " * @returns ${5:Return value description}",
+      " * ",
+      " * @example",
+      " * ```typescript",
+      " * ${6:// Usage example}",
+      " * ```",
+      " */"
+    ],
+    "description": "JSDoc comment for function with full documentation"
+  },
+  
+  "JSDoc React Component": {
+    "prefix": ["jsdoc-component", "/**comp"],
+    "body": [
+      "/**",
+      " * ${1:Component description}",
+      " * ",
+      " * @description ${2:Detailed description of component purpose and behavior}",
+      " * ",
+      " * @param props - Component properties",
+      " * @param props.${3:propName} - ${4:Property description}",
+      " * ",
+      " * @access ${5|Public,Employee,Client|} only",
+      " * @route ${6:/route/path}",
+      " * ",
+      " * @example",
+      " * ```tsx",
+      " * <${7:ComponentName} ${3:propName}={${8:value}} />",
+      " * ```",
+      " */"
+    ],
+    "description": "JSDoc comment for React component"
+  },
+  
+  "JSDoc Server Action": {
+    "prefix": ["jsdoc-action", "/**action"],
+    "body": [
+      "/**",
+      " * ${1:Server action description}",
+      " * ",
+      " * @description ${2:Detailed description of the server action}",
+      " * ",
+      " * @param formData - Form data containing action parameters",
+      " * @param formData.${3:fieldName} - ${4:Field description}",
+      " * ",
+      " * @returns Promise<{success: true} | {error: string}>",
+      " * ",
+      " * @throws {Error} ${5:Error conditions}",
+      " * @security Requires authenticated ${6|employee,client,admin|}",
+      " * @database ${7:Tables affected}",
+      " * ",
+      " * @example",
+      " * ```typescript",
+      " * const result = await ${8:actionName}(formData)",
+      " * if ('error' in result) {",
+      " *   toast.error(result.error)",
+      " * }",
+      " * ```",
+      " */"
+    ],
+    "description": "JSDoc comment for server action"
+  },
+  
+  "Context Comment": {
+    "prefix": ["context", "//context"],
+    "body": [
+      "// CONTEXT: ${1:What this code block does}",
+      "// SECURITY: ${2:Security considerations}",
+      "// DATABASE: ${3:Database operations}",
+      "// BUSINESS_RULE: ${4:Business logic explanation}"
+    ],
+    "description": "Context comment for LLM understanding"
+  }
+}
