@@ -21,7 +21,9 @@ export function Header() {
 
   // Load artists when user is available and is employee
   useEffect(() => {
+    console.log('Header: user=', !!user, 'role=', role, 'loading=', loading)
     if (user && ['agent', 'admin'].includes(role || '')) {
+      console.log('Header: Loading artists for employee...')
       fetchArtists()
       loadSelectedArtist()
     }
@@ -103,6 +105,11 @@ export function Header() {
         </div>
         
         <div className="flex flex-1 items-center space-x-3">
+          {/* Debug info */}
+          <div className="text-xs text-red-500">
+            user:{user ? 'Y' : 'N'} role:{role || 'null'} loading:{loading ? 'Y' : 'N'}
+          </div>
+          
           {/* Artist Selector - Only show when authenticated as employee */}
           {user && ['agent', 'admin'].includes(role || '') && (
             <DropdownMenu>
