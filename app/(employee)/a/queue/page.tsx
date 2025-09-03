@@ -14,11 +14,13 @@ import { getServerUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import { BookingQueue } from '@/components/employee/booking-queue'
+import { BookingQueueSkeleton } from '@/components/employee/booking-queue-skeleton'
 import { getSelectedArtistIdFromSearchParams } from '@/lib/employeeArtist'
 import { getSelectedArtistIdFromCookie } from '@/lib/actions/artist-selection-actions'
 import { Badge } from '@/components/ui/badge'
 import { Eye } from 'lucide-react'
 import Link from 'next/link'
+import { Suspense } from 'react'
 
 interface Selection {
   id: string
@@ -72,78 +74,155 @@ interface QueueData {
 }
 
 /**
- * Fetches all client-confirmed selections for the booking queue
+ * Fetches client-confirmed selections for the booking queue with pagination
  * 
+ * @param artistId - Optional artist ID for filtering
+ * @param page - Page number (0-based)
+ * @param limit - Items per page (default 50)
  * @returns Promise<QueueData> Queue selections with related data
  */
-async function getQueueSelections(artistId?: string | null): Promise<QueueData> {
+async function getQueueSelections(
+  artistId?: string | null, 
+  page: number = 0, 
+  limit: number = 50
+): Promise<QueueData> {
   const supabase = await createServerClient()
   
-  let query = supabase
+  // First, get the selections with basic data and filtering
+  let selectionsQuery = supabase
     .from('selections')
     .select(`
       id,
       passenger_id,
       option_id,
+      leg_id,
       status,
-      created_at,
-      passenger:tour_personnel!passenger_id (
-        id,
-        full_name,
-        party_tag
-      ),
-      option:options!option_id (
-        id,
-        airline,
-        flight_number,
-        route,
-        departure_date,
-        price_per_pax,
-        is_recommended
-      ),
-      leg:legs!leg_id (
-        id,
-        origin,
-        destination,
-        departure_date,
-        label,
-        project:projects!project_id (
-          id,
-          name,
-          type,
-          artist:artists!artist_id (
-            id,
-            name
-          )
-        )
-      ),
-      holds (
-        id,
-        expires_at
-      ),
-      pnr:pnrs!passenger_id (
-        id,
-        code
-      )
-    `)
+      created_at
+    `, { count: 'exact' })
     .not('status', 'eq', 'expired')
 
-  // Apply artist filter through join if provided
-  if (artistId) {
-    // Filter through the nested relationship
-    query = query.eq('leg.project.artist_id', artistId)
-  }
+  // Apply artist filter if provided - we'll filter after fetching legs
+  // Supabase doesn't support deep filtering on this complex join efficiently
 
-  const { data: selections, error } = await query.order('created_at', { ascending: false })
+  const { data: baseSelections, error: selectionsError, count } = await selectionsQuery
+    .order('created_at', { ascending: false })
+    .range(page * limit, (page + 1) * limit - 1)
 
-  if (error) {
-    console.error('Error fetching queue selections:', error)
+  if (selectionsError) {
+    console.error('Error fetching queue selections:', selectionsError)
     return { selections: [], totalCount: 0 }
   }
 
+  if (!baseSelections || baseSelections.length === 0) {
+    return { selections: [], totalCount: count || 0 }
+  }
+
+  // Now fetch the related data separately for better performance
+  const selectionIds = baseSelections.map(s => s.id)
+  const passengerIds = baseSelections.map(s => s.passenger_id)
+  const optionIds = baseSelections.map(s => s.option_id)
+  const legIds = baseSelections.map(s => s.leg_id)
+
+  // Fetch related data in parallel
+  const [
+    { data: passengers },
+    { data: options },
+    { data: legs },
+    { data: holds },
+    { data: pnrs }
+  ] = await Promise.all([
+    // Passengers
+    supabase
+      .from('tour_personnel')
+      .select('id, full_name, party_tag')
+      .in('id', passengerIds),
+    
+    // Options
+    supabase
+      .from('options')
+      .select('id, airline, flight_number, route, departure_date, price_per_pax, is_recommended')
+      .in('id', optionIds),
+    
+    // Legs with projects and artists
+    supabase
+      .from('legs')
+      .select(`
+        id, origin, destination, departure_date, label,
+        project:projects!project_id (
+          id, name, type,
+          artist:artists!artist_id (id, name)
+        )
+      `)
+      .in('id', legIds),
+    
+    // Holds
+    supabase
+      .from('holds')
+      .select('id, expires_at, option_id, passenger_id')
+      .in('option_id', optionIds)
+      .in('passenger_id', passengerIds),
+    
+    // PNRs
+    supabase
+      .from('pnrs')
+      .select('id, code, passenger_id')
+      .in('passenger_id', passengerIds)
+  ])
+
+  // Create lookup maps for efficient joining
+  const passengerMap = new Map(passengers?.map(p => [p.id, p]) || [])
+  const optionMap = new Map(options?.map(o => [o.id, o]) || [])
+  const legMap = new Map(legs?.map(l => [l.id, l]) || [])
+  const holdsMap = new Map()
+  const pnrMap = new Map(pnrs?.map(p => [p.passenger_id, p]) || [])
+
+  // Group holds by option_id and passenger_id
+  holds?.forEach(hold => {
+    const key = `${hold.option_id}-${hold.passenger_id}`
+    if (!holdsMap.has(key)) {
+      holdsMap.set(key, [])
+    }
+    holdsMap.get(key).push(hold)
+  })
+
+  // Combine the data
+  const enrichedSelections: Selection[] = baseSelections.map(selection => {
+    const holdsKey = `${selection.option_id}-${selection.passenger_id}`
+    return {
+      ...selection,
+      passenger: passengerMap.get(selection.passenger_id) || { id: selection.passenger_id, full_name: 'Unknown', party_tag: '' },
+      option: optionMap.get(selection.option_id) || { 
+        id: selection.option_id, 
+        airline: '', 
+        flight_number: '', 
+        route: '', 
+        departure_date: '', 
+        price_per_pax: null, 
+        is_recommended: false 
+      },
+      leg: legMap.get(selection.leg_id) || { 
+        id: selection.leg_id, 
+        origin: '', 
+        destination: '', 
+        departure_date: '', 
+        label: null,
+        project: { id: '', name: '', type: 'tour' as const, artist: { id: '', name: '' } }
+      },
+      holds: holdsMap.get(holdsKey) || [],
+      pnr: pnrMap.get(selection.passenger_id) || null
+    }
+  })
+
+  // Apply artist filter after enriching data if needed
+  const filteredSelections = artistId 
+    ? enrichedSelections.filter(selection => 
+        selection.leg.project.artist.id === artistId
+      )
+    : enrichedSelections
+
   return {
-    selections: selections || [],
-    totalCount: selections?.length || 0
+    selections: filteredSelections,
+    totalCount: artistId ? filteredSelections.length : (count || 0)
   }
 }
 
@@ -219,10 +298,12 @@ export default async function BookingQueuePage({
         </div>
       </div>
 
-      <BookingQueue 
-        selections={queueData.selections}
-        totalCount={queueData.totalCount}
-      />
+      <Suspense fallback={<BookingQueueSkeleton />}>
+        <BookingQueue 
+          selections={queueData.selections}
+          totalCount={queueData.totalCount}
+        />
+      </Suspense>
     </div>
   )
 }
