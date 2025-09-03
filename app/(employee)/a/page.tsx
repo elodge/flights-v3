@@ -19,7 +19,7 @@ import { createServerClient } from '@/lib/supabase-server'
 import { getServerUser } from '@/lib/auth'
 import { Database } from '@/lib/database.types'
 import { getSelectedArtistIdServer } from '@/lib/employeeArtist'
-import { cookies } from 'next/headers'
+import { getSelectedArtistIdFromCookie } from '@/lib/actions/artist-selection-actions'
 
 type TourWithStats = Database['public']['Tables']['projects']['Row'] & {
   artists: {
@@ -113,10 +113,11 @@ export default async function EmployeePortalPage({
   searchParams: { [key: string]: string | string[] | undefined } 
 }) {
   // Get selected artist from URL params or cookies
-  const selectedArtistId = getSelectedArtistIdServer(
-    new URLSearchParams(searchParams as Record<string, string>), 
-    cookies()
+  const urlArtistId = getSelectedArtistIdServer(
+    new URLSearchParams(searchParams as Record<string, string>)
   )
+  const cookieArtistId = await getSelectedArtistIdFromCookie()
+  const selectedArtistId = urlArtistId || cookieArtistId
   
   const tours = await getEmployeeTours(selectedArtistId)
   

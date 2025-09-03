@@ -9,7 +9,6 @@
  * @persistence 90-day cookie storage
  */
 
-import { cookies } from 'next/headers'
 import type { ReadonlyURLSearchParams } from 'next/navigation'
 
 /**
@@ -23,34 +22,32 @@ export const EMPLOYEE_ARTIST_COOKIE = 'employee_artist_id'
 export const COOKIE_MAX_AGE = 90 * 24 * 60 * 60 // 90 days in seconds
 
 /**
- * Gets the selected artist ID from URL params or cookies (server-side)
+ * Gets the selected artist ID from URL params (server-side)
  * 
  * @description Determines the currently selected artist for filtering employee portal
- * data. Uses precedence: URL searchParams → cookie → null (all artists).
+ * data. Since this utility file can be imported by client components, it only
+ * checks URL parameters. Cookie checking should be done in server components.
  * 
  * @param searchParams - URL search parameters from the request
- * @param cookieStore - Next.js cookies() object
  * @returns string | null - Artist UUID or null for "All Artists"
  * 
  * @algorithm
- * 1. Check URL parameter 'artist' first (highest precedence)
- * 2. Fall back to 'employee_artist_id' cookie
- * 3. Return null for "All Artists" if neither found
+ * 1. Check URL parameter 'artist' (highest precedence)
+ * 2. Return null for "All Artists" if not found
  * 
  * @example
  * ```typescript
  * // In a server component or page
- * const artistId = getSelectedArtistIdServer(searchParams, cookies())
+ * const artistId = getSelectedArtistIdServer(searchParams)
  * if (artistId) {
  *   // Filter data by artist
  * } else {
- *   // Show all artists' data
+ *   // Show all artists' data or check cookie separately
  * }
  * ```
  */
 export function getSelectedArtistIdServer(
-  searchParams: ReadonlyURLSearchParams | URLSearchParams,
-  cookieStore: ReturnType<typeof cookies>
+  searchParams: ReadonlyURLSearchParams | URLSearchParams
 ): string | null {
   // Priority 1: URL parameter
   const urlArtistId = searchParams.get('artist')
@@ -58,43 +55,11 @@ export function getSelectedArtistIdServer(
     return urlArtistId
   }
 
-  // Priority 2: Cookie
-  const cookieArtistId = cookieStore.get(EMPLOYEE_ARTIST_COOKIE)?.value
-  if (cookieArtistId) {
-    return cookieArtistId
-  }
-
-  // Priority 3: Default to all artists
+  // Return null - server components should check cookies separately
   return null
 }
 
-/**
- * Sets the selected artist ID on server-side (for cookie persistence)
- * 
- * @description Updates the employee artist selection cookie. Used when URL
- * parameters change to ensure persistence across sessions.
- * 
- * @param artistId - Artist UUID to store, or null to clear selection
- * 
- * @business_rule Cookie expires after 90 days
- * @business_rule Null artistId removes the cookie entirely
- */
-export async function setSelectedArtistIdServer(artistId: string | null): Promise<void> {
-  'use server'
-  const cookieStore = cookies()
-  
-  if (artistId) {
-    cookieStore.set(EMPLOYEE_ARTIST_COOKIE, artistId, {
-      maxAge: COOKIE_MAX_AGE,
-      httpOnly: false, // Allow client-side access
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/'
-    })
-  } else {
-    cookieStore.delete(EMPLOYEE_ARTIST_COOKIE)
-  }
-}
+
 
 /**
  * Client-side utilities for artist selection management
