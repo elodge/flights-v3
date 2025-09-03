@@ -325,7 +325,7 @@ export function BookingQueue({ selections, totalCount }: BookingQueueProps) {
               <SelectItem value="expired">Expired</SelectItem>
               <SelectItem value="high">High (≤2h)</SelectItem>
               <SelectItem value="medium">Medium (≤6h)</SelectItem>
-              <SelectItem value="low">Low (>6h)</SelectItem>
+              <SelectItem value="low">Low (&gt;6h)</SelectItem>
               <SelectItem value="none">No Hold</SelectItem>
             </SelectContent>
           </Select>
