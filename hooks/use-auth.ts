@@ -67,22 +67,21 @@ export function useUser(): UseUserReturn {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  // Get user profile
+  // Get user profile via API endpoint
   const fetchProfile = async (userId: string) => {
     try {
-      console.log('useUser: Fetching profile for userId:', userId)
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single()
+      console.log('useUser: Fetching profile via API for userId:', userId)
       
-      if (error) {
-        console.error('useUser: Profile fetch error:', error)
-        setProfile(null)
+      const response = await fetch('/api/auth/profile')
+      
+      if (response.ok) {
+        const profileData = await response.json()
+        console.log('useUser: Profile fetched successfully via API:', profileData)
+        setProfile(profileData)
       } else {
-        console.log('useUser: Profile fetched successfully:', data)
-        setProfile(data)
+        const errorText = await response.text()
+        console.error('useUser: Profile API error:', response.status, errorText)
+        setProfile(null)
       }
     } catch (error) {
       console.error('useUser: Profile fetch exception:', error)
