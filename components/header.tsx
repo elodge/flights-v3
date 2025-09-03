@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Bell, ChevronDown, LogOut, Plane } from 'lucide-react'
 import { useUser } from '@/hooks/use-auth'
 import { usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { clientUtils } from '@/lib/employeeArtist'
 export function Header() {
   const { user, profile, role, loading, signOut } = useUser()
@@ -31,6 +31,18 @@ export function Header() {
   useEffect(() => {
     loadSelectedArtist()
   }, [pathname])
+
+  const updateSelectedArtistName = useCallback((artistId: string) => {
+    const artist = artists.find(a => a.id === artistId)
+    setSelectedArtistName(artist?.name || 'All Artists')
+  }, [artists])
+
+  // Update artist name when artists array or selectedArtistId changes
+  useEffect(() => {
+    if (selectedArtistId && artists.length > 0) {
+      updateSelectedArtistName(selectedArtistId)
+    }
+  }, [artists, selectedArtistId, updateSelectedArtistName])
 
   const fetchArtists = async () => {
     try {
@@ -65,10 +77,7 @@ export function Header() {
     }
   }
 
-  const updateSelectedArtistName = (artistId: string) => {
-    const artist = artists.find(a => a.id === artistId)
-    setSelectedArtistName(artist?.name || 'All Artists')
-  }
+
 
   const handleArtistSelect = (artistId: string | null) => {
     clientUtils.setSelectedArtistId(artistId)
