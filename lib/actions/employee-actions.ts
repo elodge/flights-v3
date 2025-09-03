@@ -1,3 +1,20 @@
+/**
+ * @fileoverview Employee portal server actions for tour and flight management
+ * 
+ * @description Core server actions for the employee portal workflow including:
+ * - Passenger assignment to flight legs
+ * - Flight option creation via Navitas parsing
+ * - Hold management with 24-hour expiry
+ * - Option recommendation and deletion
+ * 
+ * @access Employee only (agent, admin roles)
+ * @database leg_passengers, options, option_components, holds
+ * @security All actions require authenticated employee user
+ * 
+ * @author Daysheets Team
+ * @since v1.0.0
+ */
+
 'use server'
 
 import { createServerClient } from '@/lib/supabase-server'
@@ -37,6 +54,38 @@ const toggleRecommendedSchema = z.object({
   is_recommended: z.boolean(),
 })
 
+/**
+ * Assigns passengers to a specific flight leg
+ * 
+ * @description Removes existing assignments for the specified passengers and creates
+ * new assignments. Used for bulk passenger assignment in the employee portal.
+ * Supports party-based grouping where passengers travel together.
+ * 
+ * @param formData - Form data containing assignment parameters
+ * @param formData.leg_id - UUID of the target flight leg
+ * @param formData.passenger_ids - Array of passenger UUIDs to assign
+ * 
+ * @returns Promise<{success: true} | {error: string}>
+ * 
+ * @throws {Error} Database validation errors
+ * @security Requires authenticated employee (agent/admin)
+ * @database Writes to leg_passengers table with RLS policies
+ * 
+ * @example
+ * ```typescript
+ * const formData = new FormData()
+ * formData.append('leg_id', 'leg-uuid-here')
+ * formData.append('passenger_ids', 'passenger-1-uuid')
+ * formData.append('passenger_ids', 'passenger-2-uuid')
+ * 
+ * const result = await assignPassengersToLeg(formData)
+ * if ('error' in result) {
+ *   toast.error(result.error)
+ * } else {
+ *   toast.success('Passengers assigned successfully')
+ * }
+ * ```
+ */
 export async function assignPassengersToLeg(formData: FormData) {
   try {
     const user = await getServerUser()
@@ -54,14 +103,17 @@ export async function assignPassengersToLeg(formData: FormData) {
 
     const supabase = await createServerClient()
 
-    // Remove existing assignments for these passengers on this leg
+    // BUSINESS_RULE: Clean slate assignment - remove existing before adding new
+    // This ensures no duplicate assignments and handles reassignment scenarios
     await supabase
       .from('leg_passengers')
       .delete()
       .eq('leg_id', validated.leg_id)
       .in('passenger_id', validated.passenger_ids)
 
-    // Add new assignments
+    // ALGORITHM: Create new assignments with default group behavior
+    // treat_as_individual=false means passengers follow group selections by default
+    // Individual preferences can be set later via client portal
     const assignments = validated.passenger_ids.map(passenger_id => ({
       leg_id: validated.leg_id,
       passenger_id: passenger_id,
@@ -347,7 +399,40 @@ export async function deleteOption(formData: FormData) {
   }
 }
 
-// Utility function to parse Navitas text
+/**
+ * Parses Navitas flight text into structured option data
+ * 
+ * @description Extracts flight information, fare details, and reference codes
+ * from Navitas-formatted text blocks. Handles both single and split itineraries.
+ * Uses pattern matching to identify flight lines, costs, and booking references.
+ * 
+ * @param navitasText - Raw Navitas text block containing flight information
+ * @returns Promise<ParsedOption | null> Structured flight data or null if invalid
+ * 
+ * @algorithm
+ * 1. Split text into lines and filter empty lines
+ * 2. Extract flight lines using regex patterns (airline codes, routes, times)
+ * 3. Parse fare information from currency patterns ($, €, £)
+ * 4. Identify reference codes (PNR, confirmation numbers)
+ * 5. Structure as option with components for multi-segment flights
+ * 
+ * @example
+ * ```typescript
+ * const navitasText = `
+ *   UA 123 LAX→JFK 15MAR 0800/1630
+ *   Business Class
+ *   Fare: $450 per person
+ *   Reference: ABC123
+ * `
+ * const option = await parseNavitasText(navitasText)
+ * // Returns: { 
+ * //   name: "UA 123 LAX→JFK 15MAR 0800/1630", 
+ * //   total_cost: 45000, 
+ * //   currency: "USD",
+ * //   components: [...]
+ * // }
+ * ```
+ */
 export async function parseNavitasText(navitasText: string) {
   const lines = navitasText.trim().split('\n').filter(line => line.trim())
   

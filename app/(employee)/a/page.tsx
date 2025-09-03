@@ -1,3 +1,15 @@
+/**
+ * @fileoverview Employee dashboard for tour management
+ * 
+ * @description Main dashboard page for agents and admins to view and manage
+ * all tours/events across artists. Shows statistics and provides navigation
+ * to detailed tour management pages.
+ * 
+ * @route /a
+ * @access Employee only (agent, admin roles)
+ * @database projects, artists, legs, leg_passengers, selections, holds
+ */
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -69,6 +81,24 @@ async function getEmployeeTours(): Promise<TourWithStats[]> {
   return toursWithStats
 }
 
+/**
+ * Employee dashboard showing all tours grouped by artist with statistics
+ * 
+ * @description Main landing page for agents and admins. Displays all tours/events
+ * organized by artist with key metrics: legs count, unconfirmed selections,
+ * and expiring holds. Provides quick navigation to detailed tour management.
+ * 
+ * @access Employee only (agent, admin roles)
+ * @route /a
+ * 
+ * @returns JSX.Element Dashboard with tour cards grouped by artist
+ * 
+ * @example
+ * ```tsx
+ * // Rendered automatically for authenticated employees at /a
+ * <EmployeePortalPage />
+ * ```
+ */
 export default async function EmployeePortalPage() {
   const tours = await getEmployeeTours()
   

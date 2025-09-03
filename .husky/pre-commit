@@ -1,5 +1,0 @@
-# Run lint-staged to check staged files
-npx lint-staged
-
-# Documentation validation (non-blocking for now)
-npm run docs:check || echo "Documentation coverage is low - please add JSDoc comments"

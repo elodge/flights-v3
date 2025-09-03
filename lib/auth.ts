@@ -1,18 +1,66 @@
+/**
+ * @fileoverview Authentication and authorization utilities
+ * 
+ * @description Core authentication helpers for server-side user management,
+ * role checking, and route protection. Integrates with Supabase Auth and
+ * custom user profiles.
+ * 
+ * @security All functions handle user sessions and role-based access control
+ * @database users table for profile data and role information
+ */
+
 import { createServerClient } from './supabase-server'
 import { Database } from './database.types'
 import { redirect } from 'next/navigation'
 
+/** Valid user roles in the system */
 export type UserRole = Database['public']['Enums']['user_role']
+
+/** User profile data from the users table */
 export type User = Database['public']['Tables']['users']['Row']
 
+/**
+ * Authenticated user object with profile and role information
+ * 
+ * @description Combines Supabase auth user with our custom profile data
+ * including role-based permissions for access control.
+ */
 export interface AuthUser {
+  /** Supabase auth user ID */
   id: string
+  /** User's email address */
   email: string
+  /** Full user profile from users table */
   user?: User
+  /** User's role: client, agent, or admin */
   role?: UserRole
 }
 
-// Server helper to get current user and role
+/**
+ * Gets the current authenticated user with profile and role information
+ * 
+ * @description Server-side helper to retrieve the current user's session
+ * and profile data. Used in server components and API routes for authentication
+ * and authorization checks.
+ * 
+ * @returns Promise<AuthUser | null> User object with profile data or null if not authenticated
+ * 
+ * @throws {Error} Database connection or query errors
+ * @security Safe to call - returns null for unauthenticated users
+ * @database Reads from users table to get profile and role
+ * 
+ * @example
+ * ```typescript
+ * const user = await getServerUser()
+ * if (!user) {
+ *   redirect('/login')
+ * }
+ * 
+ * if (user.role !== 'admin') {
+ *   return { error: 'Unauthorized' }
+ * }
+ * ```
+ */
 export async function getServerUser(): Promise<AuthUser | null> {
   try {
     const supabase = await createServerClient()
