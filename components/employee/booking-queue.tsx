@@ -26,8 +26,7 @@ interface Selection {
   id: string
   passenger_id: string
   option_id: string
-  selection_type: 'group' | 'individual'
-  status: 'pending' | 'held' | 'ticketed' | 'cancelled'
+  status: 'client_choice' | 'held' | 'ticketed' | 'expired'
   created_at: string
   passenger: {
     id: string
@@ -237,15 +236,22 @@ export function BookingQueue({ selections, totalCount }: BookingQueueProps) {
 
   const getStatusBadge = (status: Selection['status']) => {
     const variants = {
-      pending: 'secondary',
-      held: 'outline',
+      client_choice: 'secondary',
+      held: 'outline', 
       ticketed: 'default',
-      cancelled: 'destructive'
+      expired: 'destructive'
     } as const
+
+    const labels = {
+      client_choice: 'Pending',
+      held: 'Held',
+      ticketed: 'Ticketed',
+      expired: 'Expired'
+    }
 
     return (
       <Badge variant={variants[status]} className="capitalize">
-        {status}
+        {labels[status]}
       </Badge>
     )
   }
@@ -304,9 +310,10 @@ export function BookingQueue({ selections, totalCount }: BookingQueueProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="client_choice">Pending</SelectItem>
               <SelectItem value="held">Held</SelectItem>
               <SelectItem value="ticketed">Ticketed</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
             </SelectContent>
           </Select>
           <Select value={urgencyFilter} onValueChange={setUrgencyFilter}>
@@ -430,7 +437,7 @@ export function BookingQueue({ selections, totalCount }: BookingQueueProps) {
                                         <div><strong>Route:</strong> {selection.option.route}</div>
                                         <div><strong>Date:</strong> {selection.option.departure_date}</div>
                                         <div><strong>Price:</strong> ${selection.option.price_per_pax || 'TBD'}</div>
-                                        <div><strong>Type:</strong> {selection.selection_type}</div>
+                                        <div><strong>Type:</strong> Individual</div>
                                       </div>
                                       {remaining && (
                                         <div className="p-3 bg-muted rounded-lg">
@@ -490,7 +497,7 @@ export function BookingQueue({ selections, totalCount }: BookingQueueProps) {
                                   {/* Action Buttons */}
                                   <div className="flex justify-between items-center pt-4 border-t">
                                     <div className="flex space-x-2">
-                                      {selection.status !== 'pending' && (
+                                      {selection.status !== 'client_choice' && (
                                         <Button 
                                           variant="outline" 
                                           size="sm"
@@ -503,7 +510,7 @@ export function BookingQueue({ selections, totalCount }: BookingQueueProps) {
                                       )}
                                     </div>
                                     <div className="flex space-x-2">
-                                      {selection.status === 'pending' && (
+                                      {selection.status === 'client_choice' && (
                                         <Button 
                                           variant="outline"
                                           onClick={() => handleMarkHeld(selection.id)}
@@ -513,7 +520,7 @@ export function BookingQueue({ selections, totalCount }: BookingQueueProps) {
                                           Mark Held
                                         </Button>
                                       )}
-                                      {['pending', 'held'].includes(selection.status) && (
+                                      {['client_choice', 'held'].includes(selection.status) && (
                                         <Button 
                                           onClick={() => handleMarkTicketed(selection.id, pnrCode)}
                                           disabled={isPending || (!selection.pnr && !pnrCode.trim())}

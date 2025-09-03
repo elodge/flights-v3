@@ -19,8 +19,7 @@ interface Selection {
   id: string
   passenger_id: string
   option_id: string
-  selection_type: 'group' | 'individual'
-  status: 'pending' | 'held' | 'ticketed' | 'cancelled'
+  status: 'client_choice' | 'held' | 'ticketed' | 'expired'
   created_at: string
   passenger: {
     id: string
@@ -123,7 +122,7 @@ async function getQueueSelections(): Promise<QueueData> {
         code
       )
     `)
-    .not('status', 'eq', 'cancelled')
+    .not('status', 'eq', 'expired')
     .order('created_at', { ascending: false })
 
   if (error) {

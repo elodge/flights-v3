@@ -79,7 +79,7 @@ export async function markHeld(formData: FormData): Promise<ActionResult> {
       return { success: false, error: 'Selection not found' }
     }
 
-    if (selection.status !== 'pending') {
+    if (selection.status !== 'client_choice') {
       return { success: false, error: `Cannot mark ${selection.status} selection as held` }
     }
 
@@ -166,7 +166,7 @@ export async function markTicketed(formData: FormData): Promise<ActionResult> {
       return { success: false, error: 'Selection not found' }
     }
 
-    if (!['pending', 'held'].includes(selection.status)) {
+    if (!['client_choice', 'held'].includes(selection.status)) {
       return { success: false, error: `Cannot ticket ${selection.status} selection` }
     }
 
@@ -280,19 +280,19 @@ export async function revertToClientChoice(formData: FormData): Promise<ActionRe
       return { success: false, error: 'Selection not found' }
     }
 
-    if (selection.status === 'cancelled') {
-      return { success: false, error: 'Cannot revert cancelled selection' }
+    if (selection.status === 'expired') {
+      return { success: false, error: 'Cannot revert expired selection' }
     }
 
-    if (selection.status === 'pending') {
+    if (selection.status === 'client_choice') {
       return { success: false, error: 'Selection is already pending' }
     }
 
-    // ALGORITHM: Revert to pending status
+    // ALGORITHM: Revert to client_choice status
     const { error: updateError } = await supabase
       .from('selections')
       .update({ 
-        status: 'pending',
+        status: 'client_choice',
         updated_at: new Date().toISOString()
       })
       .eq('id', validated.selection_id)
@@ -308,7 +308,7 @@ export async function revertToClientChoice(formData: FormData): Promise<ActionRe
 
     return { 
       success: true, 
-      data: { selection_id: validated.selection_id, status: 'pending' }
+      data: { selection_id: validated.selection_id, status: 'client_choice' }
     }
 
   } catch (error) {
@@ -341,7 +341,7 @@ export async function getQueueStats(): Promise<ActionResult> {
     const { data: statusCounts, error: statusError } = await supabase
       .from('selections')
       .select('status')
-      .not('status', 'eq', 'cancelled')
+      .not('status', 'eq', 'expired')
 
     if (statusError) {
       return { success: false, error: 'Failed to fetch queue statistics' }
@@ -350,9 +350,10 @@ export async function getQueueStats(): Promise<ActionResult> {
     // Calculate statistics
     const stats = {
       total: statusCounts.length,
-      pending: statusCounts.filter(s => s.status === 'pending').length,
+      client_choice: statusCounts.filter(s => s.status === 'client_choice').length,
       held: statusCounts.filter(s => s.status === 'held').length,
       ticketed: statusCounts.filter(s => s.status === 'ticketed').length,
+      expired: statusCounts.filter(s => s.status === 'expired').length,
     }
 
     return { success: true, data: stats }

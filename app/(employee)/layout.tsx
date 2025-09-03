@@ -25,7 +25,7 @@ export default async function EmployeeLayout({
   const { data: queueCount } = await supabase
     .from('selections')
     .select('id', { count: 'exact', head: true })
-    .not('status', 'eq', 'cancelled')
+    .not('status', 'eq', 'expired')
     .not('status', 'eq', 'ticketed')
 
   return (
