@@ -6,10 +6,16 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Bell, ChevronDown, LogOut, Plane } from 'lucide-react'
 import { useUser } from '@/hooks/use-auth'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export function Header() {
   const { user, profile, role, loading, signOut } = useUser()
   const pathname = usePathname()
+  const [hasMounted, setHasMounted] = useState(false)
+
+  useEffect(() => {
+    setHasMounted(true)
+  }, [])
 
   const handleSignOut = async () => {
     await signOut()
@@ -44,8 +50,8 @@ export function Header() {
         </div>
         
         <div className="flex flex-1 items-center space-x-3">
-          {/* Artist Selector - Only show when authenticated */}
-          {user && (
+          {/* Artist Selector - Only show when authenticated and mounted */}
+          {hasMounted && user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-9 w-[200px] justify-between border border-border/50 hover:border-border hover:bg-accent/50">
@@ -61,8 +67,8 @@ export function Header() {
         </div>
 
         <div className="flex items-center space-x-3">
-          {/* Notifications Button - Only show when authenticated */}
-          {user && (
+          {/* Notifications Button - Only show when authenticated and mounted */}
+          {hasMounted && user && (
             <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-accent/50">
               <Bell className="h-4 w-4" />
               <span className="sr-only">Notifications</span>
@@ -70,7 +76,7 @@ export function Header() {
           )}
 
           {/* Account Menu */}
-          {loading ? (
+          {!hasMounted || loading ? (
             <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
           ) : user ? (
             <DropdownMenu>
