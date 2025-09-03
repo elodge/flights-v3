@@ -9,8 +9,6 @@
  * @persistence 90-day cookie storage
  */
 
-'use server'
-
 import { cookies } from 'next/headers'
 import type { ReadonlyURLSearchParams } from 'next/navigation'
 
@@ -82,6 +80,7 @@ export function getSelectedArtistIdServer(
  * @business_rule Null artistId removes the cookie entirely
  */
 export async function setSelectedArtistIdServer(artistId: string | null): Promise<void> {
+  'use server'
   const cookieStore = cookies()
   
   if (artistId) {
