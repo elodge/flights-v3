@@ -21,9 +21,7 @@ export function Header() {
 
   // Load artists when user is available and is employee
   useEffect(() => {
-    console.log('Header useEffect: user=', !!user, 'role=', role, 'loading=', loading)
     if (user && ['agent', 'admin'].includes(role || '')) {
-      console.log('Loading artists for employee...')
       fetchArtists()
       loadSelectedArtist()
     }
@@ -36,15 +34,10 @@ export function Header() {
 
   const fetchArtists = async () => {
     try {
-      console.log('Fetching artists from /api/artists...')
       const response = await fetch('/api/artists')
-      console.log('Artist API response status:', response.status)
       if (response.ok) {
         const artistData = await response.json()
-        console.log('Artists loaded:', artistData.length, artistData)
         setArtists(artistData)
-      } else {
-        console.error('Failed to fetch artists - status:', response.status)
       }
     } catch (error) {
       console.error('Failed to fetch artists:', error)

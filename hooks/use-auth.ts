@@ -70,7 +70,6 @@ export function useUser(): UseUserReturn {
   // Get user profile
   const fetchProfile = async (userId: string) => {
     try {
-      console.log('useUser: Fetching profile for user ID:', userId)
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -78,14 +77,13 @@ export function useUser(): UseUserReturn {
         .single()
       
       if (error) {
-        console.error('useUser: Error fetching profile:', error)
+        console.error('Error fetching user profile:', error)
         setProfile(null)
       } else {
-        console.log('useUser: Profile loaded:', data)
         setProfile(data)
       }
     } catch (error) {
-      console.error('useUser: Exception fetching profile:', error)
+      console.error('Exception fetching user profile:', error)
       setProfile(null)
     }
   }
@@ -108,7 +106,10 @@ export function useUser(): UseUserReturn {
       const { data: { session } } = await supabase.auth.getSession()
       setUser(session?.user || null)
       if (session?.user) {
-        await fetchProfile(session.user.id)
+        // Small delay to ensure auth context is set
+        setTimeout(async () => {
+          await fetchProfile(session.user.id)
+        }, 100)
       }
       setLoading(false)
     }
@@ -133,13 +134,10 @@ export function useUser(): UseUserReturn {
     return () => subscription.unsubscribe()
   }, [])
 
-  const role = profile?.role || null
-  console.log('useUser: Returning - user=', !!user, 'profile=', !!profile, 'role=', role, 'loading=', loading)
-  
   return {
     user,
     profile,
-    role,
+    role: profile?.role || null,
     loading,
     signOut
   }
