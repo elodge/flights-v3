@@ -5,9 +5,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Bell, ChevronDown, LogOut } from 'lucide-react'
 import { useUser } from '@/hooks/use-auth'
+import { usePathname } from 'next/navigation'
 
 export function Header() {
   const { user, profile, role, loading, signOut } = useUser()
+  const pathname = usePathname()
 
   const handleSignOut = async () => {
     await signOut()
@@ -89,11 +91,11 @@ export function Header() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : (
+          ) : pathname !== '/login' ? (
             <Button variant="outline" size="sm" onClick={() => window.location.href = '/login'}>
               Sign In
             </Button>
-          )}
+          ) : null}
         </div>
       </div>
     </header>
