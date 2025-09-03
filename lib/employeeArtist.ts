@@ -22,13 +22,38 @@ export const EMPLOYEE_ARTIST_COOKIE = 'employee_artist_id'
 export const COOKIE_MAX_AGE = 90 * 24 * 60 * 60 // 90 days in seconds
 
 /**
+ * Safely converts Next.js searchParams to URLSearchParams
+ * 
+ * @description Next.js searchParams can contain string[], undefined, or Symbol values
+ * that cause errors when converted to URLSearchParams. This helper safely converts
+ * them by taking the first string value from arrays and ignoring non-string values.
+ * 
+ * @param searchParams - Next.js searchParams object
+ * @returns URLSearchParams - Safe URLSearchParams object
+ */
+export function searchParamsToURLSearchParams(
+  searchParams: { [key: string]: string | string[] | undefined }
+): URLSearchParams {
+  const urlParams = new URLSearchParams()
+  Object.entries(searchParams).forEach(([key, value]) => {
+    if (typeof value === 'string') {
+      urlParams.set(key, value)
+    } else if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'string') {
+      urlParams.set(key, value[0])
+    }
+    // Ignore undefined values and non-string types
+  })
+  return urlParams
+}
+
+/**
  * Gets the selected artist ID from URL params (server-side)
  * 
  * @description Determines the currently selected artist for filtering employee portal
  * data. Since this utility file can be imported by client components, it only
  * checks URL parameters. Cookie checking should be done in server components.
  * 
- * @param searchParams - URL search parameters from the request
+ * @param searchParams - URL search parameters from the request OR Next.js searchParams
  * @returns string | null - Artist UUID or null for "All Artists"
  * 
  * @algorithm
@@ -38,13 +63,30 @@ export const COOKIE_MAX_AGE = 90 * 24 * 60 * 60 // 90 days in seconds
  * @example
  * ```typescript
  * // In a server component or page
- * const artistId = getSelectedArtistIdServer(searchParams)
+ * const artistId = getSelectedArtistIdFromSearchParams(searchParams)
  * if (artistId) {
  *   // Filter data by artist
  * } else {
  *   // Show all artists' data or check cookie separately
  * }
  * ```
+ */
+export function getSelectedArtistIdFromSearchParams(
+  searchParams: { [key: string]: string | string[] | undefined }
+): string | null {
+  // Convert safely to URLSearchParams first
+  const urlParams = searchParamsToURLSearchParams(searchParams)
+  return getSelectedArtistIdServer(urlParams)
+}
+
+/**
+ * Gets the selected artist ID from URLSearchParams (server-side)
+ * 
+ * @description Lower-level function that works with URLSearchParams directly.
+ * Use getSelectedArtistIdFromSearchParams for Next.js searchParams objects.
+ * 
+ * @param searchParams - URLSearchParams object
+ * @returns string | null - Artist UUID or null for "All Artists"
  */
 export function getSelectedArtistIdServer(
   searchParams: ReadonlyURLSearchParams | URLSearchParams

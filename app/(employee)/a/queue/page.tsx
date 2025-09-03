@@ -14,7 +14,7 @@ import { getServerUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import { BookingQueue } from '@/components/employee/booking-queue'
-import { getSelectedArtistIdServer } from '@/lib/employeeArtist'
+import { getSelectedArtistIdFromSearchParams } from '@/lib/employeeArtist'
 import { getSelectedArtistIdFromCookie } from '@/lib/actions/artist-selection-actions'
 import { Badge } from '@/components/ui/badge'
 import { Eye } from 'lucide-react'
@@ -176,9 +176,7 @@ export default async function BookingQueuePage({
   }
 
   // Get selected artist from URL params or cookies
-  const urlArtistId = getSelectedArtistIdServer(
-    new URLSearchParams(searchParams as Record<string, string>)
-  )
+  const urlArtistId = getSelectedArtistIdFromSearchParams(searchParams)
   const cookieArtistId = await getSelectedArtistIdFromCookie()
   const selectedArtistId = urlArtistId || cookieArtistId
 
