@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Clock, Plane, Users, FileText, AlertTriangle, Loader2 } from 'lucide-react'
 import { formatDistanceToNow, isAfter, parseISO } from 'date-fns'
 import { markHeld, markTicketed, revertToClientChoice } from '@/lib/actions/booking-actions'
+import { DocumentUpload } from './document-upload'
 import { toast } from 'sonner'
 
 interface Selection {
@@ -475,15 +476,14 @@ export function BookingQueue({ selections, totalCount }: BookingQueueProps) {
                                     {/* Documents Section */}
                                     <div className="space-y-4">
                                       <h3 className="font-semibold">Documents</h3>
-                                      <div className="space-y-2">
-                                        <Button size="sm" variant="outline" disabled className="gap-2">
-                                          <FileText className="h-4 w-4" />
-                                          Upload Documents (Coming soon)
-                                        </Button>
-                                        <p className="text-xs text-muted-foreground">
-                                          Upload itinerary and invoice PDFs
-                                        </p>
-                                      </div>
+                                      <DocumentUpload
+                                        passengerId={selection.passenger_id}
+                                        projectId={selection.leg.project.id}
+                                        onUploadComplete={() => {
+                                          toast.success('Documents uploaded successfully')
+                                          // Optionally refresh or update UI
+                                        }}
+                                      />
                                     </div>
                                   </div>
 
