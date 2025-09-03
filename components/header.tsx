@@ -31,25 +31,29 @@ export function Header() {
         </div>
         
         <div className="flex flex-1 items-center space-x-2">
-          {/* Artist Selector Placeholder */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-[200px] justify-between">
-                Select Artist
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-[200px]">
-              <DropdownMenuItem disabled>No artists available</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Artist Selector - Only show when authenticated */}
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-[200px] justify-between">
+                  Select Artist
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[200px]">
+                <DropdownMenuItem disabled>No artists available</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         <div className="flex items-center space-x-2">
-          {/* Notifications Button Placeholder */}
-          <Button variant="outline" size="icon">
-            <Bell className="h-4 w-4" />
-          </Button>
+          {/* Notifications Button - Only show when authenticated */}
+          {user && (
+            <Button variant="outline" size="icon">
+              <Bell className="h-4 w-4" />
+            </Button>
+          )}
 
           {/* Account Menu */}
           {loading ? (
