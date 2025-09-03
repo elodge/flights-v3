@@ -70,15 +70,22 @@ export function useUser(): UseUserReturn {
   // Get user profile
   const fetchProfile = async (userId: string) => {
     try {
-      const { data } = await supabase
+      console.log('useUser: Fetching profile for user ID:', userId)
+      const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single()
       
-      setProfile(data)
+      if (error) {
+        console.error('useUser: Error fetching profile:', error)
+        setProfile(null)
+      } else {
+        console.log('useUser: Profile loaded:', data)
+        setProfile(data)
+      }
     } catch (error) {
-      console.error('Error fetching profile:', error)
+      console.error('useUser: Exception fetching profile:', error)
       setProfile(null)
     }
   }
@@ -126,10 +133,13 @@ export function useUser(): UseUserReturn {
     return () => subscription.unsubscribe()
   }, [])
 
+  const role = profile?.role || null
+  console.log('useUser: Returning - user=', !!user, 'profile=', !!profile, 'role=', role, 'loading=', loading)
+  
   return {
     user,
     profile,
-    role: profile?.role || null,
+    role,
     loading,
     signOut
   }
