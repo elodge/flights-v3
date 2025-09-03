@@ -70,6 +70,7 @@ export function useUser(): UseUserReturn {
   // Get user profile
   const fetchProfile = async (userId: string) => {
     try {
+      console.log('useUser: Fetching profile for userId:', userId)
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -77,13 +78,14 @@ export function useUser(): UseUserReturn {
         .single()
       
       if (error) {
-        console.error('Error fetching user profile:', error)
+        console.error('useUser: Profile fetch error:', error)
         setProfile(null)
       } else {
+        console.log('useUser: Profile fetched successfully:', data)
         setProfile(data)
       }
     } catch (error) {
-      console.error('Exception fetching user profile:', error)
+      console.error('useUser: Profile fetch exception:', error)
       setProfile(null)
     }
   }
@@ -103,15 +105,20 @@ export function useUser(): UseUserReturn {
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
+      console.log('useUser: Getting initial session...')
       const { data: { session } } = await supabase.auth.getSession()
+      console.log('useUser: Session found:', !!session, 'User ID:', session?.user?.id)
       setUser(session?.user || null)
       if (session?.user) {
+        console.log('useUser: Will fetch profile in 100ms...')
         // Small delay to ensure auth context is set
         setTimeout(async () => {
           await fetchProfile(session.user.id)
+          setLoading(false)
         }, 100)
+      } else {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
     getInitialSession()
@@ -119,9 +126,11 @@ export function useUser(): UseUserReturn {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('useUser: Auth state change:', event, 'Session:', !!session)
         setUser(session?.user || null)
         
         if (session?.user) {
+          console.log('useUser: Auth change - fetching profile for:', session.user.id)
           await fetchProfile(session.user.id)
         } else {
           setProfile(null)
