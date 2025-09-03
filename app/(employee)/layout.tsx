@@ -1,5 +1,7 @@
 import { getServerUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import { EmployeeNav } from '@/components/employee/employee-nav'
+import { createServerClient } from '@/lib/supabase-server'
 
 export default async function EmployeeLayout({
   children,
@@ -18,6 +20,14 @@ export default async function EmployeeLayout({
     redirect('/c')
   }
 
+  // Get queue count for navigation badge
+  const supabase = await createServerClient()
+  const { data: queueCount } = await supabase
+    .from('selections')
+    .select('id', { count: 'exact', head: true })
+    .not('status', 'eq', 'cancelled')
+    .not('status', 'eq', 'ticketed')
+
   return (
     <div className="employee-portal">
       <div className="mb-6">
@@ -26,6 +36,9 @@ export default async function EmployeeLayout({
           Flight management and crew coordination - {user.user?.full_name || user.email} ({user.role})
         </p>
       </div>
+      
+      <EmployeeNav queueCount={queueCount?.count || 0} />
+      
       {children}
     </div>
   )
