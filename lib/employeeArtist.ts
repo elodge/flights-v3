@@ -134,16 +134,17 @@ export const clientUtils = {
    * Sets the selected artist ID and updates URL (client-side)
    * 
    * @description Updates both cookie and URL without page reload using
-   * History API. Maintains consistent state across client and server.
+   * Next.js router. Maintains consistent state across client and server.
    * 
    * @param artistId - Artist UUID to select, or null for "All Artists"
+   * @param router - Next.js router instance for navigation
    * 
    * @algorithm
    * 1. Update cookie with new artist ID (or remove if null)
-   * 2. Update URL search parameters using replaceState
-   * 3. Trigger page refresh to update server-side data
+   * 2. Update URL search parameters using Next.js router
+   * 3. No page refresh needed - Next.js handles server-side data updates
    */
-  setSelectedArtistId(artistId: string | null): void {
+  setSelectedArtistId(artistId: string | null, router?: any): void {
     // Update cookie
     if (artistId) {
       const expires = new Date()
@@ -153,17 +154,17 @@ export const clientUtils = {
       document.cookie = `${EMPLOYEE_ARTIST_COOKIE}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
     }
 
-    // Update URL without reload
-    const url = new URL(window.location.href)
-    if (artistId) {
-      url.searchParams.set('artist', artistId)
-    } else {
-      url.searchParams.delete('artist')
+    // Update URL without reload using Next.js router
+    if (router) {
+      const url = new URL(window.location.href)
+      if (artistId) {
+        url.searchParams.set('artist', artistId)
+      } else {
+        url.searchParams.delete('artist')
+      }
+      
+      // Use router.replace for smooth navigation without reload
+      router.replace(`${url.pathname}${url.search}`, { scroll: false })
     }
-    
-    window.history.replaceState({}, '', url.toString())
-    
-    // Trigger page refresh to update server-side data
-    window.location.reload()
   }
 }

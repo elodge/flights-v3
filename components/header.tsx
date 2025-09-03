@@ -5,12 +5,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Bell, ChevronDown, LogOut, Plane } from 'lucide-react'
 import { useUser } from '@/hooks/use-auth'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
 import { clientUtils } from '@/lib/employeeArtist'
 export function Header() {
   const { user, profile, role, loading, signOut } = useUser()
   const pathname = usePathname()
+  const router = useRouter()
   const [artists, setArtists] = useState<Array<{id: string, name: string}>>([])
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null)
   const [selectedArtistName, setSelectedArtistName] = useState<string>('All Artists')
@@ -80,7 +81,7 @@ export function Header() {
 
 
   const handleArtistSelect = (artistId: string | null) => {
-    clientUtils.setSelectedArtistId(artistId)
+    clientUtils.setSelectedArtistId(artistId, router)
   }
 
   const getUserInitials = () => {
