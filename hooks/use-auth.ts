@@ -70,21 +70,17 @@ export function useUser(): UseUserReturn {
   // Get user profile via API endpoint
   const fetchProfile = async (userId: string) => {
     try {
-      console.log('useUser: Fetching profile via API for userId:', userId)
-      
       const response = await fetch('/api/auth/profile')
       
       if (response.ok) {
         const profileData = await response.json()
-        console.log('useUser: Profile fetched successfully via API:', profileData)
         setProfile(profileData)
       } else {
-        const errorText = await response.text()
-        console.error('useUser: Profile API error:', response.status, errorText)
+        console.error('Failed to fetch user profile:', response.status)
         setProfile(null)
       }
     } catch (error) {
-      console.error('useUser: Profile fetch exception:', error)
+      console.error('Error fetching user profile:', error)
       setProfile(null)
     }
   }
@@ -104,12 +100,9 @@ export function useUser(): UseUserReturn {
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      console.log('useUser: Getting initial session...')
       const { data: { session } } = await supabase.auth.getSession()
-      console.log('useUser: Session found:', !!session, 'User ID:', session?.user?.id)
       setUser(session?.user || null)
       if (session?.user) {
-        console.log('useUser: Will fetch profile in 100ms...')
         // Small delay to ensure auth context is set
         setTimeout(async () => {
           await fetchProfile(session.user.id)
@@ -125,11 +118,9 @@ export function useUser(): UseUserReturn {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('useUser: Auth state change:', event, 'Session:', !!session)
         setUser(session?.user || null)
         
         if (session?.user) {
-          console.log('useUser: Auth change - fetching profile for:', session.user.id)
           await fetchProfile(session.user.id)
         } else {
           setProfile(null)
