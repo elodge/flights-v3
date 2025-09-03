@@ -1,3 +1,16 @@
+/**
+ * @fileoverview Flight option management component for employee portal
+ * 
+ * @description Displays and manages flight options for a leg including:
+ * - Option display with components and pricing
+ * - Hold management with 24-hour expiry
+ * - Recommendation toggling
+ * - Option deletion with confirmation
+ * 
+ * @access Employee only (agent, admin roles)
+ * @database Reads options, creates holds, updates recommendations
+ */
+
 'use client'
 
 import { useState } from 'react'
@@ -18,31 +31,60 @@ import { Clock, Star, Trash2, Settings, Plane } from 'lucide-react'
 import { createHold, toggleOptionRecommended, deleteOption } from '@/lib/actions/employee-actions'
 import { toast } from 'sonner'
 
+/**
+ * Flight option data structure with all related information
+ * 
+ * @description Complete flight option including components, holds, and metadata
+ */
 interface FlightOption {
+  /** Unique option identifier */
   id: string
+  /** Display name for the option */
   name: string
+  /** Optional detailed description */
   description: string | null
+  /** Cost in cents (e.g., $450.00 = 45000) */
   total_cost: number | null
+  /** Currency code (USD, EUR, etc.) */
   currency: string | null
+  /** Whether this option is marked as recommended */
   is_recommended: boolean
+  /** Whether this option is available for booking */
   is_available: boolean
+  /** Active holds on this option */
   holds: Array<{
+    /** Hold identifier */
     id: string
+    /** When this hold expires (ISO string) */
     expires_at: string
+    /** Personnel who has the hold */
     tour_personnel: {
+      /** Full name of the person */
       full_name: string
     }
   }>
+  /** Flight segments/components */
   option_components: Array<{
+    /** Component identifier */
     id: string
+    /** Order in the itinerary */
     component_order: number
+    /** Raw Navitas text for this segment */
     navitas_text: string
   }>
 }
 
+/**
+ * Personnel data for hold assignment
+ * 
+ * @description Represents tour personnel who can have holds placed
+ */
 interface Personnel {
+  /** Personnel identifier */
   id: string
+  /** Full name for display */
   full_name: string
+  /** Whether assigned to the current leg */
   is_assigned: boolean
 }
 

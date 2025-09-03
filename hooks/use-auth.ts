@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Client-side authentication hooks
+ * 
+ * @description Custom React hooks for managing user authentication state,
+ * role checking, and route protection in client components.
+ * 
+ * @access Client-side only
+ * @security Handles user sessions and role-based access control
+ */
+
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -6,14 +16,51 @@ import { supabase } from '@/lib/supabase'
 import { User, UserRole } from '@/lib/auth'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
+/**
+ * Return type for the useUser hook
+ * 
+ * @description Provides complete user state including authentication,
+ * profile data, role information, and loading states.
+ */
 interface UseUserReturn {
+  /** Supabase auth user object */
   user: SupabaseUser | null
+  /** User profile from our users table */
   profile: User | null
+  /** User's role for access control */
   role: UserRole | null
+  /** Whether user data is being loaded */
   loading: boolean
+  /** Function to sign out the user */
   signOut: () => Promise<void>
 }
 
+/**
+ * Client-side hook for user authentication and profile management
+ * 
+ * @description Manages user authentication state, profile data, and role information.
+ * Automatically syncs with Supabase auth changes and provides sign-out functionality.
+ * 
+ * @returns UseUserReturn Object containing user, profile, role, loading state, and signOut function
+ * 
+ * @example
+ * ```tsx
+ * function MyComponent() {
+ *   const { user, role, loading, signOut } = useUser()
+ *   
+ *   if (loading) return <div>Loading...</div>
+ *   if (!user) return <div>Please log in</div>
+ *   
+ *   return (
+ *     <div>
+ *       <p>Welcome, {user.email}!</p>
+ *       <p>Role: {role}</p>
+ *       <button onClick={signOut}>Sign Out</button>
+ *     </div>
+ *   )
+ * }
+ * ```
+ */
 export function useUser(): UseUserReturn {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [profile, setProfile] = useState<User | null>(null)

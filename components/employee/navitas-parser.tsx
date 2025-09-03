@@ -1,3 +1,14 @@
+/**
+ * @fileoverview Navitas flight text parser component for employee portal
+ * 
+ * @description Allows agents to paste Navitas flight information and convert
+ * it into structured flight options with preview and save functionality.
+ * Handles both single and multi-segment flights.
+ * 
+ * @access Employee only (agent, admin roles)
+ * @database Creates records in options and option_components tables
+ */
+
 'use client'
 
 import { useState } from 'react'
@@ -10,22 +21,68 @@ import { Plus, Star, Plane } from 'lucide-react'
 import { parseNavitasText, createFlightOption } from '@/lib/actions/employee-actions'
 import { toast } from 'sonner'
 
+/**
+ * Props for the Navitas parser component
+ * 
+ * @description Configuration for flight option creation from Navitas text
+ */
 interface NavitasParserProps {
+  /** UUID of the leg to create options for */
   legId: string
+  /** Callback fired when a new option is successfully created */
   onOptionCreated?: () => void
 }
 
+/**
+ * Structured flight option data parsed from Navitas text
+ * 
+ * @description Represents a flight option with all necessary components
+ * for saving to the database and displaying to users.
+ */
 interface ParsedOption {
+  /** Display name for the flight option */
   name: string
+  /** Optional detailed description */
   description?: string
+  /** Cost in cents (e.g., $450.00 = 45000) */
   total_cost?: number
+  /** Currency code (USD, EUR, etc.) */
   currency: string
+  /** Individual flight segments/components */
   components: Array<{
+    /** Text description of this flight segment */
     description: string
+    /** Order of this component in the itinerary */
     component_order: number
   }>
 }
 
+/**
+ * Flight option creation component using Navitas text parsing
+ * 
+ * @description Provides a workflow for agents to create flight options by:
+ * 1. Pasting Navitas flight text
+ * 2. Previewing parsed flight information
+ * 3. Setting recommendation status
+ * 4. Saving as a new flight option
+ * 
+ * @param props - Component properties
+ * @param props.legId - UUID of the flight leg to create options for
+ * @param props.onOptionCreated - Callback when option is successfully created
+ * 
+ * @access Employee only (used in leg management page)
+ * 
+ * @example
+ * ```tsx
+ * <NavitasParser 
+ *   legId="leg-uuid-here"
+ *   onOptionCreated={() => {
+ *     console.log('New option created!')
+ *     // Refresh options list
+ *   }}
+ * />
+ * ```
+ */
 export function NavitasParser({ legId, onOptionCreated }: NavitasParserProps) {
   const [navitasText, setNavitasText] = useState('')
   const [isRecommended, setIsRecommended] = useState(false)

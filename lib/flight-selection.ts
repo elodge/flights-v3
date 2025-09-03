@@ -1,15 +1,44 @@
+/**
+ * @fileoverview Client-side flight option selection utilities
+ * 
+ * @description Provides functions for clients to select flight options
+ * through the rpc_client_select_option RPC function. Handles both
+ * group selections (all passengers) and individual selections.
+ * 
+ * @access Client only - uses RLS-protected RPC function
+ * @database Calls rpc_client_select_option which writes to selections table
+ */
+
 import { supabase } from './supabase'
 import { Database } from './database.types'
 
+/**
+ * Parameters for flight option selection
+ * 
+ * @description Configuration for selecting a flight option, either for
+ * all passengers on a leg or specific individuals.
+ */
 export interface SelectOptionParams {
+  /** UUID of the flight leg */
   leg_id: string
+  /** UUID of the flight option to select */
   option_id: string
+  /** Optional array of passenger UUIDs for individual selection */
   passenger_ids?: string[]
 }
 
+/**
+ * Result of flight option selection operation
+ * 
+ * @description Response object indicating success/failure and providing
+ * user-friendly messages or error details.
+ */
 export interface SelectOptionResult {
+  /** Whether the selection was successful */
   success: boolean
+  /** Success message for user feedback */
   message?: string
+  /** Error message if selection failed */
   error?: string
 }
 
