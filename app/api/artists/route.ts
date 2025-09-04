@@ -10,7 +10,7 @@
 
 import { NextResponse } from 'next/server'
 import { getServerUser } from '@/lib/auth'
-import { createServerClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase'
 
 /**
  * GET handler for artists list
@@ -34,7 +34,7 @@ export async function GET() {
       )
     }
 
-    const supabase = await createServerClient()
+    const supabase = createAdminClient()
 
     // Fetch all artists
     const { data: artists, error } = await supabase

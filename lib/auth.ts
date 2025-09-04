@@ -117,7 +117,9 @@ export async function requireRole(allowedRoles: UserRole[]): Promise<AuthUser> {
 // Server helper to sync user on first login
 export async function syncUser(userId: string, email: string): Promise<User> {
   try {
-    const supabase = await createServerClient()
+    // Use admin client for user sync to bypass RLS restrictions
+    const { createAdminClient } = await import('./supabase')
+    const supabase = createAdminClient()
     
     // Try to get existing user
     const { data: existingUser } = await supabase

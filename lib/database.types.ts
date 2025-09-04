@@ -93,6 +93,67 @@ export type Database = {
         }
         Relationships: []
       }
+      budgets: {
+        Row: {
+          amount_cents: number
+          created_at: string | null
+          created_by: string
+          id: string
+          level: string
+          notes: string | null
+          party: string | null
+          passenger_id: string | null
+          project_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string | null
+          created_by: string
+          id?: string
+          level: string
+          notes?: string | null
+          party?: string | null
+          passenger_id?: string | null
+          project_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          level?: string
+          notes?: string | null
+          party?: string | null
+          passenger_id?: string | null
+          project_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budgets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_passenger_id_fkey"
+            columns: ["passenger_id"]
+            isOneToOne: false
+            referencedRelation: "tour_personnel"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           created_at: string

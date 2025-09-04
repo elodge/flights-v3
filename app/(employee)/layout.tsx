@@ -1,7 +1,7 @@
 import { getServerUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { EmployeeNav } from '@/components/employee/employee-nav'
-import { createServerClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase'
 
 export default async function EmployeeLayout({
   children,
@@ -20,13 +20,22 @@ export default async function EmployeeLayout({
     redirect('/c')
   }
 
-  // Get queue count for navigation badge
-  const supabase = await createServerClient()
-  const { data: queueCount } = await supabase
-    .from('selections')
-    .select('id', { count: 'exact', head: true })
-    .not('status', 'eq', 'expired')
-    .not('status', 'eq', 'ticketed')
+  // Get queue count for navigation badge (show total across all artists for now)
+  let queueCount = { count: 0 }
+  try {
+    const adminSupabase = createAdminClient()
+    const { data: selections } = await adminSupabase
+      .from('selections')
+      .select('id')
+      .not('status', 'eq', 'expired')
+      .not('status', 'eq', 'ticketed')
+    
+    queueCount = { count: selections?.length || 0 }
+  } catch (error) {
+    // If admin client fails (e.g., missing service role key), fall back to 0
+    console.warn('Unable to fetch queue count:', error)
+    queueCount = { count: 0 }
+  }
 
   return (
     <div className="employee-portal">

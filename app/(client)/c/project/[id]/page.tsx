@@ -8,6 +8,9 @@ import { notFound } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import { getServerUser } from '@/lib/auth'
 import { Database } from '@/lib/database.types'
+// Temporarily disabled budget features for authentication fix
+// import { BudgetSummary } from '@/components/client/budget-summary'
+// import { getBudgetSnapshot } from '@/lib/actions/budget-actions'
 
 type ProjectWithDetails = Database['public']['Tables']['projects']['Row'] & {
   artists: {
@@ -121,11 +124,15 @@ interface PageProps {
 }
 
 export default async function ProjectPage({ params }: PageProps) {
-  const project = await getProject(params.id)
+  const { id } = await params
+  const project = await getProject(id)
 
   if (!project) {
     notFound()
   }
+
+  // Temporarily disabled budget features for authentication fix
+  // const budgetSnapshot = await getBudgetSnapshot(id)
 
   // Sort legs by order
   const sortedLegs = project.legs.sort((a, b) => a.leg_order - b.leg_order)
@@ -220,12 +227,15 @@ export default async function ProjectPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="legs" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="legs">Legs</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-        </TabsList>
+      {/* Main Content with Budget Summary Sidebar */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-3">
+          {/* Tabs */}
+          <Tabs defaultValue="legs" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="legs">Legs</TabsTrigger>
+              <TabsTrigger value="documents">Documents</TabsTrigger>
+            </TabsList>
 
         <TabsContent value="legs" className="space-y-4">
           <Card>
@@ -339,7 +349,14 @@ export default async function ProjectPage({ params }: PageProps) {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+          </Tabs>
+        </div>
+        
+        {/* Budget Summary Sidebar */}
+        <div className="lg:col-span-1">
+          {/* <BudgetSummary snapshot={budgetSnapshot} /> */}
+        </div>
+      </div>
     </div>
   )
 }

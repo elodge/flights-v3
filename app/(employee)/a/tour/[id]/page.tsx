@@ -3,12 +3,15 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { ArrowLeft, Calendar, Plane, Users, FileText, Settings, Plus } from 'lucide-react'
+import { ArrowLeft, Calendar, Plane, Users, FileText, Settings, Plus, DollarSign } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import { getServerUser } from '@/lib/auth'
 import { Database } from '@/lib/database.types'
+// Temporarily disabled budget features for authentication fix
+// import { BudgetManagement } from '@/components/employee/budget-management'
+// import { getProjectBudgets, getBudgetSnapshot } from '@/lib/actions/budget-actions'
 
 type TourWithDetails = Database['public']['Tables']['projects']['Row'] & {
   artists: {
@@ -42,6 +45,7 @@ type TourWithDetails = Database['public']['Tables']['projects']['Row'] & {
     is_vip: boolean
     passport_number: string | null
     nationality: string | null
+    party: string | null
   }>
 }
 
@@ -86,7 +90,8 @@ async function getEmployeeTour(tourId: string): Promise<TourWithDetails | null> 
         role_title,
         is_vip,
         passport_number,
-        nationality
+        nationality,
+        party
       )
     `)
     .eq('id', tourId)
@@ -111,6 +116,11 @@ export default async function EmployeeTourPage({ params }: PageProps) {
 
   // Sort legs by order
   const sortedLegs = tour.legs.sort((a, b) => a.leg_order - b.leg_order)
+
+  // Get budget data
+  // Temporarily disabled budget features for authentication fix
+  // const budgets = await getProjectBudgets(params.id)
+  // const budgetSnapshot = await getBudgetSnapshot(params.id)
 
   return (
     <div className="space-y-6">
@@ -207,6 +217,7 @@ export default async function EmployeeTourPage({ params }: PageProps) {
         <TabsList>
           <TabsTrigger value="legs">Legs</TabsTrigger>
           <TabsTrigger value="personnel">Personnel</TabsTrigger>
+          {/* <TabsTrigger value="budget">Budget</TabsTrigger> */}
           <TabsTrigger value="documents">Documents</TabsTrigger>
         </TabsList>
 
@@ -408,6 +419,20 @@ export default async function EmployeeTourPage({ params }: PageProps) {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Temporarily disabled budget tab for authentication fix */}
+        {/* <TabsContent value="budget" className="space-y-4">
+          <BudgetManagement 
+            projectId={params.id}
+            budgets={budgets}
+            snapshot={budgetSnapshot}
+            tourPersonnel={tour.tour_personnel.map(p => ({
+              id: p.id,
+              full_name: p.full_name,
+              party: p.party
+            }))}
+          />
+        </TabsContent> */}
 
         <TabsContent value="documents" className="space-y-4">
           <Card>

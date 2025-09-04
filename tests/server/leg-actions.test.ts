@@ -35,8 +35,6 @@ const mockSupabaseClient = {
 
 describe('Server Actions - Leg Management', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    
     // Setup default mocks
     vi.mocked(createServerClient).mockResolvedValue(mockSupabaseClient as any)
     vi.mocked(getServerUser).mockResolvedValue({
@@ -45,12 +43,49 @@ describe('Server Actions - Leg Management', () => {
       role: 'agent',
     } as any)
     
-    // Reset the mock query builder chain
-    mockQueryBuilder.select.mockReturnThis()
-    mockQueryBuilder.insert.mockReturnThis()
-    mockQueryBuilder.delete.mockReturnThis()
-    mockQueryBuilder.eq.mockReturnThis()
-    mockQueryBuilder.in.mockReturnThis()
+    // Setup flexible query builder chain
+    mockQueryBuilder.select.mockReturnValue(mockQueryBuilder)
+    mockQueryBuilder.insert.mockReturnValue(mockQueryBuilder) 
+    
+    // Create a delete-specific builder that has eq and in methods
+    const deleteBuilder = {
+      eq: vi.fn().mockReturnValue({
+        in: vi.fn().mockResolvedValue({ data: null, error: null }),
+        then: vi.fn((resolve: any) => resolve({ data: null, error: null })),
+        catch: vi.fn(),
+        finally: vi.fn()
+      }),
+      in: vi.fn().mockResolvedValue({ data: null, error: null }),
+      then: vi.fn((resolve: any) => resolve({ data: null, error: null })),
+      catch: vi.fn(),
+      finally: vi.fn()
+    }
+    
+    mockQueryBuilder.delete.mockReturnValue(deleteBuilder)
+    
+    // Make .eq() and .in() both chainable AND awaitable
+    const chainablePromise = {
+      eq: vi.fn().mockReturnValue({
+        then: vi.fn((resolve: any) => resolve({ data: null, error: null })),
+        catch: vi.fn(),
+        finally: vi.fn()
+      }),
+      in: vi.fn().mockReturnValue({
+        then: vi.fn((resolve: any) => resolve({ data: null, error: null })),
+        catch: vi.fn(),
+        finally: vi.fn()
+      }),
+      then: vi.fn((resolve: any) => resolve({ data: null, error: null })),
+      catch: vi.fn(),
+      finally: vi.fn()
+    }
+    
+    mockQueryBuilder.eq.mockReturnValue(chainablePromise)
+    mockQueryBuilder.in.mockReturnValue(chainablePromise)
+    mockQueryBuilder.single.mockResolvedValue({ data: null, error: null })
+    
+    // Ensure the from method returns the query builder
+    mockSupabaseClient.from.mockReturnValue(mockQueryBuilder)
   })
 
   afterEach(() => {

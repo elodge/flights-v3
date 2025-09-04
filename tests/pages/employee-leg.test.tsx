@@ -27,6 +27,14 @@ vi.mock('next/navigation', () => ({
   notFound: vi.fn(),
 }))
 
+vi.mock('next/headers', () => ({
+  cookies: vi.fn().mockReturnValue({
+    getAll: vi.fn().mockReturnValue([]),
+    set: vi.fn(),
+    get: vi.fn()
+  })
+}))
+
 vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
@@ -260,7 +268,7 @@ describe('Employee Leg Page Integration', () => {
     await user.click(aliceCheckbox)
 
     // Click assign button
-    const assignButton = screen.getByRole('button', { name: /assign to leg/i })
+    const assignButton = screen.getByRole('button', { name: /assign selected/i })
     await user.click(assignButton)
 
     // Should call assignPassengersToLeg with correct data
@@ -502,7 +510,7 @@ describe('Employee Leg Page Integration', () => {
     render(legPage)
 
     // Click assign button without selecting anyone
-    const assignButton = screen.getByRole('button', { name: /assign to leg/i })
+    const assignButton = screen.getByRole('button', { name: /assign selected/i })
     await user.click(assignButton)
 
     // Should show error toast

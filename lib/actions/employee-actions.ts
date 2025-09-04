@@ -222,11 +222,11 @@ export async function createFlightOption(formData: FormData) {
 
     // Create option components
     if (validated.components.length > 0) {
-      const components = validated.components.map(comp => ({
-        option_id: option.id,
-        navitas_text: comp.description,
-        component_order: comp.component_order,
-      }))
+          const components = validated.components.map(comp => ({
+      option_id: option.id,
+      navitas_text: comp.description,
+      component_order: comp.component_order,
+    }))
 
       const { error: componentsError } = await supabase
         .from('option_components')

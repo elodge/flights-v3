@@ -7,6 +7,9 @@ import { notFound } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import { getServerUser } from '@/lib/auth'
 import { Database } from '@/lib/database.types'
+// Temporarily disabled budget features for authentication fix
+// import { BudgetSummary } from '@/components/client/budget-summary'
+// import { getBudgetSnapshot } from '@/lib/actions/budget-actions'
 
 type LegWithDetails = Database['public']['Tables']['legs']['Row'] & {
   projects: {
@@ -109,18 +112,22 @@ interface PageProps {
 }
 
 export default async function LegPage({ params }: PageProps) {
-  const leg = await getLeg(params.id, params.legId)
+  const { id, legId } = await params
+  const leg = await getLeg(id, legId)
 
   if (!leg) {
     notFound()
   }
+
+  // Temporarily disabled budget features for authentication fix
+  // const budgetSnapshot = await getBudgetSnapshot(id)
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center space-x-4">
         <Button variant="outline" size="sm" asChild>
-          <Link href={`/c/project/${params.id}`}>
+          <Link href={`/c/project/${id}`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to {leg.projects.name}
           </Link>
@@ -146,8 +153,11 @@ export default async function LegPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Flight Selection Coming Soon */}
-      <Card>
+      {/* Main Content with Budget Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-3">
+          {/* Flight Selection Coming Soon */}
+          <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Settings className="h-5 w-5" />
@@ -184,7 +194,14 @@ export default async function LegPage({ params }: PageProps) {
             </div>
           </div>
         </CardContent>
-      </Card>
+          </Card>
+        </div>
+        
+        {/* Budget Summary Sidebar */}
+        <div className="lg:col-span-1">
+          {/* <BudgetSummary snapshot={budgetSnapshot} compact={true} /> */}
+        </div>
+      </div>
     </div>
   )
 }
