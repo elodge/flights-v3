@@ -36,6 +36,21 @@ const mockQueryBuilder = {
   update: vi.fn().mockReturnThis()
 };
 
+// Create separate mock builders for different table calls
+const mockUsersQueryBuilder = {
+  select: vi.fn().mockReturnThis(),
+  eq: vi.fn().mockReturnThis(),
+  single: vi.fn()
+};
+
+const mockPersonnelQueryBuilder = {
+  select: vi.fn().mockReturnThis(),
+  eq: vi.fn().mockReturnThis(),
+  single: vi.fn(),
+  insert: vi.fn().mockReturnThis(),
+  update: vi.fn().mockReturnThis()
+};
+
 describe('Personnel Server Actions', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -44,7 +59,15 @@ describe('Personnel Server Actions', () => {
     const { createServerClient } = await import('@/lib/supabase-server');
     vi.mocked(createServerClient).mockResolvedValue(mockSupabaseClient as any);
     
-    mockSupabaseClient.from.mockReturnValue(mockQueryBuilder);
+    // Setup table-specific mocks
+    mockSupabaseClient.from.mockImplementation((table: string) => {
+      if (table === 'users') {
+        return mockUsersQueryBuilder;
+      } else if (table === 'tour_personnel') {
+        return mockPersonnelQueryBuilder;
+      }
+      return mockQueryBuilder;
+    });
   });
 
   describe('addTourPerson', () => {
@@ -55,12 +78,12 @@ describe('Personnel Server Actions', () => {
       });
 
       // Mock user profile query
-      mockQueryBuilder.single.mockResolvedValue({
+      mockUsersQueryBuilder.single.mockResolvedValueOnce({
         data: { role: 'agent' }
       });
 
       // Mock insert operation
-      mockQueryBuilder.single.mockResolvedValue({
+      mockPersonnelQueryBuilder.single.mockResolvedValueOnce({
         data: { id: 'new-person-id' },
         error: null
       });
@@ -73,7 +96,7 @@ describe('Personnel Server Actions', () => {
 
       expect(result).toEqual({ id: 'new-person-id' });
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('tour_personnel');
-      expect(mockQueryBuilder.insert).toHaveBeenCalledWith([{
+      expect(mockPersonnelQueryBuilder.insert).toHaveBeenCalledWith([{
         project_id: 'project-123',
         full_name: 'John Doe',
         party: 'A Party',
@@ -93,7 +116,7 @@ describe('Personnel Server Actions', () => {
       });
 
       // Mock user profile query with client role
-      mockQueryBuilder.single.mockResolvedValue({
+      mockUsersQueryBuilder.single.mockResolvedValueOnce({
         data: { role: 'client' }
       });
 
@@ -107,6 +130,16 @@ describe('Personnel Server Actions', () => {
     });
 
     it('should handle validation errors', async () => {
+      // Mock authentication
+      mockSupabaseClient.auth.getUser.mockResolvedValue({
+        data: { user: { id: 'user-123' } }
+      });
+
+      // Mock user profile query
+      mockUsersQueryBuilder.single.mockResolvedValueOnce({
+        data: { role: 'agent' }
+      });
+
       const result = await addTourPerson('project-123', {
         full_name: 'Jo', // Too short
         party: 'A Party'
@@ -123,12 +156,12 @@ describe('Personnel Server Actions', () => {
       });
 
       // Mock user profile query
-      mockQueryBuilder.single.mockResolvedValue({
+      mockUsersQueryBuilder.single.mockResolvedValueOnce({
         data: { role: 'agent' }
       });
 
       // Mock insert operation with error
-      mockQueryBuilder.single.mockResolvedValue({
+      mockPersonnelQueryBuilder.single.mockResolvedValueOnce({
         data: null,
         error: { message: 'Database connection failed' }
       });
@@ -149,12 +182,12 @@ describe('Personnel Server Actions', () => {
       });
 
       // Mock user profile query
-      mockQueryBuilder.single.mockResolvedValue({
+      mockUsersQueryBuilder.single.mockResolvedValueOnce({
         data: { role: 'agent' }
       });
 
       // Mock insert operation
-      mockQueryBuilder.single.mockResolvedValue({
+      mockPersonnelQueryBuilder.single.mockResolvedValueOnce({
         data: { id: 'new-person-id' },
         error: null
       });
@@ -164,7 +197,7 @@ describe('Personnel Server Actions', () => {
         party: 'A Party'
       });
 
-      expect(mockQueryBuilder.insert).toHaveBeenCalledWith([{
+      expect(mockPersonnelQueryBuilder.insert).toHaveBeenCalledWith([{
         project_id: 'project-123',
         full_name: 'John Doe', // Should be normalized
         party: 'A Party',
@@ -186,17 +219,17 @@ describe('Personnel Server Actions', () => {
       });
 
       // Mock user profile query
-      mockQueryBuilder.single.mockResolvedValue({
+      mockUsersQueryBuilder.single.mockResolvedValueOnce({
         data: { role: 'agent' }
       });
 
-      // Mock update operation
-      mockQueryBuilder.eq.mockResolvedValue({
+      // Mock update operation (first call - no .single())
+      mockPersonnelQueryBuilder.eq.mockResolvedValueOnce({
         error: null
       });
 
-      // Mock project_id query for revalidation
-      mockQueryBuilder.single.mockResolvedValue({
+      // Mock project_id query for revalidation (second call - with .single())
+      mockPersonnelQueryBuilder.single.mockResolvedValueOnce({
         data: { project_id: 'project-123' }
       });
 
@@ -207,7 +240,7 @@ describe('Personnel Server Actions', () => {
 
       expect(result).toEqual({ success: true });
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('tour_personnel');
-      expect(mockQueryBuilder.update).toHaveBeenCalledWith({
+      expect(mockPersonnelQueryBuilder.update).toHaveBeenCalledWith({
         full_name: 'John Updated',
         status: 'inactive',
         updated_at: expect.any(String)
@@ -221,17 +254,17 @@ describe('Personnel Server Actions', () => {
       });
 
       // Mock user profile query
-      mockQueryBuilder.single.mockResolvedValue({
+      mockUsersQueryBuilder.single.mockResolvedValueOnce({
         data: { role: 'agent' }
       });
 
       // Mock update operation
-      mockQueryBuilder.eq.mockResolvedValue({
+      mockPersonnelQueryBuilder.eq.mockResolvedValueOnce({
         error: null
       });
 
       // Mock project_id query for revalidation
-      mockQueryBuilder.single.mockResolvedValue({
+      mockPersonnelQueryBuilder.single.mockResolvedValueOnce({
         data: { project_id: 'project-123' }
       });
 
@@ -240,7 +273,7 @@ describe('Personnel Server Actions', () => {
       });
 
       expect(result).toEqual({ success: true });
-      expect(mockQueryBuilder.update).toHaveBeenCalledWith({
+      expect(mockPersonnelQueryBuilder.update).toHaveBeenCalledWith({
         status: 'inactive',
         updated_at: expect.any(String)
       });
@@ -253,7 +286,7 @@ describe('Personnel Server Actions', () => {
       });
 
       // Mock user profile query with client role
-      mockQueryBuilder.single.mockResolvedValue({
+      mockUsersQueryBuilder.single.mockResolvedValueOnce({
         data: { role: 'client' }
       });
 
@@ -266,6 +299,16 @@ describe('Personnel Server Actions', () => {
     });
 
     it('should handle validation errors', async () => {
+      // Mock authentication
+      mockSupabaseClient.auth.getUser.mockResolvedValue({
+        data: { user: { id: 'user-123' } }
+      });
+
+      // Mock user profile query
+      mockUsersQueryBuilder.single.mockResolvedValueOnce({
+        data: { role: 'agent' }
+      });
+
       const result = await updateTourPerson('person-123', {
         full_name: 'Jo' // Too short
       });
@@ -281,13 +324,18 @@ describe('Personnel Server Actions', () => {
       });
 
       // Mock user profile query
-      mockQueryBuilder.single.mockResolvedValue({
+      mockUsersQueryBuilder.single.mockResolvedValueOnce({
         data: { role: 'agent' }
       });
 
       // Mock update operation with error
-      mockQueryBuilder.eq.mockResolvedValue({
+      mockPersonnelQueryBuilder.eq.mockResolvedValueOnce({
         error: { message: 'Update failed' }
+      });
+
+      // Mock project_id query for revalidation
+      mockPersonnelQueryBuilder.single.mockResolvedValueOnce({
+        data: { project_id: 'project-123' }
       });
 
       const result = await updateTourPerson('person-123', {
@@ -305,17 +353,17 @@ describe('Personnel Server Actions', () => {
       });
 
       // Mock user profile query
-      mockQueryBuilder.single.mockResolvedValue({
+      mockUsersQueryBuilder.single.mockResolvedValueOnce({
         data: { role: 'agent' }
       });
 
       // Mock update operation
-      mockQueryBuilder.eq.mockResolvedValue({
+      mockPersonnelQueryBuilder.eq.mockResolvedValueOnce({
         error: null
       });
 
       // Mock project_id query for revalidation
-      mockQueryBuilder.single.mockResolvedValue({
+      mockPersonnelQueryBuilder.single.mockResolvedValueOnce({
         data: { project_id: 'project-123' }
       });
 
@@ -323,7 +371,7 @@ describe('Personnel Server Actions', () => {
         full_name: '  John   Updated  '
       });
 
-      expect(mockQueryBuilder.update).toHaveBeenCalledWith({
+      expect(mockPersonnelQueryBuilder.update).toHaveBeenCalledWith({
         full_name: 'John Updated', // Should be normalized
         updated_at: expect.any(String)
       });

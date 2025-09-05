@@ -27,7 +27,14 @@ export async function GET() {
   try {
     // Authenticate user
     const user = await getServerUser()
-    if (!user || user.role === 'client') {
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - authentication required' },
+        { status: 401 }
+      )
+    }
+    
+    if (user.role === 'client') {
       return NextResponse.json(
         { error: 'Unauthorized - employee access required' },
         { status: 403 }

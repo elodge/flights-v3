@@ -1,3 +1,17 @@
+/**
+ * @fileoverview Header Component with Navigation and User Management
+ * 
+ * @description Global header component providing navigation, artist filtering, notifications,
+ * chat unread counts, and user account management. Includes role-based admin navigation
+ * for accessing the RBAC (Role-Based Access Control) system. Logo is clickable and navigates
+ * to the appropriate dashboard based on user role.
+ * 
+ * @access All authenticated users (client/agent/admin)
+ * @security Role-based visibility for admin features and employee-only components
+ * @database Accesses users, artists, notifications, and chat tables via API routes
+ * @business_rule Admin users can access user management via avatar dropdown; logo navigates to role-appropriate dashboard
+ */
+
 "use client"
 
 import { Button } from '@/components/ui/button'
@@ -5,13 +19,33 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { Bell, ChevronDown, LogOut, Plane, MessageSquare } from 'lucide-react'
+import { Bell, ChevronDown, LogOut, Plane, MessageSquare, Shield } from 'lucide-react'
 import { useUser } from '@/hooks/use-auth'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
 import { clientUtils } from '@/lib/employeeArtist'
 import { GlobalUnreadClient } from '@/components/chat/GlobalUnreadClient'
 import { NotificationBell } from '@/components/employee/notification-bell'
+
+/**
+ * Global Header Component
+ * 
+ * @description Renders the main application header with navigation, user management,
+ * artist filtering, notifications, and chat features. Provides role-based access
+ * to admin functionality through the user avatar dropdown. Logo is clickable and
+ * navigates to the appropriate dashboard based on user role.
+ * 
+ * @returns JSX.Element - Complete header with navigation and user controls
+ * @access All authenticated users (client/agent/admin)
+ * @security Role-based visibility for admin panel access
+ * @database Fetches artists, notifications, and chat data via API routes
+ * @business_rule Admin users see "Admin Panel" option in avatar dropdown; logo navigates to role-appropriate dashboard
+ * 
+ * @example
+ * ```tsx
+ * <Header />
+ * ```
+ */
 export function Header() {
   const { user, profile, role, loading, signOut } = useUser()
   const pathname = usePathname()
@@ -148,8 +182,26 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
       <div className="container flex h-16 max-w-screen-2xl items-center px-4">
-        {/* Logo & Brand */}
-        <div className="flex items-center space-x-3 mr-6">
+        {/* Logo & Brand - Clickable to navigate to dashboard */}
+        <button
+          onClick={() => {
+            // CONTEXT: Navigate to appropriate dashboard based on user role
+            // BUSINESS_RULE: Clients go to /c, employees go to /a, unauthenticated go to /
+            if (user && role) {
+              if (role === 'client') {
+                router.push('/c')
+              } else if (['agent', 'admin'].includes(role)) {
+                router.push('/a')
+              } else {
+                router.push('/')
+              }
+            } else {
+              router.push('/')
+            }
+          }}
+          className="flex items-center space-x-3 mr-6 hover:opacity-80 transition-opacity cursor-pointer"
+          aria-label="Go to dashboard"
+        >
           <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground">
             <Plane className="h-4 w-4" />
           </div>
@@ -161,7 +213,7 @@ export function Header() {
               Flight Management
             </span>
           </div>
-        </div>
+        </button>
         
         <div className="flex flex-1 items-center space-x-3">
           {/* Artist Selector - Only show when authenticated as employee */}
@@ -259,6 +311,15 @@ export function Header() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem disabled>Profile</DropdownMenuItem>
                 <DropdownMenuItem disabled>Settings</DropdownMenuItem>
+                {/* CONTEXT: Admin Panel navigation - only visible to admin users */}
+                {/* SECURITY: Role-based access control for RBAC system */}
+                {/* BUSINESS_RULE: Admin users can access user management via dropdown */}
+                {role === 'admin' && (
+                  <DropdownMenuItem onClick={() => router.push('/admin/users')}>
+                    <Shield className="mr-2 h-4 w-4" />
+                    Admin Panel
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
