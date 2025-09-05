@@ -22,6 +22,7 @@ import { notFound } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import { getServerUser } from '@/lib/auth'
 import { Database } from '@/lib/database.types'
+import { AddLegDialog } from '@/components/employee/add-leg-dialog'
 // Temporarily disabled budget features for authentication fix
 // import { BudgetManagement } from '@/components/employee/budget-management'
 // import { getProjectBudgets, getBudgetSnapshot } from '@/lib/actions/budget-actions'
@@ -292,10 +293,7 @@ export default async function EmployeeTourPage({ params }: PageProps) {
                     Manage {sortedLegs.length} flight{sortedLegs.length !== 1 ? 's' : ''} for this {tour.type}
                   </CardDescription>
                 </div>
-                <Button size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Leg
-                </Button>
+                <AddLegDialog projectId={tour.id} />
               </div>
             </CardHeader>
             <CardContent>

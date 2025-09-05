@@ -42,6 +42,20 @@ export default function LoginPage() {
         // SECURITY: Sign out any existing stale session
         // This clears invalid refresh tokens without showing errors
         await supabase.auth.signOut({ scope: 'local' })
+        
+        // CONTEXT: Clear all browser storage to prevent "test" user ID issues
+        // SECURITY: Ensures clean authentication state
+        if (typeof window !== 'undefined') {
+          localStorage.clear()
+          sessionStorage.clear()
+          
+          // Clear any Supabase-specific storage
+          Object.keys(localStorage).forEach(key => {
+            if (key.includes('supabase') || key.includes('sb-')) {
+              localStorage.removeItem(key)
+            }
+          })
+        }
       } catch (error) {
         // FALLBACK: Ignore signOut errors - we're already on login page
         console.debug('Session cleanup (expected):', error)
@@ -82,6 +96,17 @@ export default function LoginPage() {
           userIdType: typeof authData.user.id
         })
 
+        // CONTEXT: Validate user ID is a proper UUID before syncing
+        // SECURITY: Prevent invalid UUIDs from causing database errors
+        const userId = authData.user.id
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+        
+        if (!uuidRegex.test(userId)) {
+          console.error('Invalid user ID format:', userId)
+          setError('Authentication error: Invalid user ID format')
+          return
+        }
+
         // Sync user to our database
         const response = await fetch('/api/auth/sync', {
           method: 'POST',
@@ -89,7 +114,7 @@ export default function LoginPage() {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            userId: authData.user.id,
+            userId: userId,
             email: authData.user.email
           })
         })
