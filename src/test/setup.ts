@@ -10,16 +10,16 @@ const mockPrefetch = vi.fn()
 const mockBack = vi.fn()
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({
+  useRouter: vi.fn(() => ({
     push: mockPush,
     replace: mockReplace,
     prefetch: mockPrefetch,
     back: mockBack,
     forward: vi.fn(),
     refresh: vi.fn(),
-  }),
-  usePathname: () => '/',
-  useSearchParams: () => new URLSearchParams(),
+  })),
+  usePathname: vi.fn(() => '/'),
+  useSearchParams: vi.fn(() => new URLSearchParams()),
 }))
 
 // Mock Next.js Link component
@@ -64,6 +64,84 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
   disconnect: vi.fn(),
 }))
 
+// Create a chainable query builder mock
+const createQueryBuilderMock = () => {
+  const queryBuilder = {
+    select: vi.fn(),
+    insert: vi.fn(),
+    upsert: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    eq: vi.fn(),
+    neq: vi.fn(),
+    gt: vi.fn(),
+    gte: vi.fn(),
+    lt: vi.fn(),
+    lte: vi.fn(),
+    like: vi.fn(),
+    ilike: vi.fn(),
+    is: vi.fn(),
+    in: vi.fn(),
+    contains: vi.fn(),
+    containedBy: vi.fn(),
+    rangeLt: vi.fn(),
+    rangeGt: vi.fn(),
+    rangeGte: vi.fn(),
+    rangeLte: vi.fn(),
+    rangeAdjacent: vi.fn(),
+    overlaps: vi.fn(),
+    textSearch: vi.fn(),
+    match: vi.fn(),
+    not: vi.fn(),
+    or: vi.fn(),
+    filter: vi.fn(),
+    order: vi.fn(),
+    limit: vi.fn(),
+    range: vi.fn(),
+    abortSignal: vi.fn(),
+    single: vi.fn().mockResolvedValue({ 
+      data: {
+        id: 'leg-456',
+        label: 'Test Leg',
+        origin_city: 'Los Angeles',
+        destination_city: 'New York',
+        departure_date: '2024-03-15',
+        departure_time: '08:00',
+        projects: {
+          id: 'project-123',
+          name: 'Eras Tour 2024',
+          type: 'tour',
+          artist_id: 'artist-123',
+          artists: {
+            id: 'artist-123',
+            name: 'Taylor Swift'
+          }
+        },
+        leg_passengers: [],
+        options: []
+      }, 
+      error: null 
+    }),
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    csv: vi.fn().mockResolvedValue(''),
+    geojson: vi.fn().mockResolvedValue({ data: null, error: null }),
+    explain: vi.fn().mockResolvedValue({ data: null, error: null }),
+    rollback: vi.fn().mockResolvedValue({ data: null, error: null }),
+    returns: vi.fn(),
+    then: vi.fn((callback) => callback({ data: null, error: null }))
+  }
+  
+  // Make each method return the queryBuilder for chaining (except terminal methods)
+  const terminalMethods = ['single', 'maybeSingle', 'csv', 'geojson', 'explain', 'rollback', 'then']
+  Object.keys(queryBuilder).forEach(method => {
+    if (!terminalMethods.includes(method)) {
+      queryBuilder[method as keyof typeof queryBuilder] = vi.fn().mockReturnValue(queryBuilder)
+    }
+  })
+  
+  return queryBuilder
+}
+
 // Mock Supabase client
 vi.mock('@/lib/supabase', () => ({
   supabase: {
@@ -85,24 +163,15 @@ vi.mock('@/lib/supabase', () => ({
         error: null 
       })
     },
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: null, error: null })
-        })
-      }),
-      insert: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: null, error: null })
-        })
-      }),
-      upsert: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: null, error: null })
-        })
-      })
+    from: vi.fn().mockImplementation(() => createQueryBuilderMock()),
+    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+    channel: vi.fn().mockReturnValue({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn().mockResolvedValue('ok'),
+      unsubscribe: vi.fn().mockResolvedValue('ok'),
+      send: vi.fn()
     }),
-    rpc: vi.fn().mockResolvedValue({ data: null, error: null })
+    removeChannel: vi.fn()
   },
   createServerClient: vi.fn().mockReturnValue({
     auth: {
@@ -111,13 +180,15 @@ vi.mock('@/lib/supabase', () => ({
         error: null 
       })
     },
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: null, error: null })
-        })
-      })
-    })
+    from: vi.fn().mockImplementation(() => createQueryBuilderMock()),
+    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+    channel: vi.fn().mockReturnValue({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn().mockResolvedValue('ok'),
+      unsubscribe: vi.fn().mockResolvedValue('ok'),
+      send: vi.fn()
+    }),
+    removeChannel: vi.fn()
   }),
   createAdminClient: vi.fn().mockReturnValue({
     auth: {
@@ -126,14 +197,37 @@ vi.mock('@/lib/supabase', () => ({
         error: null 
       })
     },
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: null, error: null })
-        })
-      })
-    })
+    from: vi.fn().mockImplementation(() => createQueryBuilderMock()),
+    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+    channel: vi.fn().mockReturnValue({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn().mockResolvedValue('ok'),
+      unsubscribe: vi.fn().mockResolvedValue('ok'),
+      send: vi.fn()
+    }),
+    removeChannel: vi.fn()
   })
+}))
+
+// Mock Supabase server client
+vi.mock('@/lib/supabase-server', () => ({
+  createServerClient: vi.fn().mockImplementation(() => ({
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ 
+        data: { user: null }, 
+        error: null 
+      })
+    },
+    from: vi.fn().mockImplementation(() => createQueryBuilderMock()),
+    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+    channel: vi.fn().mockReturnValue({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn().mockResolvedValue('ok'),
+      unsubscribe: vi.fn().mockResolvedValue('ok'),
+      send: vi.fn()
+    }),
+    removeChannel: vi.fn()
+  }))
 }))
 
 // Mock auth helpers

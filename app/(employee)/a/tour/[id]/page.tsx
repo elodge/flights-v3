@@ -1,3 +1,16 @@
+/**
+ * @fileoverview Employee tour detail page with leg management
+ * 
+ * @description Displays comprehensive tour information for employees including
+ * leg details, personnel assignments, and navigation to leg management.
+ * Fixed Next.js 15 async params compatibility and database schema issues.
+ * 
+ * @route /a/tour/[id]
+ * @access Employee only (agent, admin roles)
+ * @security Requires authenticated employee via getServerUser
+ * @database Reads from projects, artists, legs, tour_personnel, leg_passengers
+ */
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -45,17 +58,42 @@ type TourWithDetails = Database['public']['Tables']['projects']['Row'] & {
     is_vip: boolean
     passport_number: string | null
     nationality: string | null
-    party: string | null
   }>
 }
 
+/**
+ * Fetches comprehensive tour data for employee portal
+ * 
+ * @description Retrieves tour details including artists, legs, and personnel.
+ * Fixed database schema issue by removing non-existent 'party' column from
+ * tour_personnel query that was causing 404 errors.
+ * 
+ * @param tourId - UUID of the tour to fetch
+ * @returns Promise<TourWithDetails | null> - Tour data or null if not found/unauthorized
+ * 
+ * @security Requires authenticated employee (agent/admin)
+ * @database Queries projects with joins to artists, legs, tour_personnel, leg_passengers
+ * @business_rule Only returns active tours (is_active = true)
+ * 
+ * @throws {Error} Database query errors or authentication failures
+ * 
+ * @example
+ * ```typescript
+ * const tour = await getEmployeeTour('tour-uuid')
+ * if (!tour) {
+ *   notFound()
+ * }
+ * ```
+ */
 async function getEmployeeTour(tourId: string): Promise<TourWithDetails | null> {
   const user = await getServerUser()
   if (!user || user.role === 'client') return null
 
   const supabase = await createServerClient()
 
-  // Get tour with related data (employees can see all)
+  // CONTEXT: Comprehensive tour query for employee portal
+  // DATABASE_FIX: Removed 'party' column from tour_personnel (doesn't exist in schema)
+  // BUSINESS_RULE: Only fetch active tours, require artist association
   const { data: tour } = await supabase
     .from('projects')
     .select(`
@@ -90,8 +128,7 @@ async function getEmployeeTour(tourId: string): Promise<TourWithDetails | null> 
         role_title,
         is_vip,
         passport_number,
-        nationality,
-        party
+        nationality
       )
     `)
     .eq('id', tourId)
@@ -102,13 +139,37 @@ async function getEmployeeTour(tourId: string): Promise<TourWithDetails | null> 
 }
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
+/**
+ * Employee tour detail page component
+ * 
+ * @description Main tour management page for employees with tabbed interface
+ * for overview, legs, personnel, and budget management. Fixed Next.js 15
+ * async params compatibility.
+ * 
+ * @param params - Promise containing route parameters (id: tour UUID)
+ * @returns Promise<JSX.Element> - Tour detail page with management interface
+ * 
+ * @security Requires authenticated employee
+ * @database Fetches tour data via getEmployeeTour
+ * @business_rule Shows 404 for inactive tours or access denied
+ * 
+ * @nextjs_15_fix Awaits params before accessing id property
+ * 
+ * @example
+ * ```tsx
+ * // Automatically rendered for route /a/tour/[id]
+ * <EmployeeTourPage params={Promise.resolve({ id: 'tour-uuid' })} />
+ * ```
+ */
 export default async function EmployeeTourPage({ params }: PageProps) {
-  const tour = await getEmployeeTour(params.id)
+  // NEXTJS_15_FIX: Await params before accessing properties to prevent 404 errors
+  const { id } = await params
+  const tour = await getEmployeeTour(id)
 
   if (!tour) {
     notFound()
@@ -119,8 +180,8 @@ export default async function EmployeeTourPage({ params }: PageProps) {
 
   // Get budget data
   // Temporarily disabled budget features for authentication fix
-  // const budgets = await getProjectBudgets(params.id)
-  // const budgetSnapshot = await getBudgetSnapshot(params.id)
+  // const budgets = await getProjectBudgets(id)
+  // const budgetSnapshot = await getBudgetSnapshot(id)
 
   return (
     <div className="space-y-6">

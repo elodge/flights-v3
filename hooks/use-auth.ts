@@ -67,17 +67,37 @@ export function useUser(): UseUserReturn {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  // Get user profile via API endpoint
+  /**
+   * Fetches user profile data directly from Supabase
+   * 
+   * @description Queries the users table directly instead of using API routes
+   * to avoid 401 authentication issues in client-side components. Fixed issue
+   * where /api/auth/profile was returning 401 due to missing auth headers.
+   * 
+   * @param userId - UUID of the user to fetch profile for
+   * 
+   * @security Uses client-side Supabase client with proper auth context
+   * @database Queries users table with user's own ID (RLS enforced)
+   * @api_fix Replaced /api/auth/profile call with direct Supabase query
+   * 
+   * @business_rule User can only fetch their own profile (enforced by RLS)
+   */
   const fetchProfile = async (userId: string) => {
     try {
-      const response = await fetch('/api/auth/profile')
+      // CONTEXT: Direct Supabase query to avoid API route authentication issues
+      // API_FIX: Previously used fetch('/api/auth/profile') which returned 401
+      // SECURITY: RLS ensures users can only access their own profile
+      const { data: profile, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single()
       
-      if (response.ok) {
-        const profileData = await response.json()
-        setProfile(profileData)
-      } else {
-        console.error('Failed to fetch user profile:', response.status)
+      if (error) {
+        console.error('Failed to fetch user profile:', error)
         setProfile(null)
+      } else {
+        setProfile(profile)
       }
     } catch (error) {
       console.error('Error fetching user profile:', error)
@@ -91,29 +111,62 @@ export function useUser(): UseUserReturn {
       await supabase.auth.signOut()
       setUser(null)
       setProfile(null)
-      router.push('/login')
+      // Clear all local storage and force refresh to ensure clean state
+      if (typeof window !== 'undefined') {
+        localStorage.clear()
+        sessionStorage.clear()
+        window.location.href = '/login'
+      } else {
+        router.push('/login')
+      }
     } catch (error) {
       console.error('Error signing out:', error)
+      // Fallback: force navigation to logout route
+      if (typeof window !== 'undefined') {
+        window.location.href = '/logout'
+      }
     }
   }
 
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user || null)
-      if (session?.user) {
-        // Small delay to ensure auth context is set
-        setTimeout(async () => {
-          await fetchProfile(session.user.id)
+      try {
+        // NEXTJS_15_FIX: Ensure session is properly initialized with timeout
+        const sessionPromise = supabase.auth.getSession()
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session check timeout')), 3000)
+        )
+        
+        const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]) as any
+        
+        if (error) {
+          console.error('Session error:', error)
           setLoading(false)
-        }, 100)
-      } else {
+          return
+        }
+        
+        setUser(session?.user || null)
+        
+        if (session?.user) {
+          await fetchProfile(session.user.id)
+        }
+        
+        setLoading(false)
+      } catch (error) {
+        console.error('Error getting initial session:', error)
         setLoading(false)
       }
     }
 
     getInitialSession()
+
+    // FALLBACK: Set loading to false after 5 seconds to prevent infinite loading
+    const timeout = setTimeout(() => {
+      setLoading(false)
+    }, 5000)
+
+    return () => clearTimeout(timeout)
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

@@ -1,8 +1,43 @@
+/**
+ * @fileoverview Employee portal layout with navigation and queue count
+ * 
+ * @description Main layout for employee-facing pages. Handles authentication,
+ * fetches booking queue count for navigation badge, and provides consistent
+ * employee portal structure.
+ * 
+ * @route /a/*
+ * @access Employee only (agent, admin roles)
+ * @security Redirects non-employees to login
+ * @database Reads from selections table via admin client to bypass RLS
+ */
+
 import { getServerUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { EmployeeNav } from '@/components/employee/employee-nav'
 import { createAdminClient } from '@/lib/supabase'
 
+/**
+ * Employee portal layout component
+ * 
+ * @description Provides authentication, navigation, and queue count for all
+ * employee pages. Uses admin client to fetch queue count across all artists
+ * to bypass RLS restrictions.
+ * 
+ * @param children - Child components to render within the layout
+ * @returns Promise<JSX.Element> - Layout with employee navigation and content
+ * 
+ * @security Requires authenticated employee (agent/admin)
+ * @database Queries selections table for queue count
+ * @business_rule Shows total queue count across all artists for now
+ * 
+ * @example
+ * ```tsx
+ * // Automatically wraps all /a/* routes
+ * <EmployeeLayout>
+ *   <EmployeeDashboard />
+ * </EmployeeLayout>
+ * ```
+ */
 export default async function EmployeeLayout({
   children,
 }: {
@@ -20,7 +55,10 @@ export default async function EmployeeLayout({
     redirect('/c')
   }
 
-  // Get queue count for navigation badge (show total across all artists for now)
+  // CONTEXT: Queue count for navigation badge
+  // BUSINESS_RULE: Show total count across all artists (not filtered)
+  // SECURITY: Uses admin client to bypass RLS - employees should see all selections
+  // DATABASE: Excludes expired and ticketed selections from count
   let queueCount = { count: 0 }
   try {
     const adminSupabase = createAdminClient()
@@ -32,7 +70,8 @@ export default async function EmployeeLayout({
     
     queueCount = { count: selections?.length || 0 }
   } catch (error) {
-    // If admin client fails (e.g., missing service role key), fall back to 0
+    // FALLBACK: If admin client fails (e.g., missing service role key), show 0
+    // This prevents layout from crashing in development environments
     console.warn('Unable to fetch queue count:', error)
     queueCount = { count: 0 }
   }

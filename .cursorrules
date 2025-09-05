@@ -1,0 +1,293 @@
+# Fllights V3 - Cursor AI Rules
+
+## 📋 MANDATORY: Documentation Standards
+
+**CRITICAL**: All code changes MUST follow the documentation guidelines in `CODING_STANDARDS.md`. No exceptions.
+
+### 🎯 JSDoc Requirements (MANDATORY)
+
+1. **Every exported function** MUST have JSDoc with:
+   - `@description` - Business context and purpose
+   - `@param` - All parameters with types and descriptions
+   - `@returns` - Return type and description
+   - `@security` - Authentication/authorization requirements
+   - `@database` - Database tables/operations involved
+   - `@business_rule` - Business logic constraints
+   - `@throws` - Error conditions (if applicable)
+   - `@example` - Usage example
+
+2. **Every React component** MUST have JSDoc with:
+   - `@description` - Component purpose and functionality
+   - `@param` - Props with types and descriptions  
+   - `@returns` - JSX.Element return type
+   - `@access` - Access level (client/employee/admin)
+   - `@route` - URL route (for page components)
+   - `@security` - Authentication requirements
+   - `@example` - Usage example
+
+3. **Every file** MUST have `@fileoverview` header with:
+   - `@description` - File purpose and main functionality
+   - `@route` - URL route pattern (for pages)
+   - `@access` - Access level restrictions
+   - `@security` - Security considerations
+   - `@database` - Database tables accessed
+   - `@coverage` - What the file covers (for tests)
+
+### 🤖 Context Markers (MANDATORY)
+
+Use these comments for complex logic:
+
+```typescript
+// CONTEXT: High-level explanation of the section
+// SECURITY: Authentication/authorization notes
+// DATABASE: Table operations and constraints
+// BUSINESS_RULE: Business logic requirements
+// ALGORITHM: Step-by-step process explanation
+// NEXTJS_15_FIX: Next.js 15 compatibility fixes
+// API_FIX: API route or integration fixes
+// COMPONENT_FIX: Component prop or rendering fixes
+// DATABASE_FIX: Database schema or query fixes
+// FALLBACK: Error handling or fallback logic
+```
+
+### 📝 Decision Documentation (MANDATORY)
+
+For architectural decisions, use:
+
+```typescript
+/**
+ * DECISION: Brief decision title
+ * 
+ * RATIONALE: Why this approach was chosen
+ * MIGRATION: How this affects existing code
+ * ALTERNATIVES: Other options considered
+ */
+```
+
+## 🔧 Code Quality Requirements
+
+### Next.js 15 Compatibility (MANDATORY)
+- ALWAYS `await params` before accessing properties
+- ALWAYS `await searchParams` before accessing properties  
+- ALWAYS `await cookies()` before calling methods
+- Document with `@nextjs_15_fix` tag
+
+### Database Schema Validation (MANDATORY)
+- Verify column names exist before using in queries
+- Document schema dependencies with `@database` tag
+- Use context comments for complex queries
+
+### Error Handling (MANDATORY)
+- Document error conditions with `@throws`
+- Use `FALLBACK:` comments for error recovery
+- Provide meaningful error messages
+
+## 🎯 LLM-Friendly Patterns (MANDATORY)
+
+### File Structure
+```typescript
+/**
+ * @fileoverview [Brief description]
+ * 
+ * @description [Detailed description with business context]
+ * @route [URL pattern if applicable]
+ * @access [Access level]
+ * @security [Security requirements]
+ * @database [Tables accessed]
+ */
+
+// Imports...
+
+/**
+ * [Function/Component description]
+ * 
+ * @description [Detailed functionality explanation]
+ * @param [parameter] - [Type and description]
+ * @returns [Return type and description]
+ * @security [Requirements]
+ * @database [Operations]
+ * @business_rule [Constraints]
+ * @example
+ * ```typescript
+ * // Usage example
+ * ```
+ */
+```
+
+### Complex Logic Comments
+```typescript
+// CONTEXT: Employee queue count for navigation badge
+// BUSINESS_RULE: Show total count across all artists (not filtered)
+// SECURITY: Uses admin client to bypass RLS
+// DATABASE: Excludes expired and ticketed selections
+
+const queueCount = await getQueueCount()
+```
+
+## 🧪 TESTING REQUIREMENTS (MANDATORY)
+
+### Test Suite Verification (BEFORE COMPLETION)
+1. **ALWAYS run the test suite** before marking any feature complete
+2. **ALL TESTS MUST PASS** - no exceptions for "quick fixes"
+3. **RUN REGRESSION TESTS** for core functionality changes
+4. **CREATE NEW TESTS** for new features or bug fixes
+
+### Required Test Commands (ALWAYS RUN IN "RUN MODE")
+```bash
+# Core test suite - MUST pass
+npm run test:run
+
+# Regression tests - MUST pass for page/routing changes  
+npm run test:regression
+
+# Artist filtering tests - MUST pass for employee portal changes
+npm run test:artist-filter
+
+# RLS security tests - MUST pass for database changes
+npm run test tests/rls/
+
+# E2E tests - MUST pass for user-facing changes
+npm run test:e2e
+
+# NEVER use watch mode - always use "run" mode to execute once and exit
+# For focused testing: npx vitest run <specific-file>
+# For debugging hanging tests: Use Ctrl+C or 'q' to quit watch mode
+```
+
+### Test Documentation (MANDATORY)
+- **Document test coverage** in `@coverage` tags
+- **Add regression tests** for any bug fixes
+- **Update existing tests** when changing functionality
+- **Reference test files** in JSDoc examples
+
+### When Tests Fail (CRITICAL ANALYSIS REQUIRED)
+1. **STOP development** immediately
+2. **ANALYZE the failure** thoroughly - DO NOT assume tests are always correct  
+3. **EXPLAIN to the user** why the test is failing in detail
+4. **DETERMINE the root cause** using this decision framework:
+
+   **A) CRITICAL FUNCTIONALITY BROKEN** (Fix the code):
+   - Does this test cover core business logic that should still work?
+   - Did I break existing user workflows?
+   - Are database operations, authentication, or security features failing?
+   - Would users notice this as a bug in production?
+   → **ACTION: Fix the code immediately, revert if necessary**
+
+   **B) TEST NEEDS UPDATING FOR NEW FEATURES** (Update the test):
+   - Did I add new functionality that changes expected behavior?
+   - Are the test mocks/fixtures out of sync with new schema/APIs?
+   - Has the UI structure changed due to new components?
+   - Is the test checking implementation details that legitimately changed?
+   → **ACTION: Update the test to reflect new functionality**
+
+   **C) TEST INFRASTRUCTURE ISSUE** (Fix test setup):
+   - Are mocks incomplete for new dependencies?
+   - Did new imports break existing test isolation?
+   - Are there new environment requirements?
+   → **ACTION: Update test infrastructure without changing business logic**
+
+5. **PROPOSE a solution** with reasoning before making changes
+6. **REVERT CODE if critical functionality is broken** and try a different approach
+7. **UPDATE tests only if legitimately outdated** for new features
+8. **ADD new tests** for new functionality gaps
+
+### Test Execution Rules (MANDATORY)
+- **ALWAYS run tests in "run mode"** - never use watch mode
+- **Use `npm run test:run`** not `npm test` or `npx vitest`
+- **For specific files:** `npx vitest run <file>` not `npx vitest <file>`
+- **If tests hang:** Press Ctrl+C or 'q' to exit watch mode
+- **Avoid debugging delays:** Run mode prevents hanging and provides clear exit
+
+### Test Failure Analysis Template (MANDATORY)
+When tests fail, provide this analysis:
+
+```
+🚨 TEST FAILURE ANALYSIS
+
+**What's Failing:** [Specific test name and assertion]
+**Error Message:** [Exact error from test output]
+**Root Cause:** [Why is this failing - code issue or test issue?]
+
+**Assessment:**
+- [ ] Code is wrong, test is correct → Fix the code
+- [ ] Test is outdated/incorrect → Update the test  
+- [ ] Business requirements changed → Update test expectations
+- [ ] Test setup/mocks are wrong → Fix test configuration
+
+**Recommendation:** [What should be done and why]
+**Impact:** [What other tests/features might be affected]
+```
+
+## 🚨 ENFORCEMENT RULES
+
+1. **REJECT** any code without proper JSDoc headers
+2. **REQUIRE** `@fileoverview` for every new file
+3. **MANDATE** context markers for business logic
+4. **ENFORCE** security and database documentation
+5. **DEMAND** examples for public APIs
+6. **REQUIRE PASSING TESTS** before feature completion
+7. **MANDATE regression test creation** for bug fixes
+8. **VERIFY BEFORE STATING** - Always read source files to confirm facts before providing information to user
+9. **NO ASSUMPTIONS** - When providing credentials, URLs, or configuration values, check the actual files/scripts first
+
+## 📚 Reference Files
+
+- `CODING_STANDARDS.md` - Complete documentation guidelines
+- `TESTING_GUIDE.md` - Testing patterns and standards
+- Existing well-documented files as examples:
+  - `lib/actions/artist-selection-actions.ts`
+  - `hooks/use-auth.ts`
+  - `app/(employee)/layout.tsx`
+
+## 🔄 FEATURE COMPLETION WORKFLOW (MANDATORY)
+
+### Before Marking ANY Feature Complete:
+
+1. **✅ DOCUMENTATION CHECK**
+   - All new files have `@fileoverview` headers
+   - All functions have complete JSDoc
+   - Context markers used for complex logic
+   - Business rules and security documented
+
+2. **✅ TEST VERIFICATION (ALWAYS RUN MODE)**
+   ```bash
+   # Run these commands in order - ALWAYS in run mode (no watch):
+   npm run test:run           # Core tests
+   npm run test:regression    # Regression prevention
+   npm run test:artist-filter # Artist filtering (if touched)
+   npm run lint              # Code quality
+   
+   # NEVER use: npm test, npx vitest (watch mode)
+   # ALWAYS use: npm run test:run, npx vitest run
+   ```
+
+3. **✅ FUNCTIONALITY CHECK**
+   - Feature works as intended
+   - No console errors in browser
+   - No 404s or broken navigation
+   - Authentication still works
+
+4. **✅ REGRESSION PREVENTION**
+   - Added tests for new functionality
+   - Added regression tests for bug fixes
+   - Updated existing tests if behavior changed
+
+### ⛔ NEVER COMPLETE A FEATURE IF:
+- Any tests are failing (without proper analysis and user approval)
+- Documentation is incomplete
+- Console shows errors
+- Code doesn't follow standards
+- Test failures haven't been explained to the user
+- Changes to test expectations haven't been justified
+
+### 🧠 CRITICAL THINKING REQUIRED:
+- **Question test validity** - tests can be wrong!
+- **Explain your reasoning** for any test changes
+- **Get user confirmation** before updating test expectations
+- **Consider broader impact** of test changes
+
+## 🎯 Goal
+
+Every piece of code should be self-documenting and LLM-friendly. Future AI assistants should understand the codebase without extensive context.
+
+**Remember**: Good documentation and testing are investments in future productivity. Every comment and test saves time for the next developer (human or AI) working with the code.

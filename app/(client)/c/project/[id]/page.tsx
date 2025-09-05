@@ -140,14 +140,12 @@ export default async function ProjectPage({ params }: PageProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center space-x-4">
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/c">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Projects
-          </Link>
-        </Button>
-      </div>
+      <Button variant="outline" size="sm" asChild>
+        <Link href="/c">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Projects
+        </Link>
+      </Button>
 
       {/* Project Info */}
       <div className="space-y-4">

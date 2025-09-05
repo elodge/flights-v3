@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -33,22 +33,55 @@ export default function LoginPage() {
     }
   })
 
+  // CONTEXT: Clear any stale auth tokens on login page load
+  // SECURITY: Prevents "Invalid Refresh Token" errors from stale sessions
+  // FALLBACK: Silently handles token cleanup without affecting UX
+  useEffect(() => {
+    const clearStaleSession = async () => {
+      try {
+        // SECURITY: Sign out any existing stale session
+        // This clears invalid refresh tokens without showing errors
+        await supabase.auth.signOut({ scope: 'local' })
+      } catch (error) {
+        // FALLBACK: Ignore signOut errors - we're already on login page
+        console.debug('Session cleanup (expected):', error)
+      }
+    }
+
+    clearStaleSession()
+  }, [])
+
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true)
     setError(null)
 
     try {
+      // CONTEXT: Clear any existing session before attempting new login
+      // SECURITY: Ensures clean state for authentication
+      await supabase.auth.signOut({ scope: 'local' })
+
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password
       })
 
       if (authError) {
-        setError(authError.message)
+        // CONTEXT: Handle specific refresh token errors gracefully
+        if (authError.message.includes('refresh') || authError.message.includes('token')) {
+          setError('Session expired. Please try signing in again.')
+        } else {
+          setError(authError.message)
+        }
         return
       }
 
       if (authData.user) {
+        console.log('Auth data:', {
+          userId: authData.user.id,
+          email: authData.user.email,
+          userIdType: typeof authData.user.id
+        })
+
         // Sync user to our database
         const response = await fetch('/api/auth/sync', {
           method: 'POST',
@@ -62,13 +95,17 @@ export default function LoginPage() {
         })
 
         if (!response.ok) {
-          console.error('Failed to sync user')
+          const errorData = await response.json()
+          console.error('Failed to sync user:', errorData)
+          setError(`Authentication sync failed: ${errorData.error || 'Unknown error'}`)
+          return
         }
 
         const userData = await response.json()
         const role = userData.user?.role || 'client'
 
         // Redirect to home - role-based redirects will happen in layouts
+        // Use router.replace to allow error handling, not immediate page reload
         router.replace('/')
       }
     } catch (error) {

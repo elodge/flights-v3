@@ -241,8 +241,9 @@ async function getQueueSelections(
 export default async function BookingQueuePage({ 
   searchParams 
 }: { 
-  searchParams: { [key: string]: string | string[] | undefined } 
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
 }) {
+  const awaited = await searchParams
   // Check authentication and role
   const user = await getServerUser()
   
@@ -255,7 +256,7 @@ export default async function BookingQueuePage({
   }
 
   // Get selected artist from URL params or cookies
-  const urlArtistId = getSelectedArtistIdFromSearchParams(searchParams)
+  const urlArtistId = getSelectedArtistIdFromSearchParams(awaited)
   const cookieArtistId = await getSelectedArtistIdFromCookie()
   const selectedArtistId = urlArtistId || cookieArtistId
 

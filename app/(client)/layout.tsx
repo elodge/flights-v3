@@ -19,12 +19,8 @@ export default async function ClientLayout({
   }
 
   return (
-    <div className="client-portal">
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold text-blue-600">Client Portal</h2>
-        <p className="text-muted-foreground">Welcome to your flight management dashboard, {user.user?.full_name || user.email}</p>
-      </div>
+    <>
       {children}
-    </div>
+    </>
   )
 }

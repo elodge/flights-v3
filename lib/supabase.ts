@@ -22,6 +22,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOi
  * 
  * @description Configured with anon key for RLS-protected operations.
  * Automatically handles user sessions and respects Row Level Security policies.
+ * Properly configured for SSR with cookie-based session persistence.
  * 
  * @security Uses anonymous key - RLS policies control data access
  * @example

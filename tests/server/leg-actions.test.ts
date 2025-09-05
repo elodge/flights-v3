@@ -18,17 +18,56 @@ const { createServerClient } = await import('@/lib/supabase-server')
 const { getServerUser } = await import('@/lib/auth')
 const { revalidatePath } = await import('next/cache')
 
-// Mock query builder methods that return themselves for chaining
-const mockQueryBuilder = {
-  select: vi.fn().mockReturnThis(),
-  insert: vi.fn().mockReturnThis(),
-  delete: vi.fn().mockReturnThis(),
-  eq: vi.fn().mockReturnThis(),
-  in: vi.fn().mockReturnThis(),
-  single: vi.fn(),
+// Create a comprehensive mock that handles all Supabase query patterns
+const createMockQueryBuilder = () => {
+  // Create a self-referencing object for chaining
+  const queryBuilder: any = {
+    select: vi.fn(),
+    insert: vi.fn(),
+    delete: vi.fn(),
+    update: vi.fn(),
+    upsert: vi.fn(),
+    eq: vi.fn(),
+    neq: vi.fn(),
+    gt: vi.fn(),
+    gte: vi.fn(),
+    lt: vi.fn(),
+    lte: vi.fn(),
+    in: vi.fn(),
+    not: vi.fn(),
+    or: vi.fn(),
+    and: vi.fn(),
+    filter: vi.fn(),
+    match: vi.fn(),
+    order: vi.fn(),
+    limit: vi.fn(),
+    range: vi.fn(),
+    single: vi.fn(),
+    maybeSingle: vi.fn(),
+    csv: vi.fn(),
+    then: vi.fn((resolve) => resolve({ data: null, error: null })),
+  }
+
+  // CRITICAL: All non-terminal methods MUST return queryBuilder for chaining
+  const terminalMethods = ['single', 'maybeSingle', 'csv', 'then']
+  Object.keys(queryBuilder).forEach(method => {
+    if (!terminalMethods.includes(method)) {
+      queryBuilder[method] = vi.fn().mockReturnValue(queryBuilder)
+    }
+  })
+  
+  // Terminal methods
+  queryBuilder.single.mockResolvedValue({ data: { id: 'test-id' }, error: null })
+  queryBuilder.maybeSingle.mockResolvedValue({ data: null, error: null })
+  queryBuilder.csv.mockResolvedValue({ data: '', error: null })
+
+  return queryBuilder
 }
 
-// Mock Supabase client
+// Keep global reference for test assertions
+const mockQueryBuilder = createMockQueryBuilder()
+
+// Mock Supabase client - use the global queryBuilder for consistent assertions
 const mockSupabaseClient = {
   from: vi.fn().mockReturnValue(mockQueryBuilder),
 }
@@ -43,48 +82,15 @@ describe('Server Actions - Leg Management', () => {
       role: 'agent',
     } as any)
     
-    // Setup flexible query builder chain
-    mockQueryBuilder.select.mockReturnValue(mockQueryBuilder)
-    mockQueryBuilder.insert.mockReturnValue(mockQueryBuilder) 
+    // Reset all mocks to ensure clean state
+    Object.values(mockQueryBuilder).forEach(mock => {
+      if (typeof mock === 'function') {
+        mock.mockClear()
+      }
+    })
     
-    // Create a delete-specific builder that has eq and in methods
-    const deleteBuilder = {
-      eq: vi.fn().mockReturnValue({
-        in: vi.fn().mockResolvedValue({ data: null, error: null }),
-        then: vi.fn((resolve: any) => resolve({ data: null, error: null })),
-        catch: vi.fn(),
-        finally: vi.fn()
-      }),
-      in: vi.fn().mockResolvedValue({ data: null, error: null }),
-      then: vi.fn((resolve: any) => resolve({ data: null, error: null })),
-      catch: vi.fn(),
-      finally: vi.fn()
-    }
-    
-    mockQueryBuilder.delete.mockReturnValue(deleteBuilder)
-    
-    // Make .eq() and .in() both chainable AND awaitable
-    const chainablePromise = {
-      eq: vi.fn().mockReturnValue({
-        then: vi.fn((resolve: any) => resolve({ data: null, error: null })),
-        catch: vi.fn(),
-        finally: vi.fn()
-      }),
-      in: vi.fn().mockReturnValue({
-        then: vi.fn((resolve: any) => resolve({ data: null, error: null })),
-        catch: vi.fn(),
-        finally: vi.fn()
-      }),
-      then: vi.fn((resolve: any) => resolve({ data: null, error: null })),
-      catch: vi.fn(),
-      finally: vi.fn()
-    }
-    
-    mockQueryBuilder.eq.mockReturnValue(chainablePromise)
-    mockQueryBuilder.in.mockReturnValue(chainablePromise)
-    mockQueryBuilder.single.mockResolvedValue({ data: null, error: null })
-    
-    // Ensure the from method returns the query builder
+    // Ensure from returns the same mockQueryBuilder for assertions
+    mockSupabaseClient.from.mockClear()
     mockSupabaseClient.from.mockReturnValue(mockQueryBuilder)
   })
 
@@ -119,18 +125,18 @@ describe('Server Actions - Leg Management', () => {
       expect(mockSupabaseClient.from).toHaveBeenCalledWith('leg_passengers')
       expect(mockQueryBuilder.delete).toHaveBeenCalled()
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('leg_id', '550e8400-e29b-41d4-a716-446655440000')
-      expect(mockQueryBuilder.in).toHaveBeenCalledWith('tour_personnel_id', ['550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002'])
+      expect(mockQueryBuilder.in).toHaveBeenCalledWith('passenger_id', ['550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002'])
 
       // Assert insert operation - adds new assignments
       expect(mockQueryBuilder.insert).toHaveBeenCalledWith([
         {
           leg_id: '550e8400-e29b-41d4-a716-446655440000',
-          tour_personnel_id: '550e8400-e29b-41d4-a716-446655440001',
+          passenger_id: '550e8400-e29b-41d4-a716-446655440001',
           treat_as_individual: false,
         },
         {
           leg_id: '550e8400-e29b-41d4-a716-446655440000',
-          tour_personnel_id: '550e8400-e29b-41d4-a716-446655440002',
+          passenger_id: '550e8400-e29b-41d4-a716-446655440002',
           treat_as_individual: false,
         }
       ])
@@ -427,12 +433,12 @@ describe('Server Actions - Leg Management', () => {
       expect(mockQueryBuilder.insert).toHaveBeenCalledWith([
         expect.objectContaining({
           option_id: '550e8400-e29b-41d4-a716-446655440003',
-          tour_personnel_id: '550e8400-e29b-41d4-a716-446655440001',
+          passenger_id: '550e8400-e29b-41d4-a716-446655440001',
           expires_at: expect.any(String),
         }),
         expect.objectContaining({
           option_id: '550e8400-e29b-41d4-a716-446655440003',
-          tour_personnel_id: '550e8400-e29b-41d4-a716-446655440002',
+          passenger_id: '550e8400-e29b-41d4-a716-446655440002',
           expires_at: expect.any(String),
         })
       ])
@@ -497,7 +503,7 @@ describe('Server Actions - Leg Management', () => {
       expect(mockQueryBuilder.insert).toHaveBeenCalledWith([
         expect.objectContaining({
           option_id: '550e8400-e29b-41d4-a716-446655440003',
-          tour_personnel_id: '550e8400-e29b-41d4-a716-446655440001',
+          passenger_id: '550e8400-e29b-41d4-a716-446655440001',
           expires_at: expect.any(String),
         })
       ])
@@ -597,13 +603,13 @@ describe('Server Actions - Leg Management', () => {
       // Verify exact column names in insert
       expect(mockQueryBuilder.insert).toHaveBeenCalledWith([{
         leg_id: '550e8400-e29b-41d4-a716-446655440000',
-        tour_personnel_id: '550e8400-e29b-41d4-a716-446655440001',
+        passenger_id: '550e8400-e29b-41d4-a716-446655440001',
         treat_as_individual: false,
       }])
 
       // Verify exact column names in queries
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('leg_id', '550e8400-e29b-41d4-a716-446655440000')
-      expect(mockQueryBuilder.in).toHaveBeenCalledWith('tour_personnel_id', ['550e8400-e29b-41d4-a716-446655440001'])
+      expect(mockQueryBuilder.in).toHaveBeenCalledWith('passenger_id', ['550e8400-e29b-41d4-a716-446655440001'])
     })
 
     it('should maintain correct column names for options table', async () => {
@@ -654,7 +660,7 @@ describe('Server Actions - Leg Management', () => {
       // Verify exact column names for holds
       expect(mockQueryBuilder.insert).toHaveBeenCalledWith([{
         option_id: '550e8400-e29b-41d4-a716-446655440003',
-        tour_personnel_id: '550e8400-e29b-41d4-a716-446655440001',
+        passenger_id: '550e8400-e29b-41d4-a716-446655440001',
         expires_at: expect.any(String),
       }])
     })

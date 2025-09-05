@@ -110,10 +110,11 @@ async function getEmployeeTours(artistId?: string | null): Promise<TourWithStats
 export default async function EmployeePortalPage({ 
   searchParams 
 }: { 
-  searchParams: { [key: string]: string | string[] | undefined } 
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
 }) {
+  const awaited = await searchParams
   // Get selected artist from URL params or cookies
-  const urlArtistId = getSelectedArtistIdFromSearchParams(searchParams)
+  const urlArtistId = getSelectedArtistIdFromSearchParams(awaited)
   const cookieArtistId = await getSelectedArtistIdFromCookie()
   const selectedArtistId = urlArtistId || cookieArtistId
   

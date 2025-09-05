@@ -67,9 +67,9 @@ describe('Flight Selection RPC Contract', () => {
 
         expect(result.success).toBe(true)
         expect(mockRpc).toHaveBeenCalledWith('rpc_client_select_option', {
-          leg_id: validLegId,
-          option_id: validOptionId,
-          passenger_ids: null
+          leg_id_param: validLegId,
+          option_id_param: validOptionId,
+          passenger_ids_param: null
         })
       })
     })
@@ -85,9 +85,9 @@ describe('Flight Selection RPC Contract', () => {
 
         expect(mockRpc).toHaveBeenCalledTimes(1)
         expect(mockRpc).toHaveBeenCalledWith('rpc_client_select_option', {
-          leg_id: validLegId,
-          option_id: validOptionId,
-          passenger_ids: null
+          leg_id_param: validLegId,
+          option_id_param: validOptionId,
+          passenger_ids_param: null
         })
 
         expect(result.success).toBe(true)
@@ -104,9 +104,9 @@ describe('Flight Selection RPC Contract', () => {
         })
 
         expect(mockRpc).toHaveBeenCalledWith('rpc_client_select_option', {
-          leg_id: validLegId,
-          option_id: validOptionId,
-          passenger_ids: null
+          leg_id_param: validLegId,
+          option_id_param: validOptionId,
+          passenger_ids_param: null
         })
 
         expect(result.success).toBe(true)
@@ -122,9 +122,9 @@ describe('Flight Selection RPC Contract', () => {
         })
 
         expect(mockRpc).toHaveBeenCalledWith('rpc_client_select_option', {
-          leg_id: validLegId,
-          option_id: validOptionId,
-          passenger_ids: []
+          leg_id_param: validLegId,
+          option_id_param: validOptionId,
+          passenger_ids_param: []
         })
 
         expect(result.success).toBe(true)
@@ -143,9 +143,9 @@ describe('Flight Selection RPC Contract', () => {
 
         expect(mockRpc).toHaveBeenCalledTimes(1)
         expect(mockRpc).toHaveBeenCalledWith('rpc_client_select_option', {
-          leg_id: validLegId,
-          option_id: validOptionId,
-          passenger_ids: validPassengerIds
+          leg_id_param: validLegId,
+          option_id_param: validOptionId,
+          passenger_ids_param: validPassengerIds
         })
 
         expect(result.success).toBe(true)
@@ -163,9 +163,9 @@ describe('Flight Selection RPC Contract', () => {
         })
 
         expect(mockRpc).toHaveBeenCalledWith('rpc_client_select_option', {
-          leg_id: validLegId,
-          option_id: validOptionId,
-          passenger_ids: singlePassenger
+          leg_id_param: validLegId,
+          option_id_param: validOptionId,
+          passenger_ids_param: singlePassenger
         })
 
         expect(result.success).toBe(true)
@@ -189,8 +189,8 @@ describe('Flight Selection RPC Contract', () => {
 
         const rpcCall = mockRpc.mock.calls[0]
         expect(rpcCall[0]).toBe('rpc_client_select_option')
-        expect(rpcCall[1].passenger_ids).toEqual(passengerIds)
-        expect(rpcCall[1].passenger_ids).toHaveLength(3)
+        expect(rpcCall[1].passenger_ids_param).toEqual(passengerIds)
+        expect(rpcCall[1].passenger_ids_param).toHaveLength(3)
       })
     })
 
@@ -265,10 +265,10 @@ describe('Flight Selection RPC Contract', () => {
         const [functionName, parameters] = mockRpc.mock.calls[0]
         
         expect(functionName).toBe('rpc_client_select_option')
-        expect(parameters).toHaveProperty('leg_id')
-        expect(parameters).toHaveProperty('option_id')
-        expect(parameters).toHaveProperty('passenger_ids')
-        expect(Object.keys(parameters)).toEqual(['leg_id', 'option_id', 'passenger_ids'])
+        expect(parameters).toHaveProperty('leg_id_param')
+        expect(parameters).toHaveProperty('option_id_param')
+        expect(parameters).toHaveProperty('passenger_ids_param')
+        expect(Object.keys(parameters)).toEqual(['leg_id_param', 'option_id_param', 'passenger_ids_param'])
       })
 
       it('should pass UUID strings in correct format', async () => {
@@ -283,10 +283,10 @@ describe('Flight Selection RPC Contract', () => {
         })
 
         const [, parameters] = mockRpc.mock.calls[0]
-        expect(parameters.leg_id).toBe(legId)
-        expect(parameters.option_id).toBe(optionId)
-        expect(typeof parameters.leg_id).toBe('string')
-        expect(typeof parameters.option_id).toBe('string')
+        expect(parameters.leg_id_param).toBe(legId)
+        expect(parameters.option_id_param).toBe(optionId)
+        expect(typeof parameters.leg_id_param).toBe('string')
+        expect(typeof parameters.option_id_param).toBe('string')
       })
     })
   })
@@ -302,9 +302,9 @@ describe('Flight Selection RPC Contract', () => {
         )
 
         expect(mockRpc).toHaveBeenCalledWith('rpc_client_select_option', {
-          leg_id: '77777777-7777-7777-7777-777777777777',
-          option_id: '00000000-0000-0000-0000-000000000001',
-          passenger_ids: null
+          leg_id_param: '77777777-7777-7777-7777-777777777777',
+          option_id_param: '00000000-0000-0000-0000-000000000001',
+          passenger_ids_param: null
         })
 
         expect(result.success).toBe(true)
@@ -328,9 +328,9 @@ describe('Flight Selection RPC Contract', () => {
         )
 
         expect(mockRpc).toHaveBeenCalledWith('rpc_client_select_option', {
-          leg_id: '77777777-7777-7777-7777-777777777777',
-          option_id: '00000000-0000-0000-0000-000000000001',
-          passenger_ids: passengerIds
+          leg_id_param: '77777777-7777-7777-7777-777777777777',
+          option_id_param: '00000000-0000-0000-0000-000000000001',
+          passenger_ids_param: passengerIds
         })
 
         expect(result.success).toBe(true)

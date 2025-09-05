@@ -18,8 +18,12 @@ import { EMPLOYEE_ARTIST_COOKIE, COOKIE_MAX_AGE } from '@/lib/employeeArtist'
  * 
  * @description Reads the employee artist selection from server-side cookies.
  * Used in combination with URL parameter checking for complete state resolution.
+ * Fixed Next.js 15 async cookies() compatibility.
  * 
- * @returns string | null - Artist UUID or null for "All Artists"
+ * @returns Promise<string | null> - Artist UUID or null for "All Artists"
+ * 
+ * @nextjs_15_fix Awaits cookies() before accessing cookie store
+ * @security Server-side only operation
  * 
  * @example
  * ```typescript
@@ -30,7 +34,8 @@ import { EMPLOYEE_ARTIST_COOKIE, COOKIE_MAX_AGE } from '@/lib/employeeArtist'
  * ```
  */
 export async function getSelectedArtistIdFromCookie(): Promise<string | null> {
-  const cookieStore = cookies()
+  // NEXTJS_15_FIX: Await cookies() before accessing properties
+  const cookieStore = await cookies()
   const cookieArtistId = cookieStore.get(EMPLOYEE_ARTIST_COOKIE)?.value
   return cookieArtistId || null
 }
@@ -39,16 +44,21 @@ export async function getSelectedArtistIdFromCookie(): Promise<string | null> {
  * Sets the selected artist ID on server-side (for cookie persistence)
  * 
  * @description Updates the employee artist selection cookie. Used when URL
- * parameters change to ensure persistence across sessions.
+ * parameters change to ensure persistence across sessions. Fixed Next.js 15
+ * async cookies() compatibility.
  * 
  * @param artistId - Artist UUID to store, or null to clear selection
+ * @returns Promise<void>
  * 
+ * @nextjs_15_fix Awaits cookies() before accessing cookie store
  * @business_rule Cookie expires after 90 days
  * @business_rule Null artistId removes the cookie entirely
  * @business_rule httpOnly=false allows client-side synchronization
+ * @security Server-side only operation with production-aware secure flag
  */
 export async function setSelectedArtistIdServer(artistId: string | null): Promise<void> {
-  const cookieStore = cookies()
+  // NEXTJS_15_FIX: Await cookies() before accessing properties
+  const cookieStore = await cookies()
   
   if (artistId) {
     cookieStore.set(EMPLOYEE_ARTIST_COOKIE, artistId, {
