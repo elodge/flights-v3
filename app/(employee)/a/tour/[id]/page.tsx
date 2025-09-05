@@ -23,6 +23,8 @@ import { createServerClient } from '@/lib/supabase-server'
 import { getServerUser } from '@/lib/auth'
 import { Database } from '@/lib/database.types'
 import { AddLegDialog } from '@/components/employee/add-leg-dialog'
+import { AddPersonDialog } from '@/components/employee/add-person-dialog'
+import { EditPersonDialog } from '@/components/employee/edit-person-dialog'
 // Temporarily disabled budget features for authentication fix
 // import { BudgetManagement } from '@/components/employee/budget-management'
 // import { getProjectBudgets, getBudgetSnapshot } from '@/lib/actions/budget-actions'
@@ -55,10 +57,16 @@ type TourWithDetails = Database['public']['Tables']['projects']['Row'] & {
     id: string
     full_name: string
     email: string | null
+    phone: string | null
     role_title: string | null
     is_vip: boolean
     passport_number: string | null
     nationality: string | null
+    party: string
+    seat_pref: string | null
+    ff_numbers: string | null
+    notes: string | null
+    status: string
   }>
 }
 
@@ -126,10 +134,16 @@ async function getEmployeeTour(tourId: string): Promise<TourWithDetails | null> 
         id,
         full_name,
         email,
+        phone,
         role_title,
         is_vip,
         passport_number,
-        nationality
+        nationality,
+        party,
+        seat_pref,
+        ff_numbers,
+        notes,
+        status
       )
     `)
     .eq('id', tourId)
@@ -400,10 +414,7 @@ export default async function EmployeeTourPage({ params }: PageProps) {
                     Manage {tour.tour_personnel.length} person{tour.tour_personnel.length !== 1 ? 's' : ''} in this {tour.type}
                   </CardDescription>
                 </div>
-                <Button size="sm">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Person
-                </Button>
+                <AddPersonDialog projectId={tour.id} />
               </div>
             </CardHeader>
             <CardContent>
@@ -420,7 +431,7 @@ export default async function EmployeeTourPage({ params }: PageProps) {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
-                      <TableHead>Role</TableHead>
+                      <TableHead>Party</TableHead>
                       <TableHead>Contact</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Travel Info</TableHead>
@@ -429,7 +440,10 @@ export default async function EmployeeTourPage({ params }: PageProps) {
                   </TableHeader>
                   <TableBody>
                     {tour.tour_personnel.map((person) => (
-                      <TableRow key={person.id}>
+                      <TableRow 
+                        key={person.id}
+                        className={person.status === 'inactive' ? 'opacity-60' : ''}
+                      >
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             <span className="font-medium">{person.full_name}</span>
@@ -439,36 +453,46 @@ export default async function EmployeeTourPage({ params }: PageProps) {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm">{person.role_title || 'Traveler'}</span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {person.email || 'No email'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
                           <Badge variant="outline" className="text-xs">
-                            Active
+                            {person.party}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="text-sm text-muted-foreground">
-                            {person.nationality && (
-                              <div>Nationality: {person.nationality}</div>
+                          <div className="text-sm">
+                            {person.email && (
+                              <div className="text-muted-foreground">{person.email}</div>
                             )}
-                            {person.passport_number && (
-                              <div>Passport: {person.passport_number}</div>
+                            {person.phone && (
+                              <div className="text-muted-foreground">{person.phone}</div>
                             )}
-                            {!person.nationality && !person.passport_number && (
-                              <span>No travel info</span>
+                            {!person.email && !person.phone && (
+                              <span className="text-muted-foreground">No contact info</span>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm">
-                            <Settings className="mr-2 h-4 w-4" />
-                            Edit
-                          </Button>
+                          <Badge 
+                            variant={person.status === 'active' ? 'default' : 'secondary'} 
+                            className="text-xs"
+                          >
+                            {person.status === 'active' ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm text-muted-foreground">
+                            {person.seat_pref && (
+                              <div>Seat: {person.seat_pref}</div>
+                            )}
+                            {person.ff_numbers && (
+                              <div>FF: {person.ff_numbers}</div>
+                            )}
+                            {!person.seat_pref && !person.ff_numbers && (
+                              <span>No travel preferences</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <EditPersonDialog person={person} />
                         </TableCell>
                       </TableRow>
                     ))}
