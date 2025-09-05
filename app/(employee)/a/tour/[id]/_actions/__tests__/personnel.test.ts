@@ -37,7 +37,7 @@ const mockQueryBuilder = {
 };
 
 describe('Personnel Server Actions', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     
     // Setup default mocks

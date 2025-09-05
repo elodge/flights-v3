@@ -25,6 +25,7 @@ import { Database } from '@/lib/database.types'
 import { AddLegDialog } from '@/components/employee/add-leg-dialog'
 import { AddPersonDialog } from '@/components/employee/add-person-dialog'
 import { EditPersonDialog } from '@/components/employee/edit-person-dialog'
+import { InlinePartySelector } from '@/components/employee/inline-party-selector'
 // Temporarily disabled budget features for authentication fix
 // import { BudgetManagement } from '@/components/employee/budget-management'
 // import { getProjectBudgets, getBudgetSnapshot } from '@/lib/actions/budget-actions'
@@ -453,9 +454,12 @@ export default async function EmployeeTourPage({ params }: PageProps) {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="text-xs">
-                            {person.party}
-                          </Badge>
+                          <InlinePartySelector
+                            personId={person.id}
+                            currentParty={person.party}
+                            fullName={person.full_name}
+                            isInactive={person.status === 'inactive'}
+                          />
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">

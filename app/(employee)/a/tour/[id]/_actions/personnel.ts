@@ -12,7 +12,6 @@
 'use server';
 
 import { z } from 'zod';
-import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { addPersonSchema, updatePersonSchema, PartyEnum } from '@/lib/validation/personnel';
 import { createServerClient } from '@/lib/supabase-server';
@@ -43,7 +42,7 @@ function requireEmployeeRole(role?: string) {
  */
 export async function addTourPerson(projectId: string, raw: unknown) {
   try {
-    const supabase = createServerClient(cookies());
+    const supabase = await createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -53,7 +52,7 @@ export async function addTourPerson(projectId: string, raw: unknown) {
     const { data: profile } = await supabase
       .from('users')
       .select('role')
-      .eq('auth_user_id', user.id)
+      .eq('id', user.id)
       .single();
     
     requireEmployeeRole(profile?.role);
@@ -121,7 +120,7 @@ export async function addTourPerson(projectId: string, raw: unknown) {
  */
 export async function updateTourPerson(personId: string, raw: unknown) {
   try {
-    const supabase = createServerClient(cookies());
+    const supabase = await createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -131,7 +130,7 @@ export async function updateTourPerson(personId: string, raw: unknown) {
     const { data: profile } = await supabase
       .from('users')
       .select('role')
-      .eq('auth_user_id', user.id)
+      .eq('id', user.id)
       .single();
     
     requireEmployeeRole(profile?.role);
