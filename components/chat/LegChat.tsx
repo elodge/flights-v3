@@ -292,7 +292,6 @@ export function LegChat({ legId }: LegChatProps) {
         is_system_message: false // Explicit false for user messages
       }
       
-      console.log('Inserting chat message:', insertData)
       
       const { data, error } = await supabase
         .from('chat_messages')
@@ -316,19 +315,29 @@ export function LegChat({ legId }: LegChatProps) {
       }
 
       // CONTEXT: Replace optimistic message with server response
-      setMessages(prev => prev.map(msg => 
-        msg.id === optimisticId 
-          ? {
-              id: data.id,
-              leg_id: data.leg_id,
-              user_id: data.user_id,
-              message: data.message || data.body, // Use message field primarily
-              sender_role: data.sender_role || getUserRole(data.users?.role),
-              created_at: data.created_at,
-              optimistic: false
-            }
-          : msg
-      ))
+      setMessages(prev => {
+        // Check if we already have a message with the server ID
+        const hasServerMessage = prev.some(m => m.id === data.id)
+        if (hasServerMessage) {
+          // If we already have the server message, just remove the optimistic one
+          return prev.filter(msg => msg.id !== optimisticId)
+        }
+        
+        // Otherwise, replace the optimistic message with the server response
+        return prev.map(msg => 
+          msg.id === optimisticId 
+            ? {
+                id: data.id,
+                leg_id: data.leg_id,
+                user_id: data.user_id,
+                message: data.message || data.body, // Use message field primarily
+                sender_role: data.sender_role || getUserRole(data.users?.role),
+                created_at: data.created_at,
+                optimistic: false
+              }
+            : msg
+        )
+      })
 
     } catch (error) {
       console.error('Error sending message:', error)
@@ -472,13 +481,18 @@ export function LegChat({ legId }: LegChatProps) {
           
           // CONTEXT: Don't add if this is our own optimistic message
           const isOwnMessage = newMessage.user_id === user.id
-          const hasOptimistic = messages.some(m => 
-            m.user_id === user.id && 
-            m.message === (newMessage.message || newMessage.body) &&
-            m.optimistic
+          const messageText = newMessage.message || newMessage.body
+          
+          // CONTEXT: Check if we already have this exact message (by ID or optimistic match)
+          const hasExistingMessage = messages.some(m => 
+            m.id === newMessage.id || 
+            (m.user_id === newMessage.user_id && 
+             m.message === messageText &&
+             m.optimistic &&
+             Math.abs(new Date(m.created_at).getTime() - new Date(newMessage.created_at).getTime()) < 5000)
           )
           
-          if (!hasOptimistic) {
+          if (!hasExistingMessage) {
             const formattedMessage: OptimisticMessage = {
               id: newMessage.id,
               leg_id: newMessage.leg_id,
@@ -489,7 +503,15 @@ export function LegChat({ legId }: LegChatProps) {
               optimistic: false
             }
             
-            setMessages(prev => [...prev, formattedMessage])
+            // CONTEXT: Use functional update to ensure we're working with latest state
+            setMessages(prev => {
+              // Double-check for duplicates in the current state
+              const alreadyExists = prev.some(m => m.id === newMessage.id)
+              if (alreadyExists) {
+                return prev // Don't add if already exists
+              }
+              return [...prev, formattedMessage]
+            })
             
             // CONTEXT: Auto-scroll if user is near bottom
             setTimeout(() => {
