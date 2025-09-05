@@ -11,10 +11,16 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
 import { clientUtils } from '@/lib/employeeArtist'
 import { GlobalUnreadClient } from '@/components/chat/GlobalUnreadClient'
+import { NotificationBell } from '@/components/employee/notification-bell'
 export function Header() {
   const { user, profile, role, loading, signOut } = useUser()
   const pathname = usePathname()
   const router = useRouter()
+  
+  // CONTEXT: Debug authentication state changes
+  // useEffect(() => {
+  //   console.log('Header auth state:', { user: user?.email, profile: profile?.full_name, role, loading })
+  // }, [user, profile, role, loading])
   
   const [artists, setArtists] = useState<Array<{id: string, name: string}>>([])
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null)
@@ -193,12 +199,9 @@ export function Header() {
         </div>
 
         <div className="flex items-center space-x-3">
-          {/* Notifications Button - Only show when authenticated */}
-          {user && (
-            <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-accent/50">
-              <Bell className="h-4 w-4" />
-              <span className="sr-only">Notifications</span>
-            </Button>
+          {/* Notifications Bell - Only show for employees */}
+          {user && ['agent', 'admin'].includes(role || '') && (
+            <NotificationBell userId={user.id} artistId={selectedArtistId || undefined} />
           )}
 
           {/* Chat Unread Count - Only show for employees */}
@@ -230,7 +233,7 @@ export function Header() {
           {loading ? (
             <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
           ) : user ? (
-            <DropdownMenu>
+            <DropdownMenu key={`user-menu-${user.id}`}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-9 w-9 rounded-full p-0 hover:bg-accent/50">
                   <Avatar className="h-8 w-8">

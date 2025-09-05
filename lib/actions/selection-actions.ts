@@ -15,6 +15,7 @@
 import { createServerClient } from '@/lib/supabase-server'
 import { getServerUser } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
+import { pushNotification } from '@/lib/notifications/push'
 
 export interface SelectFlightOptionParams {
   leg_id: string
@@ -111,12 +112,30 @@ export async function selectFlightOption(params: SelectFlightOptionParams): Prom
         const revalidationClient = await createServerClient()
         const { data: legData } = await revalidationClient
           .from('legs')
-          .select('project_id')
+          .select('project_id, artist_id')
           .eq('id', leg_id)
           .single()
         
         if (legData) {
           revalidatePath(`/c/project/${legData.project_id}/legs/${leg_id}`)
+          
+          // CONTEXT: Create notification for client selection
+          // BUSINESS_RULE: Notify employees when clients make selections
+          try {
+            await pushNotification({
+              type: 'client_selection',
+              severity: 'info',
+              artistId: legData.artist_id,
+              projectId: legData.project_id,
+              legId: leg_id,
+              title: 'New selection from client',
+              body: `Client made a flight selection for leg ${leg_id.slice(0, 8)}`,
+              actorUserId: user.id
+            })
+          } catch (notificationError) {
+            console.error('Notification error:', notificationError)
+            // Don't fail the selection if notification fails
+          }
         }
       } catch (revalidateError) {
         console.error('Revalidation error:', revalidateError)

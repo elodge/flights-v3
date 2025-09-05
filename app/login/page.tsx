@@ -129,6 +129,10 @@ export default function LoginPage() {
         const userData = await response.json()
         const role = userData.user?.role || 'client'
 
+        // CONTEXT: Wait for auth state to be fully synchronized before navigation
+        // ALGORITHM: Give the useUser hook time to process the auth state change
+        await new Promise(resolve => setTimeout(resolve, 100))
+
         // Redirect to home - role-based redirects will happen in layouts
         // Use router.replace to allow error handling, not immediate page reload
         router.replace('/')
