@@ -592,13 +592,14 @@ export function LegChat({ legId }: LegChatProps) {
   }
 
   return (
-    <div className="flex flex-col h-[600px]">
+    <div className="flex flex-col h-[600px] max-h-[600px]">
       {/* Messages Area */}
-      <ScrollArea 
-        ref={scrollAreaRef}
-        className="flex-1 p-4"
-        onScrollCapture={handleScroll}
-      >
+      <div className="flex-1 min-h-0">
+        <ScrollArea 
+          ref={scrollAreaRef}
+          className="h-full p-4"
+          onScrollCapture={handleScroll}
+        >
         {/* Loading older messages indicator */}
         {isLoadingMore && (
           <div className="flex justify-center py-4">
@@ -620,8 +621,8 @@ export function LegChat({ legId }: LegChatProps) {
             ))}
           </div>
         ) : (
-          /* Message list */
           <div className="space-y-4">
+            {/* Message list */}
             {messages.map((message) => (
               <div key={message.id} className="flex gap-3">
                 <div className="flex-shrink-0">
@@ -681,10 +682,11 @@ export function LegChat({ legId }: LegChatProps) {
             <div ref={messagesEndRef} />
           </div>
         )}
-      </ScrollArea>
+        </ScrollArea>
+      </div>
 
       {/* Message Composer */}
-      <div className="border-t p-4">
+      <div className="border-t p-4 flex-shrink-0">
         <div className="flex gap-2">
           <Textarea
             placeholder="Type your message... (Enter to send, Shift+Enter for new line)"

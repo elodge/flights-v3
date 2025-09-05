@@ -3,30 +3,57 @@
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Bell, ChevronDown, LogOut, Plane } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Bell, ChevronDown, LogOut, Plane, MessageSquare } from 'lucide-react'
 import { useUser } from '@/hooks/use-auth'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect, useCallback } from 'react'
 import { clientUtils } from '@/lib/employeeArtist'
+import { GlobalUnreadClient } from '@/components/chat/GlobalUnreadClient'
 export function Header() {
   const { user, profile, role, loading, signOut } = useUser()
   const pathname = usePathname()
   const router = useRouter()
+  
   const [artists, setArtists] = useState<Array<{id: string, name: string}>>([])
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null)
   const [selectedArtistName, setSelectedArtistName] = useState<string>('All Artists')
+  const [unreadCount, setUnreadCount] = useState<number>(0)
 
   const handleSignOut = async () => {
     await signOut()
   }
+
+  // Fetch initial unread count
+  const fetchInitialUnreadCount = useCallback(async () => {
+    if (!user || !['agent', 'admin'].includes(role || '')) return
+    
+    try {
+      const url = new URL('/api/chat/global-unread', window.location.origin)
+      if (selectedArtistId) {
+        url.searchParams.set('artist', selectedArtistId)
+      }
+      
+      const response = await fetch(url.toString())
+      
+      if (response.ok) {
+        const data = await response.json()
+        setUnreadCount(data.total || 0)
+      }
+    } catch (error) {
+      console.error('Error fetching initial unread count:', error)
+    }
+  }, [user, role, selectedArtistId])
 
   // Load artists when user is available and is employee
   useEffect(() => {
     if (user && ['agent', 'admin'].includes(role || '')) {
       fetchArtists()
       loadSelectedArtist()
+      fetchInitialUnreadCount()
     }
-  }, [user, role])
+  }, [user, role, fetchInitialUnreadCount])
 
   // Load current selection from URL/cookie
   useEffect(() => {
@@ -46,6 +73,13 @@ export function Header() {
       updateSelectedArtistName(selectedArtistId)
     }
   }, [artists, selectedArtistId, updateSelectedArtistName])
+
+  // Update unread count when artist selection changes
+  useEffect(() => {
+    if (user && ['agent', 'admin'].includes(role || '')) {
+      fetchInitialUnreadCount()
+    }
+  }, [selectedArtistId, user, role, fetchInitialUnreadCount])
 
   const fetchArtists = async () => {
     try {
@@ -167,6 +201,31 @@ export function Header() {
             </Button>
           )}
 
+          {/* Chat Unread Count - Only show for employees */}
+          {user && ['agent', 'admin'].includes(role || '') && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-accent/50 relative">
+                    <MessageSquare className="h-4 w-4" />
+                    {unreadCount > 0 && (
+                      <Badge 
+                        variant="destructive" 
+                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                      >
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </Badge>
+                    )}
+                    <span className="sr-only">Chat messages</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Unread chat messages{selectedArtistId ? ` (filtered by ${selectedArtistName})` : ' (all artists)'}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
           {/* Account Menu */}
           {loading ? (
             <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
@@ -211,6 +270,16 @@ export function Header() {
           ) : null}
         </div>
       </div>
+      
+      {/* Real-time unread count updates - Only for employees */}
+      {user && ['agent', 'admin'].includes(role || '') && (
+        <GlobalUnreadClient
+          initialCount={unreadCount}
+          artistId={selectedArtistId}
+          userId={user.id}
+          onCountUpdate={setUnreadCount}
+        />
+      )}
     </header>
   )
 }
