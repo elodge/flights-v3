@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Users, Upload, Plus } from 'lucide-react'
 import { AddPersonDialog } from './add-person-dialog'
 import { EditPersonDialog } from './edit-person-dialog'
+import { DeletePersonDialog } from './delete-person-dialog'
 import { InlinePartySelector } from './inline-party-selector'
 import { PersonnelImportDialog } from './personnel-import-dialog'
 import { Database } from '@/lib/database.types'
@@ -156,7 +157,14 @@ export function PersonnelTab({ projectId, personnel }: PersonnelTabProps) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <EditPersonDialog person={person} />
+                      <div className="flex items-center gap-1">
+                        <EditPersonDialog person={person} />
+                        <DeletePersonDialog 
+                          personId={person.id}
+                          personName={person.full_name}
+                          disabled={person.status === 'inactive'}
+                        />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
