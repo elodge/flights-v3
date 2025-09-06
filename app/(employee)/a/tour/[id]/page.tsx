@@ -23,9 +23,7 @@ import { createServerClient } from '@/lib/supabase-server'
 import { getServerUser } from '@/lib/auth'
 import { Database } from '@/lib/database.types'
 import { AddLegDialog } from '@/components/employee/add-leg-dialog'
-import { AddPersonDialog } from '@/components/employee/add-person-dialog'
-import { EditPersonDialog } from '@/components/employee/edit-person-dialog'
-import { InlinePartySelector } from '@/components/employee/inline-party-selector'
+import { PersonnelTab } from '@/components/employee/personnel-tab'
 // Temporarily disabled budget features for authentication fix
 // import { BudgetManagement } from '@/components/employee/budget-management'
 // import { getProjectBudgets, getBudgetSnapshot } from '@/lib/actions/budget-actions'
@@ -406,105 +404,10 @@ export default async function EmployeeTourPage({ params }: PageProps) {
         </TabsContent>
 
         <TabsContent value="personnel" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Tour Personnel</CardTitle>
-                  <CardDescription>
-                    Manage {tour.tour_personnel.length} person{tour.tour_personnel.length !== 1 ? 's' : ''} in this {tour.type}
-                  </CardDescription>
-                </div>
-                <AddPersonDialog projectId={tour.id} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {tour.tour_personnel.length === 0 ? (
-                <div className="text-center py-8">
-                  <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-4 text-lg font-semibold">No personnel assigned</h3>
-                  <p className="mt-2 text-muted-foreground">
-                    Tour personnel will appear here once they are added to this tour.
-                  </p>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Party</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Travel Info</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tour.tour_personnel.map((person) => (
-                      <TableRow 
-                        key={person.id}
-                        className={person.status === 'inactive' ? 'opacity-60' : ''}
-                      >
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-medium">{person.full_name}</span>
-                            {person.is_vip && (
-                              <Badge variant="secondary" className="text-xs">VIP</Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <InlinePartySelector
-                            personId={person.id}
-                            currentParty={person.party}
-                            fullName={person.full_name}
-                            isInactive={person.status === 'inactive'}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {person.email && (
-                              <div className="text-muted-foreground">{person.email}</div>
-                            )}
-                            {person.phone && (
-                              <div className="text-muted-foreground">{person.phone}</div>
-                            )}
-                            {!person.email && !person.phone && (
-                              <span className="text-muted-foreground">No contact info</span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={person.status === 'active' ? 'default' : 'secondary'} 
-                            className="text-xs"
-                          >
-                            {person.status === 'active' ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm text-muted-foreground">
-                            {person.seat_pref && (
-                              <div>Seat: {person.seat_pref}</div>
-                            )}
-                            {person.ff_numbers && (
-                              <div>FF: {person.ff_numbers}</div>
-                            )}
-                            {!person.seat_pref && !person.ff_numbers && (
-                              <span>No travel preferences</span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <EditPersonDialog person={person} />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+          <PersonnelTab 
+            projectId={tour.id} 
+            personnel={tour.tour_personnel} 
+          />
         </TabsContent>
 
         {/* Temporarily disabled budget tab for authentication fix */}

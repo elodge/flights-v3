@@ -10,34 +10,39 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { adminSearchUsers, adminCreateInvite, adminUpdateUserProfile } from '@/app/(admin)/admin/users/_actions/user-actions'
 
-// Mock Supabase client
+// Mock Supabase client with proper chaining
+const createMockQuery = () => {
+  const mockQuery = {
+    or: vi.fn(() => mockQuery),
+    eq: vi.fn(() => mockQuery),
+    order: vi.fn(() => mockQuery),
+    range: vi.fn(() => ({ data: [], count: 0, error: null }))
+  }
+  return mockQuery
+}
+
 const mockSupabaseClient = {
   from: vi.fn(() => ({
-    select: vi.fn(() => ({
-      or: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          order: vi.fn(() => ({
-            range: vi.fn(() => ({ data: [], count: 0, error: null }))
-          }))
-        }))
-      })),
-      eq: vi.fn(() => ({
-        order: vi.fn(() => ({
-          range: vi.fn(() => ({ data: [], count: 0, error: null }))
-        }))
-      })),
-      order: vi.fn(() => ({
-        range: vi.fn(() => ({ data: [], count: 0, error: null }))
-      }))
-    })),
-    rpc: vi.fn(() => ({ data: [{ token: 'test-token', expires_at: '2024-01-13T00:00:00Z' }], error: null })),
-    update: vi.fn(() => ({ eq: vi.fn(() => ({ error: null })) }))
-  }))
+    select: vi.fn(() => createMockQuery()),
+    update: vi.fn(() => ({ eq: vi.fn(() => ({ error: null })) })),
+    insert: vi.fn(() => ({ select: vi.fn(() => ({ data: [{ token: 'test-token', expires_at: '2024-01-13T00:00:00Z' }], error: null })) })),
+    delete: vi.fn(() => ({ eq: vi.fn(() => ({ error: null })) }))
+  })),
+  rpc: vi.fn(() => ({ data: [{ token: 'test-token', expires_at: '2024-01-13T00:00:00Z' }], error: null })),
+  auth: {
+    admin: {
+      inviteUserByEmail: vi.fn(() => ({ data: { user: { id: 'new-user-id' } }, error: null }))
+    }
+  }
 }
 
 // Mock auth functions
 vi.mock('@/lib/supabase-server', () => ({
   createServerClient: vi.fn(() => mockSupabaseClient)
+}))
+
+vi.mock('@/lib/supabase', () => ({
+  createAdminClient: vi.fn(() => mockSupabaseClient)
 }))
 
 vi.mock('@/lib/auth', () => ({
@@ -98,9 +103,10 @@ describe('Admin User Management', () => {
       })
 
       expect(result).toEqual({
-        token: 'test-token',
-        expiresAt: '2024-01-13T00:00:00Z',
-        acceptUrl: expect.stringContaining('/invite/accept?token=test-token')
+        success: true,
+        message: 'Invite email sent successfully to client@example.com',
+        userId: 'new-user-id',
+        email: 'client@example.com'
       })
     })
 
@@ -112,9 +118,10 @@ describe('Admin User Management', () => {
       })
 
       expect(result).toEqual({
-        token: 'test-token',
-        expiresAt: '2024-01-13T00:00:00Z',
-        acceptUrl: expect.stringContaining('/invite/accept?token=test-token')
+        success: true,
+        message: 'Invite email sent successfully to agent@example.com',
+        userId: 'new-user-id',
+        email: 'agent@example.com'
       })
     })
   })

@@ -39,7 +39,7 @@ vi.mock('@/lib/supabase-server', () => ({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           single: vi.fn().mockResolvedValue({
-            data: mockTourData,
+            data: null, // Will be set in beforeEach
             error: null,
           }),
         }),
@@ -105,6 +105,14 @@ const mockTourData = {
 describe('Tour Page - Inline Party Selector Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    
+    // CONTEXT: Set mock data for Supabase client
+    const { createServerClient } = require('@/lib/supabase-server');
+    const mockClient = createServerClient();
+    mockClient.from().select().eq().single.mockResolvedValue({
+      data: mockTourData,
+      error: null,
+    });
   });
 
   describe('Personnel Table Rendering', () => {

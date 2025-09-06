@@ -8,9 +8,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { pushNotification, getUnreadCount, markNotificationsAsRead, getRecentNotifications } from '../push';
 
-// Mock the supabase server client
-const mockSupabaseClient = {
-  from: vi.fn(() => ({
+// Mock the supabase server client with proper chaining
+const createMockQuery = (finalResult = { data: [], error: null }) => {
+  const mockQuery = {
+    eq: vi.fn(() => mockQuery),
+    not: vi.fn(() => mockQuery),
+    in: vi.fn(() => mockQuery),
+    limit: vi.fn(() => finalResult)
+  }
+  // Make the final call return the result
+  mockQuery.eq.mockReturnValueOnce(finalResult);
+  mockQuery.not.mockReturnValueOnce(finalResult);
+  mockQuery.in.mockReturnValueOnce(finalResult);
+  return mockQuery
+}
+
+// Create a mock that can handle nested queries
+const createMockFrom = () => {
+  const mockFrom = vi.fn(() => ({
     insert: vi.fn(() => ({
       select: vi.fn(() => ({
         single: vi.fn(() => ({
@@ -19,22 +34,26 @@ const mockSupabaseClient = {
         }))
       }))
     })),
-    select: vi.fn(() => ({
-      not: vi.fn(() => ({
-        in: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            data: [],
-            count: 5,
-            error: null
-          }))
-        }))
-      }))
-    })),
+    select: vi.fn(() => {
+      // For the nested query in .not(), return a simple query
+      if (mockFrom.mock.calls.length > 1) {
+        return {
+          eq: vi.fn(() => ({ data: [], error: null }))
+        }
+      }
+      // For the main query, return the full chain
+      return createMockQuery({ count: 5, error: null })
+    }),
     upsert: vi.fn(() => ({
       data: null,
       error: null
     }))
   }))
+  return mockFrom
+}
+
+const mockSupabaseClient = {
+  from: createMockFrom()
 };
 
 vi.mock('@/lib/supabase-server', () => ({
