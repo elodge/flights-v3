@@ -9,18 +9,26 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { pushNotification, getUnreadCount, markNotificationsAsRead, getRecentNotifications } from '../push';
 
 // Mock the supabase server client with proper chaining
-const createMockQuery = (finalResult = { data: [], error: null }) => {
-  const mockQuery = {
-    eq: vi.fn(() => mockQuery),
-    not: vi.fn(() => mockQuery),
-    in: vi.fn(() => mockQuery),
-    limit: vi.fn(() => finalResult)
-  }
-  // Make the final call return the result
-  mockQuery.eq.mockReturnValueOnce(finalResult);
-  mockQuery.not.mockReturnValueOnce(finalResult);
-  mockQuery.in.mockReturnValueOnce(finalResult);
-  return mockQuery
+const createMockQuery = (finalResult = { count: 5, error: null }) => {
+  // Create a query object that's both a function and has methods
+  const mockQuery = Object.assign(
+    // Make it awaitable
+    Promise.resolve(finalResult),
+    {
+      eq: vi.fn(() => mockQuery),
+      not: vi.fn(() => mockQuery),
+      in: vi.fn(() => mockQuery),
+      limit: vi.fn(() => mockQuery),
+      order: vi.fn(() => mockQuery),
+      select: vi.fn(() => mockQuery),
+      // Add the result properties directly
+      count: finalResult.count,
+      error: finalResult.error,
+      data: finalResult.data
+    }
+  );
+  
+  return mockQuery;
 }
 
 // Create a mock that can handle nested queries
@@ -34,14 +42,24 @@ const createMockFrom = () => {
         }))
       }))
     })),
-    select: vi.fn(() => {
-      // For the nested query in .not(), return a simple query
-      if (mockFrom.mock.calls.length > 1) {
+    select: vi.fn(function(selectArg) {
+      // For different types of queries, return appropriate mocks
+      const callCount = mockFrom.mock.calls.length;
+      
+      if (callCount > 1) {
+        // For nested queries in .not(), return a simple query
         return {
           eq: vi.fn(() => ({ data: [], error: null }))
         }
       }
-      // For the main query, return the full chain
+      
+      // Check the select argument to determine what kind of query this is
+      if (typeof selectArg === 'string' && selectArg.includes('notification_reads')) {
+        // This is getRecentNotifications - return a query with order support
+        return createMockQuery({ data: [], error: null });
+      }
+      
+      // Default to count query for getUnreadCount
       return createMockQuery({ count: 5, error: null })
     }),
     upsert: vi.fn(() => ({
@@ -165,29 +183,23 @@ describe('Notification Push Helpers', () => {
       // Mock notification data
       const mockFrom = mockSupabaseClient.from as any;
       mockFrom.mockReturnValueOnce({
-        select: vi.fn(() => ({
-          order: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              limit: vi.fn(() => ({
-                data: [
-                  {
-                    id: 'notif-1',
-                    type: 'client_selection',
-                    severity: 'info',
-                    title: 'New selection',
-                    body: 'Client made selection',
-                    artist_id: 'artist-123',
-                    project_id: 'project-456',
-                    leg_id: 'leg-789',
-                    actor_user_id: 'user-101',
-                    created_at: '2024-01-01T00:00:00Z',
-                    notification_reads: []
-                  }
-                ],
-                error: null
-              }))
-            }))
-          }))
+        select: vi.fn(() => createMockQuery({
+          data: [
+            {
+              id: 'notif-1',
+              type: 'client_selection',
+              severity: 'info',
+              title: 'New selection',
+              body: 'Client made selection',
+              artist_id: 'artist-123',
+              project_id: 'project-456',
+              leg_id: 'leg-789',
+              actor_user_id: 'user-101',
+              created_at: '2024-01-01T00:00:00Z',
+              notification_reads: []
+            }
+          ],
+          error: null
         }))
       });
 

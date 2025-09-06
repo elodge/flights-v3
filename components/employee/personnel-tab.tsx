@@ -102,10 +102,10 @@ export function PersonnelTab({ projectId, personnel }: PersonnelTabProps) {
               </TableHeader>
               <TableBody>
                 {personnel.map((person) => (
-                  <TableRow 
-                    key={person.id}
-                    className={person.status === 'inactive' ? 'opacity-60' : ''}
-                  >
+                    <TableRow 
+                      key={person.id}
+                      className={person.status === 'inactive' ? 'opacity-60' : ''}
+                    >
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <span className="font-medium">{person.full_name}</span>

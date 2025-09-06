@@ -66,6 +66,7 @@ export function DeletePersonDialog({
   const handleDelete = () => {
     startTransition(async () => {
       try {
+        
         // SECURITY: Call server action with role enforcement
         await deleteTourPerson(personId);
         
@@ -75,7 +76,21 @@ export function DeletePersonDialog({
         router.refresh();
       } catch (error) {
         // ERROR: Show error toast with details
-        const errorMessage = error instanceof Error ? error.message : 'Failed to delete person';
+        let errorMessage = 'Failed to delete person';
+        
+        if (error instanceof Error) {
+          // CONTEXT: Handle Zod validation errors with user-friendly messages
+          if (error.message.includes('Invalid person ID format')) {
+            errorMessage = 'Invalid person ID. Please refresh the page and try again.';
+          } else if (error.message.includes('Unauthorized')) {
+            errorMessage = 'You do not have permission to delete this person.';
+          } else if (error.message.includes('Failed to delete person')) {
+            errorMessage = 'Database error occurred. Please try again.';
+          } else {
+            errorMessage = error.message;
+          }
+        }
+        
         toast.error(`Failed to remove ${personName}: ${errorMessage}`);
       }
     });

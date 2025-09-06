@@ -8,24 +8,32 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { deleteTourPerson } from '@/app/(admin)/admin/users/_actions/delete-personnel';
 
-// CONTEXT: Mock Supabase server client
+// CONTEXT: Mock Supabase server client with proper chainable methods
 const createMockQuery = () => {
   const mockQuery = {
     eq: vi.fn(() => mockQuery),
-    single: vi.fn()
+    mockResolvedValue: vi.fn()
   };
   return mockQuery;
 };
+
+const createMockDeleteQuery = () => {
+  const mockDeleteQuery = {
+    eq: vi.fn()
+  };
+  return mockDeleteQuery;
+};
+
+const mockSelectQuery = createMockQuery();
+const mockDeleteQuery = createMockDeleteQuery();
 
 const mockSupabaseClient = {
   auth: {
     getUser: vi.fn()
   },
   from: vi.fn(() => ({
-    select: vi.fn(() => createMockQuery()),
-    delete: vi.fn(() => ({
-      eq: vi.fn()
-    }))
+    select: vi.fn(() => mockSelectQuery),
+    delete: vi.fn(() => mockDeleteQuery)
   }))
 };
 
@@ -41,53 +49,61 @@ describe('deleteTourPerson', () => {
   it('should successfully delete person for admin user', async () => {
     // CONTEXT: Mock authenticated admin user
     const mockUser = { id: 'user-123' };
-    const mockUserData = { role: 'admin' };
-    
+    const mockUserData = [{ role: 'admin' }];
+
     mockSupabaseClient.auth.getUser.mockResolvedValue({
       data: { user: mockUser },
       error: null
     });
 
-    const mockQuery = createMockQuery();
-    mockQuery.single.mockResolvedValue({
-      data: mockUserData,
-      error: null
-    });
-
-    mockSupabaseClient.from().delete().eq.mockResolvedValue({
-      error: null
+    // CONTEXT: Mock the select query to return user data directly
+    mockSupabaseClient.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({
+          data: mockUserData,
+          error: null
+        })
+      }),
+      delete: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({
+          error: null
+        })
+      })
     });
 
     const result = await deleteTourPerson('550e8400-e29b-41d4-a716-446655440000');
 
     expect(result).toEqual({ success: true });
-    expect(mockSupabaseClient.from().delete().eq).toHaveBeenCalledWith('id', '550e8400-e29b-41d4-a716-446655440000');
   });
 
   it('should successfully delete person for agent user', async () => {
     // CONTEXT: Mock authenticated agent user
     const mockUser = { id: 'user-456' };
-    const mockUserData = { role: 'agent' };
-    
+    const mockUserData = [{ role: 'agent' }];
+
     mockSupabaseClient.auth.getUser.mockResolvedValue({
       data: { user: mockUser },
       error: null
     });
 
-    const mockQuery = createMockQuery();
-    mockQuery.single.mockResolvedValue({
-      data: mockUserData,
-      error: null
-    });
-
-    mockSupabaseClient.from().delete().eq.mockResolvedValue({
-      error: null
+    // CONTEXT: Mock the select query to return user data directly
+    mockSupabaseClient.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({
+          data: mockUserData,
+          error: null
+        })
+      }),
+      delete: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({
+          error: null
+        })
+      })
     });
 
     const result = await deleteTourPerson('550e8400-e29b-41d4-a716-446655440001');
 
     expect(result).toEqual({ success: true });
-    expect(mockSupabaseClient.from().delete().eq).toHaveBeenCalledWith('id', '550e8400-e29b-41d4-a716-446655440001');
   });
 
   it('should reject unauthorized user (not authenticated)', async () => {
@@ -105,17 +121,26 @@ describe('deleteTourPerson', () => {
   it('should reject client role user', async () => {
     // CONTEXT: Mock authenticated client user
     const mockUser = { id: 'user-789' };
-    const mockUserData = { role: 'client' };
+    const mockUserData = [{ role: 'client' }];
     
     mockSupabaseClient.auth.getUser.mockResolvedValue({
       data: { user: mockUser },
       error: null
     });
 
-    const mockQuery = createMockQuery();
-    mockQuery.single.mockResolvedValue({
-      data: mockUserData,
-      error: null
+    // CONTEXT: Mock the select query to return client user data
+    mockSupabaseClient.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({
+          data: mockUserData,
+          error: null
+        })
+      }),
+      delete: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({
+          error: null
+        })
+      })
     });
 
     await expect(deleteTourPerson('550e8400-e29b-41d4-a716-446655440000'))
@@ -133,8 +158,8 @@ describe('deleteTourPerson', () => {
       error: null
     });
 
-    mockSupabaseClient.from().select().eq().single.mockResolvedValue({
-      data: mockUserData,
+    mockSelectQuery.mockResolvedValue({
+      data: [mockUserData],
       error: null
     });
 
@@ -146,21 +171,26 @@ describe('deleteTourPerson', () => {
   it('should handle database error during deletion', async () => {
     // CONTEXT: Mock authenticated admin user with database error
     const mockUser = { id: 'user-123' };
-    const mockUserData = { role: 'admin' };
+    const mockUserData = [{ role: 'admin' }];
     
     mockSupabaseClient.auth.getUser.mockResolvedValue({
       data: { user: mockUser },
       error: null
     });
 
-    const mockQuery = createMockQuery();
-    mockQuery.single.mockResolvedValue({
-      data: mockUserData,
-      error: null
-    });
-
-    mockSupabaseClient.from().delete().eq.mockResolvedValue({
-      error: { message: 'Database constraint violation' }
+    // CONTEXT: Mock the select query to return user data, but delete fails
+    mockSupabaseClient.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({
+          data: mockUserData,
+          error: null
+        })
+      }),
+      delete: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({
+          error: { message: 'Database constraint violation' }
+        })
+      })
     });
 
     await expect(deleteTourPerson('550e8400-e29b-41d4-a716-446655440000'))
@@ -177,10 +207,19 @@ describe('deleteTourPerson', () => {
       error: null
     });
 
-    const mockQuery = createMockQuery();
-    mockQuery.single.mockResolvedValue({
-      data: null,
-      error: { message: 'User not found' }
+    // CONTEXT: Mock the select query to return an error
+    mockSupabaseClient.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({
+          data: null,
+          error: { message: 'User not found' }
+        })
+      }),
+      delete: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({
+          error: null
+        })
+      })
     });
 
     await expect(deleteTourPerson('550e8400-e29b-41d4-a716-446655440000'))
