@@ -339,10 +339,16 @@ export default async function ProjectPage({ params }: PageProps) {
             <CardContent>
               <div className="text-center py-8">
                 <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold">Documents coming soon</h3>
-                <p className="mt-2 text-muted-foreground">
-                  Project documents will be available here once generated.
+                <h3 className="mt-4 text-lg font-semibold">View Documents</h3>
+                <p className="mt-2 text-muted-foreground mb-4">
+                  View and download tour documents.
                 </p>
+                <Button asChild>
+                  <Link href={`/tour/${project.id}/documents`}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    View Documents
+                  </Link>
+                </Button>
               </div>
             </CardContent>
           </Card>

@@ -435,10 +435,16 @@ export default async function EmployeeTourPage({ params }: PageProps) {
             <CardContent>
               <div className="text-center py-8">
                 <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold">Documents coming soon</h3>
-                <p className="mt-2 text-muted-foreground">
-                  Document management features will be available here.
+                <h3 className="mt-4 text-lg font-semibold">Document Management</h3>
+                <p className="mt-2 text-muted-foreground mb-4">
+                  Upload, manage, and organize tour documents.
                 </p>
+                <Button asChild>
+                  <Link href={`/a/tour/${tour.id}/documents`}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Manage Documents
+                  </Link>
+                </Button>
               </div>
             </CardContent>
           </Card>
