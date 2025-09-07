@@ -32,7 +32,7 @@ import { HoldCountdown } from '@/components/employee/hold-countdown';
 interface QueueItem {
   id: string;
   option_id: string;
-  selected_at: string;
+  created_at: string;
   price_snapshot: number;
   currency: string;
   selection_groups: {
@@ -324,7 +324,7 @@ export function BookingQueueContent() {
                   <div>
                     <span className="font-medium">Selected:</span>
                     <span className="ml-2">
-                      {new Date(item.selected_at).toLocaleDateString()}
+                      {new Date(item.created_at).toLocaleDateString()}
                     </span>
                   </div>
                 </div>

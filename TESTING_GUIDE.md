@@ -27,6 +27,12 @@ npm run test:ui
 
 # Run tests in watch mode
 npm run test:watch
+
+# Run build tests (catches import/compilation errors)
+npm run test:build
+
+# Run TypeScript type checking
+npm run test:types
 ```
 
 ### Test Coverage

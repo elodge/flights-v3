@@ -258,7 +258,7 @@ export async function getBookingQueue(artistId?: string) {
 
   requireEmployee(me?.role);
 
-  // DATABASE: Complex query for booking queue data
+  // DATABASE: Complex query for booking queue data using client_selections
   let query = supabase
     .from('client_selections')
     .select(`
@@ -319,7 +319,7 @@ export async function getBookingQueue(artistId?: string) {
     .in('option_id', optionIds)
     .gt('expires_at', new Date().toISOString());
 
-  // CONTEXT: Fetch ticketing progress for each selection group
+  // CONTEXT: Fetch ticketing progress for each leg
   const legIds = [...new Set(selections.map(s => s.selection_groups?.leg_id).filter(Boolean))];
   const { data: ticketings } = await supabase
     .from('ticketings')

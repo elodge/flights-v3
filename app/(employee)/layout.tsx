@@ -58,15 +58,14 @@ export default async function EmployeeLayout({
   // CONTEXT: Queue count for navigation badge
   // BUSINESS_RULE: Show total count across all artists (not filtered)
   // SECURITY: Uses admin client to bypass RLS - employees should see all selections
-  // DATABASE: Excludes expired and ticketed selections from count
+  // DATABASE: Uses client_selections table (restored group-based system)
   let queueCount = { count: 0 }
   try {
     const adminSupabase = createAdminClient()
     const { data: selections } = await adminSupabase
-      .from('selections')
+      .from('client_selections')
       .select('id')
-      .not('status', 'eq', 'expired')
-      .not('status', 'eq', 'ticketed')
+      .eq('is_active', true)
     
     queueCount = { count: selections?.length || 0 }
   } catch (error) {
