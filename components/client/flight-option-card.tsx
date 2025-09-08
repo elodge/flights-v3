@@ -18,10 +18,11 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Clock, MapPin, Star, Plane, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import { normalizeSegment } from '@/lib/segmentAdapter'
+import { getAirlineName } from '@/lib/airlines'
 import { useHoldCountdown } from '@/hooks/use-hold-countdown'
 import { selectFlightOption } from '@/lib/actions/selection-actions'
 import { useAviationStack } from '@/hooks/useAviationstack'
-import { getAirlineName } from '@/lib/airlines'
 
 interface OptionComponent {
   id: string
