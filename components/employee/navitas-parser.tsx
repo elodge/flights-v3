@@ -17,7 +17,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { Plus, Star, Plane } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Plus, Star, Plane, DollarSign } from 'lucide-react'
 import { parseNavitasText, type NavitasOption } from '@/lib/navitas'
 import { FlightSegmentRow } from '@/components/flight/FlightSegmentRow'
 import { createFlightOption } from '@/lib/actions/employee-actions'
@@ -68,10 +70,27 @@ export function NavitasParser({ legId, onOptionCreated }: NavitasParserProps) {
   const [parsedOptions, setParsedOptions] = useState<NavitasOption[]>([])
   const [parseErrors, setParseErrors] = useState<string[]>([])
   const [isCreating, setIsCreating] = useState(false)
+  // CONTEXT: Manual price input for cases where price isn't in Navitas text
+  const [manualPrice, setManualPrice] = useState('')
+  const [currency, setCurrency] = useState('USD')
 
   const handlePreview = async () => {
     const result = parseNavitasText(navitasText)
-    setParsedOptions(result.options)
+    
+    // CONTEXT: Apply manual price override if provided and no price found in text
+    // BUSINESS_RULE: Manual price takes precedence when Navitas text has no fare
+    const optionsWithPrice = result.options.map(option => {
+      if (!option.totalFare && manualPrice && parseFloat(manualPrice) > 0) {
+        return {
+          ...option,
+          totalFare: parseFloat(manualPrice),
+          currency: currency
+        }
+      }
+      return option
+    })
+    
+    setParsedOptions(optionsWithPrice)
     setParseErrors(result.errors)
     
     if (result.options.length > 0) {
@@ -153,6 +172,8 @@ export function NavitasParser({ legId, onOptionCreated }: NavitasParserProps) {
     setParsedOptions([])
     setParseErrors([])
     setIsRecommended(false)
+    setManualPrice('')
+    setCurrency('USD')
   }
 
   return (
@@ -184,16 +205,47 @@ Reference: UCWYOJ"
             />
           </div>
           
-          <div className="flex items-center space-x-2">
-            <Switch 
-              id="recommended" 
-              checked={isRecommended}
-              onCheckedChange={setIsRecommended}
-            />
-            <label htmlFor="recommended" className="text-sm font-medium flex items-center space-x-1">
-              <Star className="h-4 w-4" />
-              <span>Mark as Recommended</span>
-            </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Price per Person (Optional)</label>
+              <div className="flex gap-2">
+                <select 
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="px-3 py-2 border border-input rounded-md bg-background text-sm min-w-[80px]"
+                >
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="GBP">GBP</option>
+                  <option value="CAD">CAD</option>
+                  <option value="AUD">AUD</option>
+                </select>
+                <input
+                  type="number"
+                  value={manualPrice}
+                  onChange={(e) => setManualPrice(e.target.value)}
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  className="flex-1 px-3 py-2 border border-input rounded-md bg-background text-sm"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Override price if not found in Navitas text
+              </p>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="recommended" 
+                checked={isRecommended}
+                onCheckedChange={setIsRecommended}
+              />
+              <label htmlFor="recommended" className="text-sm font-medium flex items-center space-x-1">
+                <Star className="h-4 w-4" />
+                <span>Mark as Recommended</span>
+              </label>
+            </div>
           </div>
           
           <div className="flex space-x-2">
@@ -253,10 +305,13 @@ Reference: UCWYOJ"
                   {option.totalFare && (
                     <div className="text-right">
                       <div className="font-semibold text-lg">
-                        ${option.totalFare.toFixed(2)}
+                        {option.currency === 'USD' ? '$' : option.currency + ' '}{option.totalFare.toFixed(2)}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         {option.currency || 'USD'}
+                        {manualPrice && parseFloat(manualPrice) > 0 && !navitasText.toLowerCase().includes('fare') && (
+                          <span className="ml-1 text-blue-600">(manual)</span>
+                        )}
                       </div>
                     </div>
                   )}
