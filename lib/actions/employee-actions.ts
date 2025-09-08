@@ -192,6 +192,119 @@ export async function removePassengerFromLeg(formData: FormData) {
   }
 }
 
+export async function updateFlightOption(formData: FormData) {
+  try {
+    const user = await getServerUser()
+    if (!user || user.role === 'client') {
+      return { error: 'Unauthorized' }
+    }
+
+    const rawData = {
+      option_id: formData.get('option_id') as string,
+      name: formData.get('name') as string,
+      description: formData.get('description') as string || undefined,
+      total_cost: formData.get('total_cost') ? parseInt(formData.get('total_cost') as string) : undefined,
+      currency: formData.get('currency') as string || undefined,
+      is_recommended: formData.get('is_recommended') === 'true',
+      components: JSON.parse(formData.get('components') as string || '[]'),
+    }
+
+    // CONTEXT: Create validation schema for update (similar to create but with option_id)
+    const updateOptionSchema = z.object({
+      option_id: customUuidSchema,
+      name: z.string().min(1),
+      description: z.string().optional(),
+      total_cost: z.number().optional(),
+      currency: z.string().optional(),
+      is_recommended: z.boolean().optional(),
+      components: z.array(z.object({
+        component_order: z.number(),
+        description: z.string(),
+      })).optional(),
+    })
+
+    const validated = updateOptionSchema.parse(rawData)
+
+    const supabase = await createServerClient()
+
+    // Update the flight option
+    const { data: option, error: optionError } = await supabase
+      .from('options')
+      .update({
+        name: validated.name,
+        description: validated.description,
+        total_cost: validated.total_cost,
+        currency: validated.currency,
+        is_recommended: validated.is_recommended || false,
+      })
+      .eq('id', validated.option_id)
+      .select()
+      .single()
+
+    if (optionError) throw optionError
+
+    // Delete existing components and recreate them
+    if (validated.components && validated.components.length > 0) {
+      // First delete existing components
+      const { error: deleteError } = await supabase
+        .from('option_components')
+        .delete()
+        .eq('option_id', validated.option_id)
+
+      if (deleteError) throw deleteError
+
+      // Create new components
+      const components = validated.components.map(comp => {
+        // CONTEXT: Parse navitas_text to extract structured fields (same logic as create)
+        const navitasMatch = comp.description.match(/^([A-Z]{2})\s*(\d+)\s+([A-Z]{3})-([A-Z]{3})\s+\d{2}[A-Z]{3}\s+([\d:]+[AP]?)-([\d:]+[AP]?)/i);
+
+        const formatTimeForDB = (timeStr: string) => {
+          return null; // Store as null until we have proper date context
+        };
+
+        if (navitasMatch) {
+          return {
+            option_id: validated.option_id,
+            navitas_text: comp.description,
+            component_order: comp.component_order,
+            airline: navitasMatch[1],
+            airline_iata: navitasMatch[1],
+            flight_number: navitasMatch[2],
+            dep_iata: navitasMatch[3],
+            arr_iata: navitasMatch[4],
+            dep_time_local: formatTimeForDB(navitasMatch[5]),
+            arr_time_local: formatTimeForDB(navitasMatch[6]),
+            departure_time: formatTimeForDB(navitasMatch[5]),
+            arrival_time: formatTimeForDB(navitasMatch[6]),
+            day_offset: 0,
+            stops: 0,
+            duration_minutes: null,
+            enriched_terminal_gate: null,
+          };
+        } else {
+          // FALLBACK: If parsing fails, store only navitas_text
+          return {
+            option_id: validated.option_id,
+            navitas_text: comp.description,
+            component_order: comp.component_order,
+          };
+        }
+      })
+
+      const { error: componentsError } = await supabase
+        .from('option_components')
+        .insert(components)
+
+      if (componentsError) throw componentsError
+    }
+
+    return { success: true, option }
+  } catch (error) {
+    console.error('Error updating flight option:', error)
+    return { error: error instanceof Error ? error.message : 'Failed to update option' }
+  }
+}
+
 export async function createFlightOption(formData: FormData) {
   try {
     const user = await getServerUser()

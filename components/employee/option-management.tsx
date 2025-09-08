@@ -33,6 +33,7 @@ import { toast } from 'sonner'
 import { FlightSegmentRow } from '@/components/flight/FlightSegmentRow'
 import { getAirlineName } from '@/lib/airlines'
 import { normalizeSegment } from '@/lib/segmentAdapter'
+import { EditOptionDialog } from './edit-option-dialog'
 
 /**
  * Flight option data structure with all related information
@@ -100,6 +101,7 @@ export function OptionManagement({ options, assignedPersonnel }: OptionManagemen
   const [isCreatingHold, setIsCreatingHold] = useState<string | null>(null)
   const [selectedPersonnel, setSelectedPersonnel] = useState<string[]>([])
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const [editingOption, setEditingOption] = useState<FlightOption | null>(null)
 
   // Calculate hold countdown
   const getHoldCountdown = (expiresAt: string) => {
@@ -354,7 +356,11 @@ export function OptionManagement({ options, assignedPersonnel }: OptionManagemen
                       </DialogContent>
                     </Dialog>
                     
-                    <Button size="sm" variant="outline">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setEditingOption(option)}
+                    >
                       <Settings className="mr-2 h-4 w-4" />
                       Edit Option
                     </Button>
@@ -376,6 +382,19 @@ export function OptionManagement({ options, assignedPersonnel }: OptionManagemen
           ))}
         </div>
       </div>
+      
+      {/* Edit Option Dialog */}
+      {editingOption && (
+        <EditOptionDialog
+          isOpen={!!editingOption}
+          onClose={() => setEditingOption(null)}
+          option={editingOption}
+          onSuccess={() => {
+            setEditingOption(null);
+            // The dialog will refresh the page
+          }}
+        />
+      )}
     </div>
   )
 }
