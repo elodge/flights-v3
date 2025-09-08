@@ -21,9 +21,7 @@ import { toast } from 'sonner'
 import { useHoldCountdown } from '@/hooks/use-hold-countdown'
 import { selectFlightOption } from '@/lib/actions/selection-actions'
 import { useAviationStack } from '@/hooks/useAviationstack'
-import { FlightSegmentRow } from '@/components/flight/FlightSegmentRow'
 import { getAirlineName } from '@/lib/airlines'
-import { normalizeSegment } from '@/lib/segmentAdapter'
 
 interface OptionComponent {
   id: string
@@ -453,7 +451,31 @@ export function FlightOptionCard({ option, legId, selectionType, passengerIds }:
                     {option.option_components
                       .sort((a, b) => a.component_order - b.component_order)
                       .map((component, i) => (
-                        <FlightSegmentRow key={component.id} segment={component} />
+                        <div key={component.id} className="border rounded-lg p-3 bg-muted/50">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="font-medium text-sm">
+                                {getAirlineName(component.airline_iata || component.airline_code)} {component.flight_number}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {component.dep_iata} → {component.arr_iata}
+                              </div>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {component.dep_time_local && component.arr_time_local && (
+                                <>
+                                  {new Date(component.dep_time_local).toLocaleTimeString('en-US', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                  })} - {new Date(component.arr_time_local).toLocaleTimeString('en-US', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                  })}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       ))}
                   </div>
                 </div>
