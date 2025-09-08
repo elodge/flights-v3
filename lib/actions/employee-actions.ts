@@ -255,8 +255,8 @@ export async function createFlightOption(formData: FormData) {
                 flight_number: navitasMatch[2],
                 dep_iata: navitasMatch[3],
                 arr_iata: navitasMatch[4],
-                dep_time_local: navitasMatch[5],
-                arr_time_local: navitasMatch[6],
+                dep_time_local: formatTimeForDB(navitasMatch[5]), // Store as null for timestamp fields
+                arr_time_local: formatTimeForDB(navitasMatch[6]), // Store as null for timestamp fields  
                 departure_time: formatTimeForDB(navitasMatch[5]), // Store as null for now
                 arrival_time: formatTimeForDB(navitasMatch[6]),   // Store as null for now
                 day_offset: 0,
