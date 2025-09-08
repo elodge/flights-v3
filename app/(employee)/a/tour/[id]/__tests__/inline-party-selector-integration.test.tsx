@@ -229,6 +229,9 @@ describe('Tour Page - Inline Party Selector Integration', () => {
       
       render(await TourPage({ params: { id: 'tour-123' } }));
       
+      // CONTEXT: Click Personnel tab to see personnel data
+      await user.click(screen.getByRole('tab', { name: /personnel/i }));
+      
       const johnRow = screen.getByText('John Doe').closest('tr');
       const partySelector = johnRow?.querySelector('[role="combobox"]');
       
@@ -254,6 +257,9 @@ describe('Tour Page - Inline Party Selector Integration', () => {
       
       render(await TourPage({ params: { id: 'tour-123' } }));
       
+      // CONTEXT: Click Personnel tab to see personnel data
+      await user.click(screen.getByRole('tab', { name: /personnel/i }));
+      
       const johnRow = screen.getByText('John Doe').closest('tr');
       const partySelector = johnRow?.querySelector('[role="combobox"]');
       
@@ -269,7 +275,11 @@ describe('Tour Page - Inline Party Selector Integration', () => {
 
   describe('Accessibility', () => {
     it('should have proper aria-labels for party selectors', async () => {
+      const user = userEvent.setup();
       render(await TourPage({ params: { id: 'tour-123' } }));
+      
+      // CONTEXT: Click Personnel tab to see personnel data
+      await user.click(screen.getByRole('tab', { name: /personnel/i }));
       
       // CONTEXT: Should have aria-label for John Doe's selector
       expect(screen.getByLabelText('Change party for John Doe')).toBeInTheDocument();
@@ -281,6 +291,9 @@ describe('Tour Page - Inline Party Selector Integration', () => {
     it('should show tooltips on hover', async () => {
       const user = userEvent.setup();
       render(await TourPage({ params: { id: 'tour-123' } }));
+      
+      // CONTEXT: Click Personnel tab to see personnel data
+      await user.click(screen.getByRole('tab', { name: /personnel/i }));
       
       const johnRow = screen.getByText('John Doe').closest('tr');
       const partySelector = johnRow?.querySelector('[role="combobox"]');
@@ -302,6 +315,9 @@ describe('Tour Page - Inline Party Selector Integration', () => {
       
       render(await TourPage({ params: { id: 'tour-123' } }));
       
+      // CONTEXT: Click Personnel tab to see personnel data
+      await user.click(screen.getByRole('tab', { name: /personnel/i }));
+      
       const johnRow = screen.getByText('John Doe').closest('tr');
       const partySelector = johnRow?.querySelector('[role="combobox"]');
       
@@ -320,6 +336,9 @@ describe('Tour Page - Inline Party Selector Integration', () => {
       );
       
       render(await TourPage({ params: { id: 'tour-123' } }));
+      
+      // CONTEXT: Click Personnel tab to see personnel data
+      await user.click(screen.getByRole('tab', { name: /personnel/i }));
       
       const johnRow = screen.getByText('John Doe').closest('tr');
       const partySelector = johnRow?.querySelector('[role="combobox"]');
