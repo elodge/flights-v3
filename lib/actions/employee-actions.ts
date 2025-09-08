@@ -237,26 +237,34 @@ export async function createFlightOption(formData: FormData) {
         // BUSINESS_RULE: Populate both navitas_text and individual fields for consistency
         const navitasMatch = comp.description.match(/^([A-Z]{2})\s*(\d+)\s+([A-Z]{3})-([A-Z]{3})\s+\d{2}[A-Z]{3}\s+([\d:]+[AP]?)-([\d:]+[AP]?)/i);
         
-        if (navitasMatch) {
-          return {
-            option_id: option.id,
-            navitas_text: comp.description,
-            component_order: comp.component_order,
-            airline: navitasMatch[1],
-            airline_iata: navitasMatch[1],
-            flight_number: navitasMatch[2],
-            dep_iata: navitasMatch[3],
-            arr_iata: navitasMatch[4],
-            dep_time_local: navitasMatch[5],
-            arr_time_local: navitasMatch[6],
-            departure_time: navitasMatch[5],
-            arrival_time: navitasMatch[6],
-            day_offset: 0,
-            stops: 0,
-            duration_minutes: null,
-            enriched_terminal_gate: null,
-          };
-        } else {
+            if (navitasMatch) {
+              // CONTEXT: Convert time-only format to proper timestamp for database storage
+              // BUSINESS_RULE: Times like "4:06P" need to be converted to full timestamps
+              const formatTimeForDB = (timeStr: string) => {
+                // For now, we'll store as time-only since we don't have a specific date
+                // Database will need either full timestamp or TIME type, not partial strings
+                return null; // Store as null until we have proper date context
+              };
+
+              return {
+                option_id: option.id,
+                navitas_text: comp.description,
+                component_order: comp.component_order,
+                airline: navitasMatch[1],
+                airline_iata: navitasMatch[1],
+                flight_number: navitasMatch[2],
+                dep_iata: navitasMatch[3],
+                arr_iata: navitasMatch[4],
+                dep_time_local: navitasMatch[5],
+                arr_time_local: navitasMatch[6],
+                departure_time: formatTimeForDB(navitasMatch[5]), // Store as null for now
+                arrival_time: formatTimeForDB(navitasMatch[6]),   // Store as null for now
+                day_offset: 0,
+                stops: 0,
+                duration_minutes: null,
+                enriched_terminal_gate: null,
+              };
+            } else {
           // FALLBACK: If parsing fails, store only navitas_text (legacy behavior)
           return {
             option_id: option.id,
