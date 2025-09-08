@@ -179,26 +179,26 @@ export function TourDocumentsContent({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-6xl mx-auto px-4 md:px-6 space-y-6">
       {/* CONTEXT: Upload section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Upload Documents</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="card-muted">
+        <div className="p-4 border-b border-border/50">
+          <h3 className="text-lg font-medium">Upload Documents</h3>
+        </div>
+        <div className="p-4">
           <TourDocUploader 
             projectId={projectId}
             onUploadSuccess={handleUploadSuccess}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* CONTEXT: Documents list */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Documents ({documents.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="card-muted">
+        <div className="p-4 border-b border-border/50">
+          <h3 className="text-lg font-medium">Documents ({documents.length})</h3>
+        </div>
+        <div className="p-4">
           {documents.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -271,8 +271,8 @@ export function TourDocumentsContent({
               </TableBody>
             </Table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

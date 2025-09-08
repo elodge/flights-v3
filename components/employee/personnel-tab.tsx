@@ -45,14 +45,14 @@ export function PersonnelTab({ projectId, personnel }: PersonnelTabProps) {
 
   return (
     <>
-      <Card>
-        <CardHeader>
+      <div className="card-muted">
+        <div className="p-4 border-b border-border/50">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Tour Personnel</CardTitle>
-              <CardDescription>
+              <h3 className="text-lg font-medium">Tour Personnel</h3>
+              <p className="text-sm text-muted-foreground">
                 Manage {personnel.length} person{personnel.length !== 1 ? 's' : ''} in this tour
-              </CardDescription>
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -67,8 +67,8 @@ export function PersonnelTab({ projectId, personnel }: PersonnelTabProps) {
               <AddPersonDialog projectId={projectId} />
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
+        </div>
+        <div className="p-4">
           {personnel.length === 0 ? (
             <div className="text-center py-8">
               <Users className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -91,21 +91,21 @@ export function PersonnelTab({ projectId, personnel }: PersonnelTabProps) {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Party</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Travel Info</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
+                <TableRow className="border-border/50">
+                  <TableHead className="text-sm font-medium">Name</TableHead>
+                  <TableHead className="text-sm font-medium">Party</TableHead>
+                  <TableHead className="text-sm font-medium">Contact</TableHead>
+                  <TableHead className="text-sm font-medium">Status</TableHead>
+                  <TableHead className="text-sm font-medium">Travel Info</TableHead>
+                  <TableHead className="w-[100px] text-sm font-medium">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {personnel.map((person) => (
-                    <TableRow 
-                      key={person.id}
-                      className={person.status === 'inactive' ? 'opacity-60' : ''}
-                    >
+                  <TableRow 
+                    key={person.id}
+                    className={`border-border/50 hover:bg-muted/50 ${person.status === 'inactive' ? 'opacity-60' : ''}`}
+                  >
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <span className="font-medium">{person.full_name}</span>
@@ -114,14 +114,14 @@ export function PersonnelTab({ projectId, personnel }: PersonnelTabProps) {
                         )}
                       </div>
                     </TableCell>
-                                            <TableCell>
-                          <InlinePartySelector
-                            personId={person.id}
-                            currentParty={person.party}
-                            fullName={person.full_name}
-                            isInactive={person.status === 'inactive'}
-                          />
-                        </TableCell>
+                    <TableCell>
+                      <InlinePartySelector
+                        personId={person.id}
+                        currentParty={person.party}
+                        fullName={person.full_name}
+                        isInactive={person.status === 'inactive'}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="text-sm">
                         {person.email && (
@@ -171,8 +171,8 @@ export function PersonnelTab({ projectId, personnel }: PersonnelTabProps) {
               </TableBody>
             </Table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* CONTEXT: Import dialog */}
       <PersonnelImportDialog

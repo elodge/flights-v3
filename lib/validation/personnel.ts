@@ -32,7 +32,12 @@ export const PartyEnum = z.enum(['A Party','B Party','C Party','D Party']);
 export const addPersonSchema = z.object({
   full_name: z.string().trim().min(3, "Full name must be at least 3 characters").max(120, "Full name must be less than 120 characters"),
   party: PartyEnum,
-  email: z.string().email("Invalid email format").optional().or(z.literal('').transform(() => undefined)),
+  email: z.string().optional().refine((val) => {
+    if (!val || val === '') return true;
+    return z.string().email().safeParse(val).success;
+  }, {
+    message: "Invalid email format"
+  }),
   phone: z.string().trim().max(40, "Phone must be less than 40 characters").optional().or(z.literal('').transform(() => undefined)),
   seat_pref: z.string().trim().max(40, "Seat preference must be less than 40 characters").optional().or(z.literal('').transform(() => undefined)),
   ff_numbers: z.string().trim().max(200, "Frequent flyer numbers must be less than 200 characters").optional().or(z.literal('').transform(() => undefined)),

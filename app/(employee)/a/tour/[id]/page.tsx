@@ -297,19 +297,19 @@ export default async function EmployeeTourPage({ params }: PageProps) {
         </TabsList>
 
         <TabsContent value="legs" className="space-y-4">
-          <Card>
-            <CardHeader>
+          <div className="card-muted">
+            <div className="p-4 border-b border-border/50">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Flight Legs</CardTitle>
-                  <CardDescription>
+                  <h3 className="text-lg font-medium">Flight Legs</h3>
+                  <p className="text-sm text-muted-foreground">
                     Manage {sortedLegs.length} flight{sortedLegs.length !== 1 ? 's' : ''} for this {tour.type}
-                  </CardDescription>
+                  </p>
                 </div>
                 <AddLegDialog projectId={tour.id} />
               </div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div className="p-4">
               {sortedLegs.length === 0 ? (
                 <div className="text-center py-8">
                   <Plane className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -399,8 +399,8 @@ export default async function EmployeeTourPage({ params }: PageProps) {
                   </TableBody>
                 </Table>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="personnel" className="space-y-4">
@@ -425,29 +425,27 @@ export default async function EmployeeTourPage({ params }: PageProps) {
         </TabsContent> */}
 
         <TabsContent value="documents" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Documents</CardTitle>
-              <CardDescription>
+          <div className="card-muted">
+            <div className="p-4 border-b border-border/50">
+              <h3 className="text-lg font-medium">Documents</h3>
+              <p className="text-sm text-muted-foreground">
                 Itineraries, invoices, and other tour documents
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+              </p>
+            </div>
+            <div className="p-4">
               <div className="text-center py-8">
-                <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold">Document Management</h3>
-                <p className="mt-2 text-muted-foreground mb-4">
+                <h3 className="text-lg font-medium">Document Management</h3>
+                <p className="mt-2 text-sm text-muted-foreground mb-4">
                   Upload, manage, and organize tour documents.
                 </p>
                 <Button asChild>
                   <Link href={`/a/tour/${tour.id}/documents`}>
-                    <FileText className="mr-2 h-4 w-4" />
                     Manage Documents
                   </Link>
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

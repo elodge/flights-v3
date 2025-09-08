@@ -142,10 +142,10 @@ export default async function EmployeePortalPage({
   const totalExpiring = tours.reduce((sum, t) => sum + t._counts.expiring_holds, 0)
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Tour Management Dashboard</h1>
-        <p className="text-muted-foreground">
+    <div className="max-w-6xl mx-auto px-4 md:px-6 space-y-6">
+      <div className="space-y-2 mb-6">
+        <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100">Tour Management Dashboard</h1>
+        <p className="text-base text-slate-600 dark:text-slate-400">
           Manage flights, tours, events, and crew coordination across all artists
         </p>
         {selectedArtistName && (
@@ -162,139 +162,129 @@ export default async function EmployeePortalPage({
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Tours</CardTitle>
-            <Plane className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalTours}</div>
-            <p className="text-xs text-muted-foreground">Tours and events</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="card-muted p-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300">Active Tours</h3>
+          </div>
+          <div className="text-4xl font-bold tabular-nums text-slate-900 dark:text-slate-100">{totalTours}</div>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Tours and events</p>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Legs</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalLegs}</div>
-            <p className="text-xs text-muted-foreground">Flight segments</p>
-          </CardContent>
-        </Card>
+        <div className="card-muted p-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300">Total Legs</h3>
+          </div>
+          <div className="text-4xl font-bold tabular-nums text-slate-900 dark:text-slate-100">{totalLegs}</div>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Flight segments</p>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Unconfirmed</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{totalUnconfirmed}</div>
-            <p className="text-xs text-muted-foreground">Pending selections</p>
-          </CardContent>
-        </Card>
+        <div className="card-muted p-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300">Unconfirmed</h3>
+          </div>
+          <div className="text-4xl font-bold tabular-nums text-amber-600">
+            {totalUnconfirmed > 0 ? totalUnconfirmed : '—'}
+          </div>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Pending selections</p>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expiring Holds</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{totalExpiring}</div>
-            <p className="text-xs text-muted-foreground">Next 24 hours</p>
-          </CardContent>
-        </Card>
+        <div className="card-muted p-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-300">Expiring Holds</h3>
+          </div>
+          <div className="text-4xl font-bold tabular-nums text-red-600">
+            {totalExpiring > 0 ? totalExpiring : '—'}
+          </div>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Next 24 hours</p>
+        </div>
       </div>
 
       {/* Tours by Artist */}
-      <div className="space-y-8">
+      <div className="space-y-6">
         {Object.keys(toursByArtist).length === 0 ? (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center py-12">
-                <Plane className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold">No active tours</h3>
-                <p className="mt-2 text-muted-foreground">
-                  Tours and events will appear here once they are created.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="card-muted p-6">
+            <div className="text-center py-12">
+              <h3 className="text-lg font-medium">No active tours</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Tours and events will appear here once they are created.
+              </p>
+            </div>
+          </div>
         ) : (
           Object.entries(toursByArtist).map(([artistName, artistTours]) => (
             <div key={artistName} className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <h2 className="text-2xl font-bold tracking-tight">{artistName}</h2>
-                <Badge variant="secondary">{artistTours.length} tours</Badge>
+              <div className="flex items-center space-x-2 mb-2">
+                <h2 className="text-lg font-medium">{artistName}</h2>
+                {artistTours.length > 1 && (
+                  <Badge variant="secondary">{artistTours.length} tours</Badge>
+                )}
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {artistTours.map((tour) => (
-                  <Card key={tour.id} className="hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1">
-                          <CardTitle className="text-lg">{tour.name}</CardTitle>
-                          <div className="flex items-center space-x-2">
-                            <Badge variant={tour.type === 'tour' ? 'default' : 'secondary'}>
-                              {tour.type === 'tour' ? 'Tour' : 'Event'}
-                            </Badge>
-                            {tour._counts.unconfirmed_selections > 0 && (
-                              <Badge variant="destructive">
-                                {tour._counts.unconfirmed_selections} pending
-                              </Badge>
-                            )}
-                            {tour._counts.expiring_holds > 0 && (
-                              <Badge variant="outline" className="text-red-600 border-red-600">
-                                {tour._counts.expiring_holds} expiring
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <CardDescription className="line-clamp-2">
-                        {tour.description || `${tour.type === 'tour' ? 'Multi-city tour' : 'Special event'} with ${tour._counts.legs} leg${tour._counts.legs !== 1 ? 's' : ''} scheduled.`}
-                      </CardDescription>
-                    </CardHeader>
-                    
-                    <CardContent>
+                  <Link key={tour.id} href={`/a/tour/${tour.id}`} className="group">
+                    <div className="card-muted p-4 hover:bg-muted/50 transition-colors cursor-pointer">
                       <div className="space-y-3">
-                        {/* Tour dates */}
-                        {tour.start_date && (
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Calendar className="mr-2 h-4 w-4" />
-                            {new Date(tour.start_date).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric',
-                              year: 'numeric'
-                            })}
-                            {tour.end_date && tour.end_date !== tour.start_date && (
-                              <> - {new Date(tour.end_date).toLocaleDateString('en-US', { 
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1 min-w-0 flex-1">
+                            <h3 className="font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                              {tour.name}
+                            </h3>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge variant={tour.type === 'tour' ? 'default' : 'secondary'} className="text-xs">
+                                {tour.type === 'tour' ? 'Tour' : 'Event'}
+                              </Badge>
+                              {tour._counts.unconfirmed_selections > 0 && (
+                                <Badge variant="destructive" className="text-xs">
+                                  {tour._counts.unconfirmed_selections} pending
+                                </Badge>
+                              )}
+                              {tour._counts.expiring_holds > 0 && (
+                                <Badge variant="outline" className="text-xs text-red-600 border-red-600">
+                                  {tour._counts.expiring_holds} expiring
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <Button variant="outline" size="sm" className="ml-2 shrink-0">
+                            Manage
+                          </Button>
+                        </div>
+                        
+                        {tour.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {tour.description}
+                          </p>
+                        )}
+                        
+                        <div className="space-y-1">
+                          {/* Tour dates */}
+                          {tour.start_date && (
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(tour.start_date).toLocaleDateString('en-US', { 
                                 month: 'short', 
                                 day: 'numeric',
                                 year: 'numeric'
-                              })}</>
-                            )}
+                              })}
+                              {tour.end_date && tour.end_date !== tour.start_date && (
+                                <> - {new Date(tour.end_date).toLocaleDateString('en-US', { 
+                                  month: 'short', 
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}</>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Stats */}
+                          <div className="text-sm text-muted-foreground">
+                            {tour._counts.legs} leg{tour._counts.legs !== 1 ? 's' : ''}
                           </div>
-                        )}
-                        
-                        {/* Stats */}
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Plane className="mr-2 h-4 w-4" />
-                          {tour._counts.legs} leg{tour._counts.legs !== 1 ? 's' : ''}
                         </div>
-                        
-                        <Button asChild className="w-full mt-4">
-                          <Link href={`/a/tour/${tour.id}`}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            Manage Tour
-                          </Link>
-                        </Button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </Link>
                 ))}
               </div>
             </div>

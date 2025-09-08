@@ -52,9 +52,17 @@ export function Header() {
   const router = useRouter()
   
   // CONTEXT: Debug authentication state changes
-  // useEffect(() => {
-  //   console.log('Header auth state:', { user: user?.email, profile: profile?.full_name, role, loading })
-  // }, [user, profile, role, loading])
+  useEffect(() => {
+    console.log('Header auth state:', { user: user?.email, profile: profile?.full_name, role, loading })
+  }, [user, profile, role, loading])
+  
+  // CONTEXT: Force re-render when authentication state changes to ensure UI updates
+  const [authKey, setAuthKey] = useState(0)
+  useEffect(() => {
+    if (user && profile) {
+      setAuthKey(prev => prev + 1)
+    }
+  }, [user, profile])
   
   const [artists, setArtists] = useState<Array<{id: string, name: string}>>([])
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null)
@@ -67,7 +75,7 @@ export function Header() {
 
   // Fetch initial unread count
   const fetchInitialUnreadCount = useCallback(async () => {
-    if (!user || !['agent', 'admin'].includes(role || '')) return
+    if (!user || !profile || !['agent', 'admin'].includes(role || '')) return
     
     try {
       const url = new URL('/api/chat/global-unread', window.location.origin)
@@ -84,16 +92,16 @@ export function Header() {
     } catch (error) {
       console.error('Error fetching initial unread count:', error)
     }
-  }, [user, role, selectedArtistId])
+  }, [user, profile, role, selectedArtistId])
 
   // Load artists when user is available and is employee
   useEffect(() => {
-    if (user && ['agent', 'admin'].includes(role || '')) {
+    if (user && profile && ['agent', 'admin'].includes(role || '')) {
       fetchArtists()
       loadSelectedArtist()
       fetchInitialUnreadCount()
     }
-  }, [user, role, fetchInitialUnreadCount])
+  }, [user, profile, role, fetchInitialUnreadCount])
 
   // Load current selection from URL/cookie
   useEffect(() => {
@@ -116,17 +124,22 @@ export function Header() {
 
   // Update unread count when artist selection changes
   useEffect(() => {
-    if (user && ['agent', 'admin'].includes(role || '')) {
+    if (user && profile && ['agent', 'admin'].includes(role || '')) {
       fetchInitialUnreadCount()
     }
-  }, [selectedArtistId, user, role, fetchInitialUnreadCount])
+  }, [selectedArtistId, user, profile, role, fetchInitialUnreadCount])
 
   const fetchArtists = async () => {
     try {
+      console.log('Fetching artists...')
       const response = await fetch('/api/artists')
+      console.log('Artists API response:', response.status, response.ok)
       if (response.ok) {
         const artistData = await response.json()
+        console.log('Artists data:', artistData)
         setArtists(artistData)
+      } else {
+        console.error('Failed to fetch artists:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Failed to fetch artists:', error)
@@ -217,7 +230,10 @@ export function Header() {
         
         <div className="flex flex-1 items-center space-x-3">
           {/* Artist Selector - Only show when authenticated as employee */}
-          {user && ['agent', 'admin'].includes(role || '') && (
+          {user && profile && ['agent', 'admin'].includes(role || '') && (() => {
+            console.log('Rendering artist selector:', { user: user?.email, role, artists: artists.length })
+            return true
+          })() && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-9 w-[200px] justify-between border border-border/50 hover:border-border hover:bg-accent/50">
@@ -243,7 +259,7 @@ export function Header() {
                   </DropdownMenuItem>
                 ))}
                 {artists.length === 0 && (
-                  <DropdownMenuItem disabled>No artists available</DropdownMenuItem>
+                  <DropdownMenuItem disabled>Loading artists...</DropdownMenuItem>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -252,12 +268,12 @@ export function Header() {
 
         <div className="flex items-center space-x-3">
           {/* Notifications Bell - Only show for employees */}
-          {user && ['agent', 'admin'].includes(role || '') && (
+          {user && profile && ['agent', 'admin'].includes(role || '') && (
             <NotificationBell userId={user.id} artistId={selectedArtistId || undefined} />
           )}
 
           {/* Chat Unread Count - Only show for employees */}
-          {user && ['agent', 'admin'].includes(role || '') && (
+          {user && profile && ['agent', 'admin'].includes(role || '') && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -284,8 +300,8 @@ export function Header() {
           {/* Account Menu */}
           {loading ? (
             <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
-          ) : user ? (
-            <DropdownMenu key={`user-menu-${user.id}`}>
+          ) : user && profile ? (
+            <DropdownMenu key={`user-menu-${user.id}-${authKey}`}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-9 w-9 rounded-full p-0 hover:bg-accent/50">
                   <Avatar className="h-8 w-8">
@@ -336,7 +352,7 @@ export function Header() {
       </div>
       
       {/* Real-time unread count updates - Only for employees */}
-      {user && ['agent', 'admin'].includes(role || '') && (
+      {user && profile && ['agent', 'admin'].includes(role || '') && (
         <GlobalUnreadClient
           initialCount={unreadCount}
           artistId={selectedArtistId}

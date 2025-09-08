@@ -38,10 +38,20 @@ vi.mock('@/lib/supabase-server', () => ({
     from: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: null, // Will be dynamically set
+              error: null,
+            }),
+          }),
           single: vi.fn().mockResolvedValue({
             data: null, // Will be dynamically set
             error: null,
           }),
+        }),
+        single: vi.fn().mockResolvedValue({
+          data: null, // Will be dynamically set
+          error: null,
         }),
       }),
     }),
@@ -103,11 +113,18 @@ const mockTourData = {
 };
 
 describe('Tour Page - Inline Party Selector Integration', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     
-    // CONTEXT: The mock is already set up to return data from the mock
-    // The TourPage component will get the mockTourData through the mock
+    // CONTEXT: Set up the mock to return the tour data
+    const { createServerClient } = await import('@/lib/supabase-server');
+    const mockClient = vi.mocked(createServerClient)();
+    
+    // Mock the tour query to return our test data
+    mockClient.from().select().eq().eq().single.mockResolvedValue({
+      data: mockTourData,
+      error: null,
+    });
   });
 
   describe('Personnel Table Rendering', () => {

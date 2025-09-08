@@ -111,17 +111,14 @@ const handleGenerateSelectionGroups = async () => {
 }
 
   return (
-    <Card>
-      <CardHeader>
+    <div className="card-muted">
+      <div className="p-4 border-b border-border/50">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center space-x-2">
-              <Users className="h-5 w-5" />
-              <span>Passenger Assignment</span>
-            </CardTitle>
-            <CardDescription>
+            <h3 className="text-lg font-medium">Passenger Assignment</h3>
+            <p className="text-sm text-muted-foreground">
               Assign personnel to this leg ({assignedPersonnel.length} assigned)
-            </CardDescription>
+            </p>
           </div>
           <div className="flex items-center space-x-2">
             {assignedPersonnel.length > 0 && (
@@ -145,8 +142,8 @@ const handleGenerateSelectionGroups = async () => {
             </Button>
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+      </div>
+      <div className="p-4 space-y-4">
         {/* Currently Assigned */}
         {assignedPersonnel.length > 0 && (
           <div className="space-y-2">
@@ -213,7 +210,7 @@ const handleGenerateSelectionGroups = async () => {
             <p className="text-sm">No personnel in this project</p>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

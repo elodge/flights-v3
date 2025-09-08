@@ -161,10 +161,10 @@ export function useUser(): UseUserReturn {
 
     getInitialSession()
 
-    // FALLBACK: Set loading to false after 5 seconds to prevent infinite loading
+    // FALLBACK: Set loading to false after 2 seconds to prevent infinite loading
     const timeout = setTimeout(() => {
       setLoading(false)
-    }, 5000)
+    }, 2000)
 
     return () => clearTimeout(timeout)
 

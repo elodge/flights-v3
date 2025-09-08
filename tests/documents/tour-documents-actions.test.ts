@@ -16,21 +16,28 @@ import {
 
 // CONTEXT: Mock Supabase client for testing
 const mockSelectQuery = {
-  eq: vi.fn(() => ({
-    order: vi.fn(() => ({
-      data: [],
-      error: null
-    })),
-    single: vi.fn(() => ({
-      data: { role: 'agent' },
-      error: null
-    }))
-  })),
-  single: vi.fn(() => ({
+  eq: vi.fn(),
+  single: vi.fn().mockResolvedValue({
     data: { role: 'agent' },
     error: null
-  }))
+  }),
+  order: vi.fn().mockResolvedValue({
+    data: [],
+    error: null
+  })
 };
+
+// CONTEXT: Set up default behavior for eq method
+mockSelectQuery.eq.mockReturnValue({
+  single: vi.fn().mockResolvedValue({
+    data: { role: 'agent' },
+    error: null
+  }),
+  order: vi.fn().mockResolvedValue({
+    data: [],
+    error: null
+  })
+});
 
 const mockInsertQuery = {
   data: { id: 'test-doc-id' },
@@ -86,14 +93,26 @@ vi.mock('@/lib/supabase-server', () => ({
 
 // CONTEXT: Mock File object for upload tests
 class MockFile {
-  name: string;
-  size: number;
-  type: string;
+  private _name: string;
+  private _size: number;
+  private _type: string;
   
   constructor(name: string, size: number, type: string) {
-    this.name = name;
-    this.size = size;
-    this.type = type;
+    this._name = name;
+    this._size = size;
+    this._type = type;
+  }
+  
+  get name() {
+    return this._name;
+  }
+  
+  get size() {
+    return this._size;
+  }
+  
+  get type() {
+    return this._type;
   }
   
   arrayBuffer() {

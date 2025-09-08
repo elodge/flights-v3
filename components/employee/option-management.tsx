@@ -178,37 +178,36 @@ export function OptionManagement({ options, assignedPersonnel }: OptionManagemen
 
   if (options.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Flight Options</CardTitle>
-          <CardDescription>Available flight options for this leg</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="card-muted">
+        <div className="p-4 border-b border-border/50">
+          <h3 className="text-lg font-medium">Flight Options</h3>
+          <p className="text-sm text-muted-foreground">Available flight options for this leg</p>
+        </div>
+        <div className="p-4">
           <div className="text-center py-8">
-            <Plane className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">No flight options</h3>
-            <p className="mt-2 text-muted-foreground">
+            <h3 className="text-lg font-medium">No flight options</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
               Flight options will appear here once you create them using the Navitas parser above.
             </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     )
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <div className="card-muted">
+      <div className="p-4 border-b border-border/50">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Flight Options</CardTitle>
-            <CardDescription>
+            <h3 className="text-lg font-medium">Flight Options</h3>
+            <p className="text-sm text-muted-foreground">
               Available flight options for this leg ({options.length} options)
-            </CardDescription>
+            </p>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
+      </div>
+      <div className="p-4">
         <div className="space-y-4">
           {options.map((option) => (
             <Card key={option.id} className="relative">
@@ -375,7 +374,7 @@ export function OptionManagement({ options, assignedPersonnel }: OptionManagemen
             </Card>
           ))}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

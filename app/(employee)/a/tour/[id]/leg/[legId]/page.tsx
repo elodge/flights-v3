@@ -20,9 +20,9 @@ import { notFound } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import { getServerUser } from '@/lib/auth'
 import { Database } from '@/lib/database.types'
-import { NavitasParser } from '@/components/employee/navitas-parser'
 import { PassengerAssignment } from '@/components/employee/passenger-assignment'
 import { OptionManagement } from '@/components/employee/option-management'
+import { AddOptionDialog } from '@/components/employee/add-option-dialog'
 import { ChatButton } from '@/components/chat/ChatButton'
 
 type LegWithDetails = Database['public']['Tables']['legs']['Row'] & {
@@ -215,7 +215,7 @@ export default async function EmployeeLegPage({ params }: PageProps) {
   const assignedPersonnel = personnel.filter(p => p.is_assigned)
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-6xl mx-auto px-4 md:px-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <Button variant="outline" size="sm" asChild>
@@ -230,22 +230,22 @@ export default async function EmployeeLegPage({ params }: PageProps) {
       </div>
 
       {/* Leg Info */}
-      <div className="space-y-4">
+      <div className="space-y-4 mb-6">
         <div className="flex items-start justify-between">
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
-              <h1 className="text-3xl font-bold tracking-tight">
+              <h1 className="text-2xl md:text-3xl font-semibold">
                 {leg.label || `Leg ${leg.leg_order}`}
               </h1>
-              <Badge variant="outline">
-                {leg.projects.artists.name}
+              <Badge variant="secondary" className="gap-2">
+                Viewing: {leg.projects.artists.name}
               </Badge>
             </div>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-lg font-medium text-muted-foreground">
               {leg.origin_city} → {leg.destination_city}
             </p>
             {leg.departure_date && (
-              <p className="text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Departure: {new Date(leg.departure_date).toLocaleDateString('en-US', { 
                   weekday: 'long',
                   year: 'numeric', 
@@ -259,15 +259,20 @@ export default async function EmployeeLegPage({ params }: PageProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         {/* Passenger Assignment */}
         {/* COMPONENT_FIX: Pass awaited legId instead of params.legId */}
         <PassengerAssignment legId={legId} personnel={personnel} />
 
         {/* Option Entry */}
-        <div>
-          {/* COMPONENT_FIX: Pass awaited legId instead of params.legId */}
-          <NavitasParser legId={legId} />
+        <div className="card-muted">
+          <div className="p-4 border-b border-border/50">
+            <h3 className="text-lg font-medium">Flight Option Entry</h3>
+            <p className="text-sm text-muted-foreground">Create new flight options for this leg</p>
+          </div>
+          <div className="p-4">
+            <AddOptionDialog legId={legId} />
+          </div>
         </div>
       </div>
 

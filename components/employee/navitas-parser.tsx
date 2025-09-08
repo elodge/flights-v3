@@ -18,7 +18,8 @@ import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Plus, Star, Plane } from 'lucide-react'
-import { parseNavitasText, createFlightOption } from '@/lib/actions/employee-actions'
+import { parseNavitasText, type NavitasOption } from '@/lib/navitas'
+import { createFlightOption } from '@/lib/actions/employee-actions'
 import { toast } from 'sonner'
 
 /**
@@ -33,29 +34,6 @@ interface NavitasParserProps {
   onOptionCreated?: () => void
 }
 
-/**
- * Structured flight option data parsed from Navitas text
- * 
- * @description Represents a flight option with all necessary components
- * for saving to the database and displaying to users.
- */
-interface ParsedOption {
-  /** Display name for the flight option */
-  name: string
-  /** Optional detailed description */
-  description?: string
-  /** Cost in cents (e.g., $450.00 = 45000) */
-  total_cost?: number
-  /** Currency code (USD, EUR, etc.) */
-  currency: string
-  /** Individual flight segments/components */
-  components: Array<{
-    /** Text description of this flight segment */
-    description: string
-    /** Order of this component in the itinerary */
-    component_order: number
-  }>
-}
 
 /**
  * Flight option creation component using Navitas text parsing
@@ -86,53 +64,84 @@ interface ParsedOption {
 export function NavitasParser({ legId, onOptionCreated }: NavitasParserProps) {
   const [navitasText, setNavitasText] = useState('')
   const [isRecommended, setIsRecommended] = useState(false)
-  const [parsedOption, setParsedOption] = useState<ParsedOption | null>(null)
+  const [parsedOptions, setParsedOptions] = useState<NavitasOption[]>([])
+  const [parseErrors, setParseErrors] = useState<string[]>([])
   const [isCreating, setIsCreating] = useState(false)
 
   const handlePreview = async () => {
-    const parsed = await parseNavitasText(navitasText)
-    if (parsed) {
-      setParsedOption(parsed)
-      toast.success('Flight option parsed successfully')
+    const result = parseNavitasText(navitasText)
+    setParsedOptions(result.options)
+    setParseErrors(result.errors)
+    
+    if (result.options.length > 0) {
+      toast.success(`Parsed ${result.options.length} flight option${result.options.length > 1 ? 's' : ''} successfully`)
     } else {
-      toast.error('Unable to parse flight data. Please check the format.')
+      toast.error('No valid flight options found. Please check the format.')
+    }
+    
+    if (result.errors.length > 0) {
+      toast.warning(`${result.errors.length} parsing warning${result.errors.length > 1 ? 's' : ''} found`)
     }
   }
 
   const handleSave = async () => {
-    if (!parsedOption) {
-      toast.error('Please preview the option first')
+    if (parsedOptions.length === 0) {
+      toast.error('Please preview the options first')
       return
     }
 
     setIsCreating(true)
     try {
-      const formData = new FormData()
-      formData.append('leg_id', legId)
-      formData.append('name', parsedOption.name)
-      if (parsedOption.description) {
-        formData.append('description', parsedOption.description)
-      }
-      if (parsedOption.total_cost) {
-        formData.append('total_cost', parsedOption.total_cost.toString())
-      }
-      formData.append('currency', parsedOption.currency)
-      formData.append('is_recommended', isRecommended.toString())
-      formData.append('components', JSON.stringify(parsedOption.components))
+      // CONTEXT: Save each parsed option as a separate flight option
+      // BUSINESS_RULE: Each Navitas block becomes one flight option
+      for (const option of parsedOptions) {
+        const formData = new FormData()
+        formData.append('leg_id', legId)
+        
+        // Generate name from first segment or passenger name
+        const name = option.passenger || 
+          (option.segments.length > 0 ? 
+            `${option.segments[0].airline} ${option.segments[0].flightNumber}` : 
+            'Navitas Option')
+        formData.append('name', name)
+        
+        // Add description with segment details
+        const description = option.segments.map(seg => 
+          `${seg.airline} ${seg.flightNumber} ${seg.origin}-${seg.destination}`
+        ).join(', ')
+        formData.append('description', description)
+        
+        // Add fare information
+        if (option.totalFare) {
+          formData.append('total_cost', (option.totalFare * 100).toString()) // Convert to cents
+        }
+        formData.append('currency', option.currency || 'USD')
+        formData.append('is_recommended', isRecommended.toString())
+        
+        // Add segments as components
+        const components = option.segments.map((seg, index) => ({
+          description: `${seg.airline} ${seg.flightNumber} ${seg.origin}-${seg.destination} ${seg.dateRaw} ${seg.depTimeRaw}-${seg.arrTimeRaw}${seg.dayOffset ? ` +${seg.dayOffset}` : ''}`,
+          component_order: index + 1
+        }))
+        formData.append('components', JSON.stringify(components))
 
-      const result = await createFlightOption(formData)
-      
-      if (result.error) {
-        toast.error(result.error)
-      } else {
-        toast.success('Flight option created successfully')
-        setNavitasText('')
-        setParsedOption(null)
-        setIsRecommended(false)
-        onOptionCreated?.()
+        const result = await createFlightOption(formData)
+        
+        if (result.error) {
+          toast.error(`Failed to create option: ${result.error}`)
+          return
+        }
       }
+      
+      toast.success(`Created ${parsedOptions.length} flight option${parsedOptions.length > 1 ? 's' : ''} successfully`)
+      setNavitasText('')
+      setParsedOptions([])
+      setParseErrors([])
+      setIsRecommended(false)
+      onOptionCreated?.()
     } catch (error) {
-      toast.error('Failed to create flight option')
+      console.error('Error creating flight options:', error)
+      toast.error('Failed to create flight options')
     } finally {
       setIsCreating(false)
     }
@@ -140,23 +149,21 @@ export function NavitasParser({ legId, onOptionCreated }: NavitasParserProps) {
 
   const handleClear = () => {
     setNavitasText('')
-    setParsedOption(null)
+    setParsedOptions([])
+    setParseErrors([])
     setIsRecommended(false)
   }
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Plane className="h-5 w-5" />
-            <span>Flight Option Entry</span>
-          </CardTitle>
-          <CardDescription>
+      <div className="card-muted">
+        <div className="p-4 border-b border-border/50">
+          <h3 className="text-lg font-medium">Flight Option Entry</h3>
+          <p className="text-sm text-muted-foreground">
             Paste Navitas text to create flight options
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          </p>
+        </div>
+        <div className="p-4 space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Navitas Flight Details</label>
             <Textarea 
@@ -164,17 +171,14 @@ export function NavitasParser({ legId, onOptionCreated }: NavitasParserProps) {
               onChange={(e) => setNavitasText(e.target.value)}
               placeholder="Paste Navitas flight text here...
 
-Examples:
-UA 123 LAX→JFK 15MAR 0800/1630
-DL 456 JFK→LAX 16MAR 1200/1500
-Fare: $450 per person
-Reference: ABC123
-
-Or:
-American Airlines 2456
-Los Angeles, CA (LAX) → New York, NY (JFK)
-March 15, 2024 - 8:00 AM → 4:30 PM
-Business Class - $1,200"
+Example:
+Evan Lodge
+AA 2689 10Aug PHX LAX  10:15A 11:43A
+AA 8453 10Aug LAX HND  2:15P 5:25P +1
+AA 170  15Aug HND LAX 11:55A 6:00A
+AA 1668 15Aug LAX PHX 10:00A 11:26A
+TOTAL FARE INC TAX  USD5790.81
+Reference: UCWYOJ"
               className="min-h-[120px] font-mono text-sm"
             />
           </div>
@@ -202,71 +206,111 @@ Business Class - $1,200"
             </Button>
             <Button 
               onClick={handleSave}
-              disabled={!parsedOption || isCreating}
+              disabled={parsedOptions.length === 0 || isCreating}
               variant="outline"
             >
-              {isCreating ? 'Saving...' : 'Save Option'}
+              {isCreating ? 'Saving...' : `Save ${parsedOptions.length} Option${parsedOptions.length > 1 ? 's' : ''}`}
             </Button>
             <Button 
               onClick={handleClear}
               variant="ghost"
-              disabled={!navitasText && !parsedOption}
+              disabled={!navitasText && parsedOptions.length === 0}
             >
               Clear
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Preview */}
-      {parsedOption && (
-        <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center space-x-2">
-                  <span>Preview: {parsedOption.name}</span>
-                  {isRecommended && (
-                    <Badge variant="default" className="flex items-center space-x-1">
-                      <Star className="h-3 w-3" />
-                      <span>Recommended</span>
-                    </Badge>
-                  )}
-                </CardTitle>
-                {parsedOption.description && (
-                  <CardDescription>{parsedOption.description}</CardDescription>
-                )}
-              </div>
-              {parsedOption.total_cost && (
-                <div className="text-right">
-                  <div className="font-semibold text-lg">
-                    ${(parsedOption.total_cost / 100).toFixed(2)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {parsedOption.currency}
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {parsedOption.components.length > 0 && (
-              <div className="space-y-2">
-                <h5 className="font-medium text-sm">Flight Segments</h5>
-                <div className="space-y-1">
-                  {parsedOption.components.map((component, index) => (
-                    <div key={index} className="text-sm p-2 bg-background rounded-md">
-                      <Badge variant="outline" className="mr-2">
-                        Segment {component.component_order}
-                      </Badge>
-                      {component.description}
-                    </div>
-                  ))}
-                </div>
-              </div>
+      {parsedOptions.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Preview: {parsedOptions.length} Option{parsedOptions.length > 1 ? 's' : ''}</h3>
+            {isRecommended && (
+              <Badge variant="default" className="flex items-center space-x-1">
+                <Star className="h-3 w-3" />
+                <span>Recommended</span>
+              </Badge>
             )}
-          </CardContent>
-        </Card>
+          </div>
+          
+          {parsedOptions.map((option, optionIndex) => (
+            <Card key={optionIndex} className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center space-x-2">
+                      <span>{option.passenger || `${option.segments[0]?.airline} ${option.segments[0]?.flightNumber}` || 'Navitas Option'}</span>
+                    </CardTitle>
+                    <CardDescription>
+                      {option.segments.map(seg => 
+                        `${seg.airline} ${seg.flightNumber} ${seg.origin}-${seg.destination}`
+                      ).join(', ')}
+                    </CardDescription>
+                  </div>
+                  {option.totalFare && (
+                    <div className="text-right">
+                      <div className="font-semibold text-lg">
+                        ${option.totalFare.toFixed(2)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {option.currency || 'USD'}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {option.segments.length > 0 && (
+                  <div className="space-y-2">
+                    <h5 className="font-medium text-sm">Flight Segments</h5>
+                    <div className="space-y-1">
+                      {option.segments.map((segment, index) => (
+                        <div key={index} className="text-sm p-2 bg-background rounded-md">
+                          <Badge variant="outline" className="mr-2">
+                            Segment {index + 1}
+                          </Badge>
+                          {segment.airline} {segment.flightNumber} {segment.origin}-{segment.destination} {segment.dateRaw} {segment.depTimeRaw}-{segment.arrTimeRaw}{segment.dayOffset ? ` +${segment.dayOffset}` : ''}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {option.reference && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    Reference: {option.reference}
+                  </div>
+                )}
+                {option.errors.length > 0 && (
+                  <div className="mt-2">
+                    <h6 className="text-sm font-medium text-amber-600">Warnings:</h6>
+                    <ul className="text-sm text-amber-600">
+                      {option.errors.map((error, index) => (
+                        <li key={index}>• {error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+          
+          {parseErrors.length > 0 && (
+            <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
+              <CardHeader>
+                <CardTitle className="text-amber-800 dark:text-amber-200">Parse Warnings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="text-sm text-amber-700 dark:text-amber-300">
+                  {parseErrors.map((error, index) => (
+                    <li key={index}>• {error}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       )}
     </div>
   )

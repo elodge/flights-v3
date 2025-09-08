@@ -149,7 +149,8 @@ describe('Client Leg Selection Integration', () => {
       expect(screen.getByText('Non-stop service')).toBeInTheDocument()
       expect(screen.getAllByText('$500')[0]).toBeInTheDocument()
       expect(screen.getByText('per person')).toBeInTheDocument()
-      expect(screen.getByText('LAX → JFK')).toBeInTheDocument()
+      // CONTEXT: Component now shows loading state initially due to AviationStack integration
+      expect(screen.getByText('Loading flight data...')).toBeInTheDocument()
     })
 
     it('should show recommended badge for recommended options', () => {
