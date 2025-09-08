@@ -65,6 +65,20 @@ type LegWithDetails = Database['public']['Tables']['legs']['Row'] & {
       id: string
       component_order: number
       navitas_text: string
+      flight_number: string | null
+      airline: string | null
+      airline_iata: string | null
+      airline_name: string | null
+      dep_iata: string | null
+      arr_iata: string | null
+      departure_time: string | null
+      arrival_time: string | null
+      dep_time_local: string | null
+      arr_time_local: string | null
+      day_offset: number | null
+      duration_minutes: number | null
+      stops: number | null
+      enriched_terminal_gate: any | null
     }>
   }>
 }
@@ -127,7 +141,21 @@ async function getLegDetails(projectId: string, legId: string): Promise<LegWithD
         option_components (
           id,
           component_order,
-          navitas_text
+          navitas_text,
+          flight_number,
+          airline,
+          airline_iata,
+          airline_name,
+          dep_iata,
+          arr_iata,
+          departure_time,
+          arrival_time,
+          dep_time_local,
+          arr_time_local,
+          day_offset,
+          duration_minutes,
+          stops,
+          enriched_terminal_gate
         )
       )
     `)
