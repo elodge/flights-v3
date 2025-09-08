@@ -281,9 +281,13 @@ export function OptionManagement({ options, assignedPersonnel }: OptionManagemen
                       <div className="space-y-2">
                         {option.option_components
                           .sort((a, b) => a.component_order - b.component_order)
-                          .map((component) => (
-                            <FlightSegmentRow key={component.id} segment={component} />
-                          ))}
+                          .map((component) => {
+                            // CONTEXT: Debug logging to understand what data we have
+                            console.log('OptionManagement component data:', component);
+                            return (
+                              <FlightSegmentRow key={component.id} segment={component} />
+                            );
+                          })}
                       </div>
                     </div>
                   )}
