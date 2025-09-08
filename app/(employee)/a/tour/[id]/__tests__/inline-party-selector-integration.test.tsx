@@ -129,7 +129,12 @@ describe('Tour Page - Inline Party Selector Integration', () => {
 
   describe('Personnel Table Rendering', () => {
     it('should render personnel table with party selectors', async () => {
+      const user = userEvent.setup();
       render(await TourPage({ params: { id: 'tour-123' } }));
+      
+      // CONTEXT: Click on Personnel tab to show personnel data
+      const personnelTab = screen.getByRole('tab', { name: /personnel/i });
+      await user.click(personnelTab);
       
       // CONTEXT: Should show both personnel rows
       expect(screen.getByText('John Doe')).toBeInTheDocument();
@@ -141,7 +146,12 @@ describe('Tour Page - Inline Party Selector Integration', () => {
     });
 
     it('should render inactive person with disabled party selector', async () => {
+      const user = userEvent.setup();
       render(await TourPage({ params: { id: 'tour-123' } }));
+      
+      // CONTEXT: Click on Personnel tab to show personnel data
+      const personnelTab = screen.getByRole('tab', { name: /personnel/i });
+      await user.click(personnelTab);
       
       // CONTEXT: Jane Smith is inactive, should have disabled selector
       const janeRow = screen.getByText('Jane Smith').closest('tr');
@@ -159,6 +169,10 @@ describe('Tour Page - Inline Party Selector Integration', () => {
       mockUpdateTourPerson.mockResolvedValue({ success: true });
       
       render(await TourPage({ params: { id: 'tour-123' } }));
+      
+      // CONTEXT: Click on Personnel tab to show personnel data
+      const personnelTab = screen.getByRole('tab', { name: /personnel/i });
+      await user.click(personnelTab);
       
       // CONTEXT: Find John Doe's party selector
       const johnRow = screen.getByText('John Doe').closest('tr');
@@ -189,6 +203,10 @@ describe('Tour Page - Inline Party Selector Integration', () => {
       mockUpdateTourPerson.mockResolvedValue({ success: true });
       
       render(await TourPage({ params: { id: 'tour-123' } }));
+      
+      // CONTEXT: Click on Personnel tab to show personnel data
+      const personnelTab = screen.getByRole('tab', { name: /personnel/i });
+      await user.click(personnelTab);
       
       const johnRow = screen.getByText('John Doe').closest('tr');
       const partySelector = johnRow?.querySelector('[role="combobox"]');
