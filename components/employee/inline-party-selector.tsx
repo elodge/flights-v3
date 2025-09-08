@@ -136,7 +136,7 @@ export function InlinePartySelector({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="relative">
+          <div className="relative" data-testid={`party-selector-${personId}`}>
             <Select
               value={optimisticParty}
               onValueChange={handlePartyChange}
@@ -145,6 +145,7 @@ export function InlinePartySelector({
               <SelectTrigger 
                 className="h-6 w-20 text-xs border-0 bg-transparent p-0 hover:bg-muted/50 focus:ring-1 focus:ring-ring"
                 aria-label={`Change party for ${fullName}`}
+                data-testid={`party-selector-trigger-${personId}`}
               >
                 <SelectValue>
                   <Badge variant="outline" className="text-xs">
@@ -161,15 +162,21 @@ export function InlinePartySelector({
               </SelectContent>
             </Select>
             
-            {/* CONTEXT: Loading spinner during updates */}
+            {/* CONTEXT: Loading spinner during updates - visible in tests */}
             {isUpdating && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+              <div 
+                className="absolute inset-0 flex items-center justify-center bg-background/80"
+                role="status"
+                aria-label="Updating party assignment"
+                data-testid={`party-loading-${personId}`}
+              >
                 <Loader2 className="h-3 w-3 animate-spin" />
+                <span className="sr-only">Updating party assignment</span>
               </div>
             )}
           </div>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent side="top" align="center">
           <p>Change party for {fullName}</p>
         </TooltipContent>
       </Tooltip>
