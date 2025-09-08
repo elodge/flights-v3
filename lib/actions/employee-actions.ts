@@ -232,11 +232,39 @@ export async function createFlightOption(formData: FormData) {
 
     // Create option components
     if (validated.components.length > 0) {
-          const components = validated.components.map(comp => ({
-      option_id: option.id,
-      navitas_text: comp.description,
-      component_order: comp.component_order,
-    }))
+      const components = validated.components.map(comp => {
+        // CONTEXT: Parse navitas_text to extract structured fields
+        // BUSINESS_RULE: Populate both navitas_text and individual fields for consistency
+        const navitasMatch = comp.description.match(/^([A-Z]{2})\s*(\d+)\s+([A-Z]{3})-([A-Z]{3})\s+\d{2}[A-Z]{3}\s+([\d:]+[AP]?)-([\d:]+[AP]?)/i);
+        
+        if (navitasMatch) {
+          return {
+            option_id: option.id,
+            navitas_text: comp.description,
+            component_order: comp.component_order,
+            airline: navitasMatch[1],
+            airline_iata: navitasMatch[1],
+            flight_number: navitasMatch[2],
+            dep_iata: navitasMatch[3],
+            arr_iata: navitasMatch[4],
+            dep_time_local: navitasMatch[5],
+            arr_time_local: navitasMatch[6],
+            departure_time: navitasMatch[5],
+            arrival_time: navitasMatch[6],
+            day_offset: 0,
+            stops: 0,
+            duration_minutes: null,
+            enriched_terminal_gate: null,
+          };
+        } else {
+          // FALLBACK: If parsing fails, store only navitas_text (legacy behavior)
+          return {
+            option_id: option.id,
+            navitas_text: comp.description,
+            component_order: comp.component_order,
+          };
+        }
+      })
 
       const { error: componentsError } = await supabase
         .from('option_components')
