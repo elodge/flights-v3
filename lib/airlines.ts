@@ -19,8 +19,8 @@ const AIRLINES = [
   { "iata": "AS", "name": "Alaska Airlines, Inc." },
   { "iata": "NK", "name": "Spirit Airlines" },
   { "iata": "F9", "name": "Frontier Airlines" },
-  { "iata": "G4", "name": "Allegiant Air" },
-  { "iata": "HA", "name": "Hawaiian Airlines" }
+  { "iata": "HA", "name": "Hawaiian Airlines" },
+  { "iata": "VX", "name": "Virgin America" }
 ] as const;
 
 // CONTEXT: Create lookup map for fast IATA code to name resolution
@@ -34,18 +34,18 @@ const AIRLINE_MAP: Record<string, string> = Object.fromEntries(
  * Get airline name by IATA code
  * 
  * @description Looks up airline name from IATA code, with fallback to code itself
- * @param code - IATA airline code (e.g., "AA", "UA", "DL")
+ * @param code - IATA airline code (e.g., "AA", "UA")
  * @returns Full airline name or IATA code if not found
  * 
  * @example
  * ```typescript
  * getAirlineName("AA") // "American Airlines"
+ * getAirlineName("UA") // "United Airlines"
  * getAirlineName("UNKNOWN") // "UNKNOWN"
- * getAirlineName(null) // ""
  * ```
  */
 export function getAirlineName(code?: string | null): string {
   if (!code) return "";
   const key = String(code).toUpperCase();
-  return AIRLINE_MAP[key] ?? key; // fall back to IATA code if unknown
+  return AIRLINE_MAP[key] ?? key;
 }
