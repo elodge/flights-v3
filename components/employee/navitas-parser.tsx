@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Plus, Star, Plane } from 'lucide-react'
 import { parseNavitasText, type NavitasOption } from '@/lib/navitas'
+import { FlightSegmentRow } from '@/components/flight/FlightSegmentRow'
 import { createFlightOption } from '@/lib/actions/employee-actions'
 import { toast } from 'sonner'
 
@@ -265,14 +266,9 @@ Reference: UCWYOJ"
                 {option.segments.length > 0 && (
                   <div className="space-y-2">
                     <h5 className="font-medium text-sm">Flight Segments</h5>
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       {option.segments.map((segment, index) => (
-                        <div key={index} className="text-sm p-2 bg-background rounded-md">
-                          <Badge variant="outline" className="mr-2">
-                            Segment {index + 1}
-                          </Badge>
-                          {segment.airline} {segment.flightNumber} {segment.origin}-{segment.destination} {segment.dateRaw} {segment.depTimeRaw}-{segment.arrTimeRaw}{segment.dayOffset ? ` +${segment.dayOffset}` : ''}
-                        </div>
+                        <FlightSegmentRow key={index} segment={segment} />
                       ))}
                     </div>
                   </div>

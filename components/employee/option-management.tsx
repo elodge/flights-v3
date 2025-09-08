@@ -30,6 +30,9 @@ import {
 import { Clock, Star, Trash2, Settings, Plane } from 'lucide-react'
 import { createHold, toggleOptionRecommended, deleteOption } from '@/lib/actions/employee-actions'
 import { toast } from 'sonner'
+import { FlightSegmentRow } from '@/components/flight/FlightSegmentRow'
+import { getAirlineName } from '@/lib/airlines'
+import { normalizeSegment } from '@/lib/segmentAdapter'
 
 /**
  * Flight option data structure with all related information
@@ -275,13 +278,11 @@ export function OptionManagement({ options, assignedPersonnel }: OptionManagemen
                   {option.option_components.length > 0 && (
                     <div className="space-y-2">
                       <h5 className="font-medium text-sm">Flight Segments</h5>
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {option.option_components
                           .sort((a, b) => a.component_order - b.component_order)
                           .map((component) => (
-                            <div key={component.id} className="text-sm p-2 bg-muted rounded-md">
-                              {component.navitas_text}
-                            </div>
+                            <FlightSegmentRow key={component.id} segment={component} />
                           ))}
                       </div>
                     </div>

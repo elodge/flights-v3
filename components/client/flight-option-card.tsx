@@ -21,6 +21,9 @@ import { toast } from 'sonner'
 import { useHoldCountdown } from '@/hooks/use-hold-countdown'
 import { selectFlightOption } from '@/lib/actions/selection-actions'
 import { useAviationStack } from '@/hooks/useAviationstack'
+import { FlightSegmentRow } from '@/components/flight/FlightSegmentRow'
+import { getAirlineName } from '@/lib/airlines'
+import { normalizeSegment } from '@/lib/segmentAdapter'
 
 interface OptionComponent {
   id: string
@@ -424,13 +427,35 @@ export function FlightOptionCard({ option, legId, selectionType, passengerIds }:
                 </div>
               )}
               
-              {/* Fallback to Navitas text if no enrichment data */}
+              {/* Fallback to segment rows if no enrichment data */}
               {!flightData && !hasStoredEnrichedData && !flightLoading && (
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <p className="text-sm text-muted-foreground">
-                    {formatSegments(option.option_components)}
-                  </p>
+                <div className="space-y-2">
+                  {/* Header with first segment info */}
+                  {option.option_components.length > 0 && (() => {
+                    const first = normalizeSegment(option.option_components[0]);
+                    const headerAirline = getAirlineName(first.airline);
+                    const headerFlight = first.airline && first.flightNumber ? `${first.airline} ${first.flightNumber}` : "";
+                    
+                    return (
+                      <div className="text-lg font-semibold">
+                        {headerFlight}
+                        {headerAirline && (
+                          <span className="ml-2 text-xs font-normal text-muted-foreground align-middle">
+                            {headerAirline}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
+                  
+                  {/* Segments list */}
+                  <div className="space-y-2">
+                    {option.option_components
+                      .sort((a, b) => a.component_order - b.component_order)
+                      .map((component, i) => (
+                        <FlightSegmentRow key={component.id} segment={component} />
+                      ))}
+                  </div>
                 </div>
               )}
               
