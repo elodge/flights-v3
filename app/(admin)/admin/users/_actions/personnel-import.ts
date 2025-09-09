@@ -20,9 +20,7 @@ import { z } from 'zod'
 // SECURITY: Strict validation prevents injection and ensures data integrity
 const PersonnelRowSchema = z.object({
   fullName: z.string().min(3, 'Full name must be at least 3 characters').max(120, 'Full name must be 120 characters or less'),
-  party: z.enum(['A Party', 'B Party', 'C Party', 'D Party'], {
-    errorMap: () => ({ message: 'Party must be one of: A Party, B Party, C Party, D Party' })
-  }),
+  party: z.enum(['A Party', 'B Party', 'C Party', 'D Party']),
   email: z.string().email('Invalid email format').optional().nullable(),
   phone: z.string().max(40, 'Phone must be 40 characters or less').optional().nullable(),
   passportNumber: z.string().max(64, 'Passport number must be 64 characters or less').optional().nullable(),
