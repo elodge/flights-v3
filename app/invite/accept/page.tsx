@@ -11,6 +11,9 @@
  * @business_rule Invited users get appropriate role and artist assignments
  */
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 'use client'
 
 import { useState, useEffect } from 'react'

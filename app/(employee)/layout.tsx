@@ -11,6 +11,9 @@
  * @database Reads from selections table via admin client to bypass RLS
  */
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { getServerUser } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { EmployeeNav } from '@/components/employee/employee-nav'

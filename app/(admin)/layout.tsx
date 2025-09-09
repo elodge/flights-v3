@@ -10,6 +10,9 @@
  * @business_rule Admins have access to all system management features
  */
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { redirect } from 'next/navigation'
 import { getServerUser } from '@/lib/auth'
 
