@@ -13,7 +13,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { createServerClient } from '@/lib/supabase-server';
 
 export type SegmentInput = {
   airline_iata: string;

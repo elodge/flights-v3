@@ -30,13 +30,13 @@ import { NotificationFilters } from '@/components/employee/notification-filters'
  * @business_rule Notifications grouped by type and filtered by artist access
  */
 export default async function NotificationsPage() {
-  const { user, profile } = await getServerUser();
+  const authUser = await getServerUser();
   
-  if (!user || !profile) {
+  if (!authUser) {
     redirect('/login');
   }
 
-  if (profile.role !== 'agent' && profile.role !== 'admin') {
+  if (authUser.role !== 'agent' && authUser.role !== 'admin') {
     redirect('/');
   }
 

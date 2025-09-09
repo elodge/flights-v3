@@ -92,7 +92,7 @@ export async function addTourPerson(projectId: string, raw: unknown) {
     
     if (error instanceof z.ZodError) {
       // CONTEXT: Access ZodError issues directly since errors property may not be serializable
-      const issues = (error as any).issues || error.errors || []
+      const issues = error.issues || []
       const firstIssue = issues[0]
       return { 
         success: false, 
@@ -179,7 +179,7 @@ export async function updateTourPerson(personId: string, raw: unknown) {
     
     if (error instanceof z.ZodError) {
       // CONTEXT: Access ZodError issues directly since errors property may not be serializable
-      const issues = (error as any).issues || error.errors || []
+      const issues = error.issues || []
       const firstIssue = issues[0]
       return { 
         success: false, 

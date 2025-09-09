@@ -17,6 +17,9 @@ import { getServerUser } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
+import type { UserDetail, UserRow, ArtistAssignment, InviteRow, ArtistRow } from '@/types/app'
+import type { Database } from '@/lib/database.types'
+import { required, toBool } from '@/lib/safe'
 
 // CONTEXT: Custom UUID validation that allows test UUIDs
 // BUSINESS_RULE: Test data uses non-standard UUIDs that should be allowed
@@ -108,7 +111,7 @@ export async function adminSearchUsers(params: z.infer<typeof searchUsersSchema>
   const supabase = await createServerClient()
   
   try {
-    // CONTEXT: Build dynamic query with filters
+    // CONTEXT: Build dynamic query with filters using proper typing
     // ALGORITHM: Apply search, role, and status filters with pagination
     let query = supabase
       .from('users')
@@ -151,7 +154,7 @@ export async function adminSearchUsers(params: z.infer<typeof searchUsersSchema>
     }
     
     return {
-      users: users || [],
+      users: (users as UserRow[]) || [],
       total: count || 0,
       page: validatedParams.page,
       limit: validatedParams.limit
@@ -468,13 +471,13 @@ export async function adminSetUserArtists(params: z.infer<typeof setUserArtistsS
  * @database Queries users, artist_assignments, and invites tables
  * @business_rule Returns complete user information for admin management
  */
-export async function adminGetUserDetail(userId: string) {
+export async function adminGetUserDetail(userId: string): Promise<UserDetail | null> {
   await requireAdmin()
   
   const supabase = await createServerClient()
   
   try {
-    // CONTEXT: Fetch user with related data
+    // CONTEXT: Fetch user with related data using proper typing
     // ALGORITHM: Join user profile with artist assignments and pending invites
     const { data: user, error: userError } = await supabase
       .from('users')
@@ -488,35 +491,54 @@ export async function adminGetUserDetail(userId: string) {
         updated_at
       `)
       .eq('id', userId)
-      .single()
+      .single<UserRow>()
     
     if (userError || !user) {
       return null
     }
     
-    // Fetch artist assignments
-    const { data: assignments } = await supabase
-      .from('artist_assignments')
+    // Fetch artist assignments with proper typing
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('employee_artists')
       .select(`
         artist_id,
         artists(id, name)
       `)
       .eq('user_id', userId)
     
-    // Fetch pending invite (if any)
-    const { data: invite } = await (supabase as any)
+    if (assignmentsError) {
+      console.error('Error fetching artist assignments:', assignmentsError)
+    }
+    
+    // Fetch pending invite (if any) with proper typing
+    const { data: invite, error: inviteError } = await supabase
       .from('invites')
-      .select('*')
+      .select('email, expires_at, accepted_at')
       .eq('email', user.email)
       .is('accepted_at', null)
       .gt('expires_at', new Date().toISOString())
-      .single()
+      .maybeSingle<Pick<InviteRow, 'email' | 'expires_at' | 'accepted_at'>>()
     
-    return {
-      ...user,
-      artistAssignments: assignments || [],
+    if (inviteError) {
+      console.error('Error fetching pending invite:', inviteError)
+    }
+    
+    // CONTEXT: Construct UserDetail with proper type safety
+    // BUSINESS_RULE: Map is_active to status for UI consistency
+    const userDetail: UserDetail = {
+      id: required(user.id, 'User ID is required'),
+      email: required(user.email, 'User email is required'),
+      full_name: user.full_name,
+      role: user.role,
+      is_active: toBool(user.is_active, true),
+      status: toBool(user.is_active, true) ? 'active' : 'inactive',
+      created_at: required(user.created_at, 'User created_at is required'),
+      updated_at: required(user.updated_at, 'User updated_at is required'),
+      artistAssignments: (assignments as ArtistAssignment[]) || [],
       pendingInvite: invite || null
     }
+    
+    return userDetail
   } catch (error) {
     console.error('Error in adminGetUserDetail:', error)
     return null
@@ -535,10 +557,10 @@ export async function adminGetUserDetail(userId: string) {
  * @database artists table
  * @business_rule Admins can see all artists for assignment
  */
-export async function adminGetArtists() {
+export async function adminGetArtists(): Promise<Pick<ArtistRow, 'id' | 'name'>[]> {
   await requireAdmin()
   
-  const supabase = createAdminClient()
+  const supabase = await createAdminClient()
   
   try {
     const { data: artists, error } = await supabase
@@ -551,7 +573,7 @@ export async function adminGetArtists() {
       throw new Error('Failed to fetch artists')
     }
     
-    return artists || []
+    return (artists as Pick<ArtistRow, 'id' | 'name'>[]) || []
   } catch (error) {
     console.error('Error in adminGetArtists:', error)
     throw new Error('Failed to fetch artists')

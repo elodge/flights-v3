@@ -29,35 +29,19 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Loader2, Save, X, Trash2, Shield, Users } from 'lucide-react'
 import { adminUpdateUserProfile, adminSetUserArtists, adminSuspendUser, adminReactivateUser, adminGetArtists } from '@/app/(admin)/admin/users/_actions/user-actions'
 import { toast } from 'sonner'
+import type { UserDetail } from '@/types/app'
 
 const updateUserSchema = z.object({
   fullName: z.string().min(1, 'Full name is required').max(100),
   email: z.string().email('Invalid email address'),
   role: z.enum(['client', 'agent', 'admin']),
-  status: z.enum(['active', 'suspended'])
+  is_active: z.boolean()
 })
 
 type UpdateUserForm = z.infer<typeof updateUserSchema>
 
 interface UserDetailTabsProps {
-  user: {
-    id: string
-    email: string
-    full_name: string
-    role: string
-    status: string
-    auth_user_id: string | null
-    created_at: string
-    updated_at: string
-    artistAssignments: Array<{
-      artist_id: string
-      artists: { id: string; name: string }
-    }>
-    pendingInvite: {
-      token: string
-      expires_at: string
-    } | null
-  }
+  user: UserDetail
 }
 
 export function UserDetailTabs({ user }: UserDetailTabsProps) {
@@ -99,8 +83,8 @@ export function UserDetailTabs({ user }: UserDetailTabsProps) {
     defaultValues: {
       fullName: user.full_name || '',
       email: user.email,
-      role: user.role as any,
-      status: user.status as any
+      role: user.role,
+      is_active: user.is_active
     }
   })
 
@@ -134,7 +118,7 @@ export function UserDetailTabs({ user }: UserDetailTabsProps) {
         fullName: data.fullName,
         email: data.email,
         role: data.role,
-        status: data.status
+        is_active: data.is_active
       })
 
       toast.success('User profile updated successfully')
@@ -207,14 +191,14 @@ export function UserDetailTabs({ user }: UserDetailTabsProps) {
     }
   }
 
-  const handleStatusChange = async (newStatus: 'active' | 'suspended') => {
+  const handleStatusChange = async (newStatus: 'active' | 'inactive') => {
     try {
-      if (newStatus === 'suspended') {
+      if (newStatus === 'inactive') {
         await adminSuspendUser(user.id)
       } else {
         await adminReactivateUser(user.id)
       }
-      toast.success(`User ${newStatus === 'suspended' ? 'suspended' : 'reactivated'} successfully`)
+      toast.success(`User ${newStatus === 'inactive' ? 'suspended' : 'reactivated'} successfully`)
     } catch (error: any) {
       console.error('Error changing user status:', error)
       toast.error('Failed to change user status')
@@ -295,22 +279,21 @@ export function UserDetailTabs({ user }: UserDetailTabsProps) {
 
               <FormField
                 control={form.control}
-                name="status"
+                name="is_active"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="suspended">Suspended</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Active Account</FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                        User can access the system
+                      </p>
+                    </div>
                   </FormItem>
                 )}
               />
@@ -413,25 +396,25 @@ export function UserDetailTabs({ user }: UserDetailTabsProps) {
               <div>
                 <h4 className="font-medium">Account Status</h4>
                 <p className="text-sm text-muted-foreground">
-                  {user.status === 'active' 
+                  {user.is_active 
                     ? 'User has access to the system'
-                    : 'User access is suspended'
+                    : 'User access is inactive'
                   }
                 </p>
               </div>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant={user.status === 'active' ? 'destructive' : 'default'}>
-                    {user.status === 'active' ? 'Suspend User' : 'Reactivate User'}
+                  <Button variant={user.is_active ? 'destructive' : 'default'}>
+                    {user.is_active ? 'Suspend User' : 'Reactivate User'}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>
-                      {user.status === 'active' ? 'Suspend User' : 'Reactivate User'}
+                      {user.is_active ? 'Suspend User' : 'Reactivate User'}
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                      {user.status === 'active' 
+                      {user.is_active 
                         ? 'Are you sure you want to suspend this user? They will lose access to the system.'
                         : 'Are you sure you want to reactivate this user? They will regain access to the system.'
                       }
@@ -440,9 +423,9 @@ export function UserDetailTabs({ user }: UserDetailTabsProps) {
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction
-                      onClick={() => handleStatusChange(user.status === 'active' ? 'suspended' : 'active')}
+                      onClick={() => handleStatusChange(user.is_active ? 'inactive' : 'active')}
                     >
-                      {user.status === 'active' ? 'Suspend' : 'Reactivate'}
+                      {user.is_active ? 'Suspend' : 'Reactivate'}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -453,14 +436,14 @@ export function UserDetailTabs({ user }: UserDetailTabsProps) {
               <div>
                 <h4 className="font-medium">Authentication Status</h4>
                 <p className="text-sm text-muted-foreground">
-                  {user.auth_user_id 
-                    ? 'User has completed account setup'
-                    : 'User has not completed account setup'
+                  {user.is_active 
+                    ? 'User has an active account'
+                    : 'User has an inactive account'
                   }
                 </p>
               </div>
-              <Badge variant={user.auth_user_id ? 'default' : 'secondary'}>
-                {user.auth_user_id ? 'Linked' : 'Pending'}
+              <Badge variant={user.is_active ? 'default' : 'secondary'}>
+                {user.is_active ? 'Active' : 'Inactive'}
               </Badge>
             </div>
 

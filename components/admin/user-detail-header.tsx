@@ -13,30 +13,13 @@
 'use client'
 
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { UserX, UserCheck, Mail, Calendar, Shield } from 'lucide-react'
+import type { UserDetail } from '@/types/app'
 
 interface UserDetailHeaderProps {
-  user: {
-    id: string
-    email: string
-    full_name: string
-    role: string
-    status: string
-    auth_user_id: string | null
-    created_at: string
-    updated_at: string
-    artistAssignments: Array<{
-      artist_id: string
-      artists: { id: string; name: string }
-    }>
-    pendingInvite: {
-      token: string
-      expires_at: string
-    } | null
-  }
+  user: UserDetail
 }
 
 export function UserDetailHeader({ user }: UserDetailHeaderProps) {
@@ -52,7 +35,7 @@ export function UserDetailHeader({ user }: UserDetailHeaderProps) {
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'active': return 'default'
-      case 'suspended': return 'destructive'
+      case 'inactive': return 'destructive'
       default: return 'outline'
     }
   }
@@ -105,7 +88,7 @@ export function UserDetailHeader({ user }: UserDetailHeaderProps) {
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">Account Status</p>
             <p className="text-sm">
-              {user.auth_user_id ? 'Linked to Auth' : 'Pending Invite'}
+              {user.is_active ? 'Active Account' : 'Inactive Account'}
             </p>
           </div>
           <div className="space-y-1">
