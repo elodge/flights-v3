@@ -101,7 +101,7 @@ export async function importPersonnel(projectId: string, rawRows: unknown) {
       seat_pref: row.seatPreference || null,
       ff_numbers: row.frequentFlyerNumbers || null,
       notes: row.notes || null,
-      created_by: user.user.id,
+      created_by: user.user!.id,
       status: 'active' as const
     }))
 
@@ -178,7 +178,7 @@ export async function importPersonnel(projectId: string, rawRows: unknown) {
  */
 export async function getPersonnelImportStats(projectId: string) {
   const user = await getServerUser()
-  if (!user.user || !['agent', 'admin'].includes(user.role || '')) {
+  if (!user || !user.user || !['agent', 'admin'].includes(user.role || '')) {
     throw new Error('Unauthorized: Agent or admin role required')
   }
 
