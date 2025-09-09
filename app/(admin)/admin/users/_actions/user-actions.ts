@@ -278,7 +278,7 @@ export async function adminSuspendUser(userId: string) {
   try {
     const { error } = await supabase
       .from('users')
-      .update({ status: 'suspended' })
+      .update({ is_active: false })
       .eq('id', userId)
     
     if (error) {
@@ -315,7 +315,7 @@ export async function adminReactivateUser(userId: string) {
   try {
     const { error } = await supabase
       .from('users')
-      .update({ status: 'active' })
+      .update({ is_active: true })
       .eq('id', userId)
     
     if (error) {
