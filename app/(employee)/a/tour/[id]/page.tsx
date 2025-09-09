@@ -88,7 +88,7 @@ async function getEmployeeTour(tourId: string): Promise<TourWithDetails | null> 
   // CONTEXT: Comprehensive tour query for employee portal
   // DATABASE_FIX: Removed 'party' column from tour_personnel (doesn't exist in schema)
   // BUSINESS_RULE: Only fetch active tours, require artist association
-  const { data: tour } = await supabase
+  const { data: tour, error } = await supabase
     .from('projects')
     .select(`
       *,
@@ -139,6 +139,14 @@ async function getEmployeeTour(tourId: string): Promise<TourWithDetails | null> 
     .eq('id', tourId)
     .eq('is_active', true)
     .single()
+
+  // VERCEL_DEBUG: Log tour query results for debugging 404s
+  if (error) {
+    console.error('Tour query error:', error, 'for tourId:', tourId)
+  }
+  if (!tour) {
+    console.warn('No tour found for tourId:', tourId, 'user:', user.role)
+  }
 
   return tour
 }
