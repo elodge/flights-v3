@@ -11,8 +11,43 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { enrichFlight, extractFlightIdentifiers, type EnrichmentQuery, type EnrichmentResult } from '@/lib/enrichment';
+
+// CONTEXT: Client-side cache to prevent duplicate requests across components
+const clientCache = new Map<string, {
+  data: EnrichmentResult;
+  timestamp: number;
+}>();
+
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCacheKey(query: EnrichmentQuery): string {
+  return JSON.stringify(query);
+}
+
+function getCachedResult(query: EnrichmentQuery): EnrichmentResult | null {
+  const key = getCacheKey(query);
+  const cached = clientCache.get(key);
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+  
+  if (cached) {
+    clientCache.delete(key); // Remove expired cache
+  }
+  
+  return null;
+}
+
+function setCachedResult(query: EnrichmentQuery, result: EnrichmentResult): void {
+  const key = getCacheKey(query);
+  clientCache.set(key, {
+    data: result,
+    timestamp: Date.now(),
+  });
+}
 
 /**
  * Hook state for flight enrichment
@@ -76,22 +111,26 @@ export function useFlightEnrichment(
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // CONTEXT: Normalize query from various input formats
-  const normalizedQuery = query
-    ? ('flight_iata' in query || 'dep_iata' in query || 'arr_iata' in query)
+  // CONTEXT: Normalize query from various input formats with memoization
+  const normalizedQuery = useMemo(() => {
+    if (!query) return null;
+    
+    return ('flight_iata' in query || 'dep_iata' in query || 'arr_iata' in query)
       ? query as EnrichmentQuery
-      : extractFlightIdentifiers(query)
-    : null;
+      : extractFlightIdentifiers(query);
+  }, [query]);
 
-  // CONTEXT: Check if query has required parameters
-  const hasValidQuery = normalizedQuery && (
-    normalizedQuery.flight_iata ||
-    normalizedQuery.dep_iata ||
-    normalizedQuery.arr_iata
-  );
+  // CONTEXT: Check if query has required parameters with memoization
+  const hasValidQuery = useMemo(() => {
+    return normalizedQuery && (
+      normalizedQuery.flight_iata ||
+      normalizedQuery.dep_iata ||
+      normalizedQuery.arr_iata
+    );
+  }, [normalizedQuery]);
 
   /**
-   * Fetch enriched flight data
+   * Fetch enriched flight data with client-side caching
    */
   const fetchEnrichment = useCallback(async () => {
     if (!hasValidQuery || !normalizedQuery) {
@@ -100,11 +139,24 @@ export function useFlightEnrichment(
       return;
     }
 
+    // CONTEXT: Check client-side cache first
+    const cachedResult = getCachedResult(normalizedQuery);
+    if (cachedResult) {
+      setData(cachedResult);
+      setError(cachedResult.success ? null : cachedResult.error || 'Cached error');
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
       const result = await enrichFlight(normalizedQuery);
+      
+      // CONTEXT: Cache the result for future use
+      setCachedResult(normalizedQuery, result);
+      
       setData(result);
       
       if (!result.success) {
@@ -112,13 +164,18 @@ export function useFlightEnrichment(
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Network error';
-      setError(errorMessage);
-      setData({
+      const errorResult: EnrichmentResult = {
         data: null,
         source: 'airlabs',
         success: false,
         error: errorMessage,
-      });
+      };
+      
+      // CONTEXT: Cache failed results to prevent retries
+      setCachedResult(normalizedQuery, errorResult);
+      
+      setError(errorMessage);
+      setData(errorResult);
     } finally {
       setLoading(false);
     }
@@ -140,16 +197,21 @@ export function useFlightEnrichment(
     setLoading(false);
   }, []);
 
-  // CONTEXT: Auto-fetch on mount and query changes
+  // CONTEXT: Stable query string for useEffect dependency
+  const queryString = useMemo(() => {
+    return normalizedQuery ? JSON.stringify(normalizedQuery) : '';
+  }, [normalizedQuery]);
+
+  // CONTEXT: Auto-fetch on mount and query changes with stable dependencies
   useEffect(() => {
-    if (!autoFetch) return;
+    if (!autoFetch || !hasValidQuery || !normalizedQuery) return;
 
     const timeoutId = setTimeout(() => {
       fetchEnrichment();
     }, debounceMs);
 
     return () => clearTimeout(timeoutId);
-  }, [autoFetch, fetchEnrichment, debounceMs]);
+  }, [autoFetch, hasValidQuery, queryString, debounceMs, fetchEnrichment]);
 
   // CONTEXT: Retry on error if enabled
   useEffect(() => {
