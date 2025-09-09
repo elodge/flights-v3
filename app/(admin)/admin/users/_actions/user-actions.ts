@@ -506,7 +506,7 @@ export async function adminGetUserDetail(userId: string) {
       .eq('user_id', userId)
     
     // Fetch pending invite (if any)
-    const { data: invite } = await supabase
+    const { data: invite } = await (supabase as any)
       .from('invites')
       .select('*')
       .eq('email', user.email)
