@@ -118,7 +118,6 @@ export async function adminSearchUsers(params: z.infer<typeof searchUsersSchema>
         full_name,
         role,
         is_active,
-        auth_user_id,
         created_at,
         updated_at
       `, { count: 'exact' })
@@ -485,7 +484,6 @@ export async function adminGetUserDetail(userId: string) {
         full_name,
         role,
         is_active,
-        auth_user_id,
         created_at,
         updated_at
       `)
