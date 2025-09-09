@@ -65,17 +65,17 @@ const setUserArtistsSchema = z.object({
  * @security Enforces admin role requirement
  */
 async function requireAdmin() {
-  const { user, role } = await getServerUser()
+  const authUser = await getServerUser()
   
-  if (!user) {
+  if (!authUser || !authUser.user) {
     redirect('/login')
   }
   
-  if (role !== 'admin') {
+  if (authUser.role !== 'admin') {
     throw new Error('Unauthorized: Admin role required')
   }
   
-  return user
+  return authUser.user
 }
 
 /**
