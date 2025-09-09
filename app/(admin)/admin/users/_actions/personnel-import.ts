@@ -61,7 +61,7 @@ export async function importPersonnel(projectId: string, rawRows: unknown) {
   // CONTEXT: Validate user authentication and role
   // SECURITY: Ensure only agents and admins can import personnel
   const user = await getServerUser()
-  if (!user.user || !['agent', 'admin'].includes(user.role || '')) {
+  if (!user || !user.user || !['agent', 'admin'].includes(user.role || '')) {
     throw new Error('Unauthorized: Agent or admin role required')
   }
 
