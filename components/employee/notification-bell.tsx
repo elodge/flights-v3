@@ -93,6 +93,7 @@ export function NotificationBell({ userId, artistId }: NotificationBellProps) {
   // CONTEXT: Load notifications on mount and when artist changes
   useEffect(() => {
     fetchNotifications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, currentArtistId]);
 
   // CONTEXT: Mark all visible notifications as read

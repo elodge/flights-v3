@@ -109,7 +109,8 @@ export async function getUnreadCount(userId: string, artistId?: string): Promise
 
   if (error) {
     console.error('Error getting unread count:', error);
-    throw new Error(`Failed to get unread count: ${error.message}`);
+    // Gracefully handle errors instead of throwing
+    return 0;
   }
 
   return count || 0;

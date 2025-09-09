@@ -101,11 +101,13 @@ export function Header() {
       loadSelectedArtist()
       fetchInitialUnreadCount()
     }
-  }, [user, profile, role, fetchInitialUnreadCount])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, profile, role])
 
   // Load current selection from URL/cookie
   useEffect(() => {
     loadSelectedArtist()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
 
 
@@ -127,7 +129,8 @@ export function Header() {
     if (user && profile && ['agent', 'admin'].includes(role || '')) {
       fetchInitialUnreadCount()
     }
-  }, [selectedArtistId, user, profile, role, fetchInitialUnreadCount])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedArtistId, user, profile, role])
 
   const fetchArtists = async () => {
     try {

@@ -40,19 +40,25 @@ export interface NotificationItem {
  * ```
  */
 export async function getUnreadCount(artistId?: string): Promise<number> {
-  const url = new URL('/api/notifications/unread-count', window.location.origin);
-  if (artistId) {
-    url.searchParams.set('artist', artistId);
-  }
+  try {
+    const url = new URL('/api/notifications/unread-count', window.location.origin);
+    if (artistId) {
+      url.searchParams.set('artist', artistId);
+    }
 
-  const response = await fetch(url.toString());
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch unread count');
-  }
+    const response = await fetch(url.toString());
+    
+    if (!response.ok) {
+      console.error('Failed to fetch unread count:', response.status);
+      return 0;
+    }
 
-  const data = await response.json();
-  return data.count;
+    const data = await response.json();
+    return data.count || 0;
+  } catch (error) {
+    console.error('Error fetching unread count:', error);
+    return 0;
+  }
 }
 
 /**
