@@ -33,7 +33,7 @@ const customUuidSchema = z.string().refine((val) => {
 const searchUsersSchema = z.object({
   q: z.string().optional(),
   role: z.enum(['client', 'agent', 'admin']).optional(),
-  status: z.enum(['active', 'suspended']).optional(),
+  is_active: z.boolean().optional(),
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(20)
 })
@@ -49,7 +49,7 @@ const updateUserSchema = z.object({
   fullName: z.string().min(1, 'Full name is required').max(100),
   email: z.string().email('Invalid email address'),
   role: z.enum(['client', 'agent', 'admin']),
-  status: z.enum(['active', 'suspended'])
+  is_active: z.boolean()
 })
 
 const setUserArtistsSchema = z.object({
@@ -134,8 +134,8 @@ export async function adminSearchUsers(params: z.infer<typeof searchUsersSchema>
     }
     
     // Apply status filter
-    if (validatedParams.status) {
-      query = query.eq('status', validatedParams.status)
+    if (validatedParams.is_active !== undefined) {
+      query = query.eq('is_active', validatedParams.is_active)
     }
     
     // Apply pagination
@@ -368,7 +368,7 @@ export async function adminUpdateUserProfile(params: z.infer<typeof updateUserSc
         full_name: validatedParams.fullName,
         email: validatedParams.email,
         role: validatedParams.role,
-        status: validatedParams.status
+        is_active: validatedParams.is_active
       })
       .eq('id', validatedParams.userId)
     
@@ -484,7 +484,7 @@ export async function adminGetUserDetail(userId: string) {
         email,
         full_name,
         role,
-        status,
+        is_active,
         auth_user_id,
         created_at,
         updated_at
