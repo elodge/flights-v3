@@ -83,6 +83,15 @@ export async function GET(request: NextRequest): Promise<NextResponse<Enrichment
       });
     }
 
+    // CONTEXT: Check if API key is configured
+    if (!process.env.AIRLABS_API_KEY) {
+      return NextResponse.json({
+        enrichment: null,
+        source: 'airlabs' as const,
+        cached: false,
+      });
+    }
+
     // SECURITY: Check rate limiting
     if (!consumeToken()) {
       return NextResponse.json(
