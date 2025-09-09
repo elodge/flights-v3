@@ -144,7 +144,7 @@ export function BookingQueue({ selections, totalCount }: BookingQueueProps) {
 
   // Filter and sort selections
   const filteredSelections = useMemo(() => {
-    let filtered = selections.filter(selection => {
+    const filtered = selections.filter(selection => {
       const matchesSearch = 
         selection.passenger.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         selection.leg.project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

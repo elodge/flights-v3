@@ -26,8 +26,8 @@ const AIRLINES = [
 // CONTEXT: Create lookup map for fast IATA code to name resolution
 const AIRLINE_MAP: Record<string, string> = Object.fromEntries(
   AIRLINES
-    .filter((a: any) => a?.iata && a?.name)
-    .map((a: any) => [String(a.iata).toUpperCase(), String(a.name)])
+  .filter((a: { iata?: string; name?: string }) => a?.iata && a?.name)
+  .map((a: { iata: string; name: string }) => [String(a.iata).toUpperCase(), String(a.name)])
 );
 
 /**

@@ -64,7 +64,7 @@ export type NormalizedSegment = {
  * })
  * ```
  */
-export function normalizeSegment(s: any): NormalizedSegment {
+export function normalizeSegment(s: Record<string, unknown>): NormalizedSegment {
   // CONTEXT: Try multiple likely keys to be resilient to different data sources
   let airline = s.airline ?? s.airline_code ?? s.airline_iata ?? s.carrier ?? "";
   let flightNumber = s.flightNumber ?? s.flight_number ?? s.number ?? "";
@@ -72,7 +72,7 @@ export function normalizeSegment(s: any): NormalizedSegment {
   let destination = s.destination ?? s.to ?? s.arrivalAirport ?? s.arr_airport ?? s.arr_iata ?? s.arr ?? "";
   let depTimeRaw = s.depTimeRaw ?? s.departureTime ?? s.dep_time ?? s.dep_time_local ?? s.dep ?? s.dep_local;
   let arrTimeRaw = s.arrTimeRaw ?? s.arrivalTime ?? s.arr_time ?? s.arr_time_local ?? s.arr ?? s.arr_local;
-  let dayOffset = s.dayOffset ?? s.plusDays ?? s.arrivalDayOffset ?? s.arrival_plus_days ?? 0;
+  const dayOffset = s.dayOffset ?? s.plusDays ?? s.arrivalDayOffset ?? s.arrival_plus_days ?? 0;
 
   // CONTEXT: Fallback to parsing navitas_text if structured fields are missing
   // BUSINESS_RULE: Handle legacy data where only navitas_text is populated

@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 interface FlightSegmentRowProps {
   /** Raw segment data from any source */
-  segment: any;
+  segment: Record<string, unknown>;
   /** Additional CSS classes */
   className?: string;
   /** Whether this segment is selected */
