@@ -117,7 +117,7 @@ export async function adminSearchUsers(params: z.infer<typeof searchUsersSchema>
         email,
         full_name,
         role,
-        status,
+        is_active,
         auth_user_id,
         created_at,
         updated_at
