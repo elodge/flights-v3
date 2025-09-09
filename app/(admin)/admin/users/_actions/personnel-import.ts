@@ -187,7 +187,7 @@ export async function getPersonnelImportStats(projectId: string) {
   try {
     const { data, error } = await supabase
       .from('tour_personnel')
-      .select('id, party, status')
+      .select('id, is_active')
       .eq('project_id', projectId)
 
     if (error) {
@@ -195,16 +195,12 @@ export async function getPersonnelImportStats(projectId: string) {
     }
 
     const totalCount = data?.length || 0
-    const activeCount = data?.filter(p => p.status === 'active').length || 0
-    const partyCounts = data?.reduce((acc, p) => {
-      acc[p.party] = (acc[p.party] || 0) + 1
-      return acc
-    }, {} as Record<string, number>) || {}
+    const activeCount = data?.filter(p => p.is_active === true).length || 0
 
     return {
       totalCount,
       activeCount,
-      partyCounts
+      partyCounts: {} // Party information not available in current schema
     }
 
   } catch (error) {
