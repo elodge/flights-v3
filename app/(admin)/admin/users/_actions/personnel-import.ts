@@ -158,7 +158,7 @@ export async function importPersonnel(projectId: string, rawRows: unknown) {
     console.error('Error in importPersonnel:', error)
     
     if (error instanceof z.ZodError) {
-      const errorMessages = error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+      const errorMessages = error.issues.map(e => `${e.path.join('.')}: ${e.message}`)
       throw new Error(`Validation failed: ${errorMessages.join(', ')}`)
     }
     
