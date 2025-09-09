@@ -197,23 +197,31 @@ export async function adminCreateInvite(params: z.infer<typeof createInviteSchem
     // SECURITY: Supabase Auth handles secure token generation and email delivery
 
     // Step 1: Create invite record in our database
-    const { data: inviteData, error: inviteError } = await supabase.rpc('create_invite', {
-      p_email: validatedParams.email,
-      p_role: validatedParams.role,
-      p_artist_ids: validatedParams.artistIds,
-      p_created_by: currentUser.id
-    })
+    // CONTEXT: Generate secure token and insert directly into invites table
+    // SECURITY: Uses crypto.randomUUID() for secure token generation
+    const token = crypto.randomUUID()
+    
+    const { data: inviteData, error: inviteError } = await supabase
+      .from('invites')
+      .insert({
+        email: validatedParams.email,
+        role: validatedParams.role,
+        artist_ids: validatedParams.artistIds,
+        created_by: currentUser.id,
+        token: token,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+      })
+      .select('token')
+      .single()
 
     if (inviteError) {
       console.error('Error creating invite record:', inviteError)
       throw new Error('Failed to create invite record')
     }
 
-    if (!inviteData || inviteData.length === 0) {
+    if (!inviteData) {
       throw new Error('Failed to create invite record')
     }
-
-    const { token } = inviteData[0]
 
     // Step 2: Use Supabase Auth Admin to send invite email
     // CONTEXT: This automatically sends an email with a secure invite link
