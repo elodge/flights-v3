@@ -135,7 +135,7 @@ const createQueryBuilderMock = () => {
   const terminalMethods = ['single', 'maybeSingle', 'csv', 'geojson', 'explain', 'rollback', 'then']
   Object.keys(queryBuilder).forEach(method => {
     if (!terminalMethods.includes(method)) {
-      queryBuilder[method as keyof typeof queryBuilder] = vi.fn().mockReturnValue(queryBuilder)
+      (queryBuilder as any)[method] = vi.fn().mockReturnValue(queryBuilder)
     }
   })
   

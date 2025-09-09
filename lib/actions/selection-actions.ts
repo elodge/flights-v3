@@ -92,7 +92,7 @@ export async function selectFlightOption(params: SelectFlightOptionParams): Prom
     const { data, error } = await supabase.rpc('rpc_client_select_option', {
       leg_id_param: leg_id,
       option_id_param: option_id,
-      passenger_ids_param: passenger_ids
+      passenger_ids_param: passenger_ids || undefined
     })
     
     if (error) {
@@ -112,7 +112,7 @@ export async function selectFlightOption(params: SelectFlightOptionParams): Prom
         const revalidationClient = await createServerClient()
         const { data: legData } = await revalidationClient
           .from('legs')
-          .select('project_id, artist_id')
+          .select('project_id')
           .eq('id', leg_id)
           .single()
         
@@ -122,10 +122,17 @@ export async function selectFlightOption(params: SelectFlightOptionParams): Prom
           // CONTEXT: Create notification for client selection
           // BUSINESS_RULE: Notify employees when clients make selections
           try {
+            // Get artist_id from project
+            const { data: projectData } = await revalidationClient
+              .from('projects')
+              .select('artist_id')
+              .eq('id', legData.project_id)
+              .single()
+            
             await pushNotification({
               type: 'client_selection',
               severity: 'info',
-              artistId: legData.artist_id,
+              artistId: projectData?.artist_id || '',
               projectId: legData.project_id,
               legId: leg_id,
               title: 'New selection from client',
@@ -203,7 +210,7 @@ export async function confirmGroupSelection(legId: string): Promise<SelectFlight
     // CONTEXT: This is an idempotent operation - confirms existing selections
     // BUSINESS_RULE: Group confirmation doesn't change individual selections
     // DATABASE: RLS ensures client can only confirm their own project selections
-    const { data, error } = await supabase.rpc('rpc_confirm_group_selection', {
+    const { data, error } = await (supabase as any).rpc('rpc_confirm_group_selection', {
       leg_id_param: legId
     })
     

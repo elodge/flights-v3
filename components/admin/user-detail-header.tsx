@@ -32,12 +32,8 @@ export function UserDetailHeader({ user }: UserDetailHeaderProps) {
     }
   }
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'active': return 'default'
-      case 'inactive': return 'destructive'
-      default: return 'outline'
-    }
+  const getStatusBadgeVariant = (isActive: boolean) => {
+    return isActive ? 'default' : 'destructive'
   }
 
   const getUserInitials = (name: string) => {
@@ -72,13 +68,13 @@ export function UserDetailHeader({ user }: UserDetailHeaderProps) {
               <Shield className="mr-1 h-3 w-3" />
               {user.role}
             </Badge>
-            <Badge variant={getStatusBadgeVariant(user.status)} className="text-sm">
-              {user.status === 'active' ? (
+            <Badge variant={getStatusBadgeVariant(user.is_active)} className="text-sm">
+              {user.is_active ? (
                 <UserCheck className="mr-1 h-3 w-3" />
               ) : (
                 <UserX className="mr-1 h-3 w-3" />
               )}
-              {user.status}
+              {user.is_active ? 'Active' : 'Inactive'}
             </Badge>
           </div>
         </div>

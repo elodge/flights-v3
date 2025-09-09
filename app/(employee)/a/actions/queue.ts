@@ -33,6 +33,7 @@ function requireEmployee(role?: string) {
 const PlaceHoldSchema = z.object({
   optionId: z.string().uuid('Invalid option ID'),
   legId: z.string().uuid('Invalid leg ID'),
+  passengerId: z.string().uuid('Invalid passenger ID'),
   hours: z.number().min(1).max(72).default(24)
 });
 
@@ -52,6 +53,7 @@ const MarkTicketedSchema = z.object({
  * and availability. Holds cannot be extended once placed.
  * @param optionId - UUID of the flight option to hold
  * @param legId - UUID of the leg containing the option
+ * @param passengerId - UUID of the passenger for the hold
  * @param hours - Number of hours for the hold (default 24, max 72)
  * @returns Hold details with expiration time
  * @security Requires agent/admin role
@@ -60,14 +62,14 @@ const MarkTicketedSchema = z.object({
  * @throws Error if unauthorized or database operation fails
  * @example
  * ```typescript
- * const hold = await placeHold('option-123', 'leg-456', 24);
+ * const hold = await placeHold('option-123', 'leg-456', 'passenger-789', 24);
  * console.log('Hold expires at:', hold.expires_at);
  * ```
  */
-export async function placeHold(optionId: string, legId: string, hours: number = 24) {
+export async function placeHold(optionId: string, legId: string, passengerId: string, hours: number = 24) {
   // CONTEXT: Validate input parameters
-  const { optionId: validatedOptionId, legId: validatedLegId, hours: validatedHours } = 
-    PlaceHoldSchema.parse({ optionId, legId, hours });
+  const { optionId: validatedOptionId, legId: validatedLegId, passengerId: validatedPassengerId, hours: validatedHours } = 
+    PlaceHoldSchema.parse({ optionId, legId, passengerId, hours });
 
   // SECURITY: Create authenticated Supabase client and verify role
   const supabase = await createServerClient();
@@ -89,11 +91,12 @@ export async function placeHold(optionId: string, legId: string, hours: number =
   const expiresAt = new Date(Date.now() + validatedHours * 3600 * 1000).toISOString();
 
   // DATABASE: Insert hold record
+  // CONTEXT: holds table only has option_id and passenger_id, not leg_id
   const { error } = await supabase
     .from('holds')
     .insert({
       option_id: validatedOptionId,
-      leg_id: validatedLegId,
+      passenger_id: validatedPassengerId,
       created_by: user.id,
       expires_at: expiresAt
     });
@@ -103,8 +106,9 @@ export async function placeHold(optionId: string, legId: string, hours: number =
   }
 
   // CONTEXT: Trigger notification event for hold expiring
+  // DATABASE: notification_events table exists but not in generated types
   try {
-    await supabase
+    await (supabase as any)
       .from('notification_events')
       .insert({
         type: 'hold_expiring',
@@ -187,7 +191,8 @@ export async function markTicketed({
   requireEmployee(me?.role);
 
   // DATABASE: Insert ticketing record (unique constraint prevents double-ticketing)
-  const { error: ticketingError } = await supabase
+  // CONTEXT: ticketings table exists but not in generated types
+  const { error: ticketingError } = await (supabase as any)
     .from('ticketings')
     .insert({
       option_id: validated.optionId,
@@ -207,8 +212,9 @@ export async function markTicketed({
   }
 
   // BUSINESS_RULE: Deactivate selection for group containing this passenger
+  // DATABASE: deactivate_selection_for_passenger RPC exists but not in generated types
   try {
-    const { error: deactivateError } = await supabase
+    const { error: deactivateError } = await (supabase as any)
       .rpc('deactivate_selection_for_passenger', {
         p_leg_id: validated.legId,
         p_passenger_id: validated.passengerId
@@ -259,7 +265,8 @@ export async function getBookingQueue(artistId?: string) {
   requireEmployee(me?.role);
 
   // DATABASE: Complex query for booking queue data using client_selections
-  let query = supabase
+  // CONTEXT: client_selections table exists but not in generated types
+  let query = (supabase as any)
     .from('client_selections')
     .select(`
       *,
@@ -312,7 +319,7 @@ export async function getBookingQueue(artistId?: string) {
   }
 
   // CONTEXT: Fetch hold information for each option
-  const optionIds = selections.map(s => s.option_id);
+  const optionIds = selections.map((s: any) => s.option_id);
   const { data: holds } = await supabase
     .from('holds')
     .select('*')
@@ -320,16 +327,16 @@ export async function getBookingQueue(artistId?: string) {
     .gt('expires_at', new Date().toISOString());
 
   // CONTEXT: Fetch ticketing progress for each leg
-  const legIds = [...new Set(selections.map(s => s.selection_groups?.leg_id).filter(Boolean))];
-  const { data: ticketings } = await supabase
+  const legIds = [...new Set(selections.map((s: any) => s.selection_groups?.leg_id).filter(Boolean))];
+  const { data: ticketings } = await (supabase as any)
     .from('ticketings')
     .select('leg_id, passenger_id, option_id')
     .in('leg_id', legIds);
 
   // CONTEXT: Enrich selections with hold and ticketing data
-  const enrichedItems = selections.map(selection => {
+  const enrichedItems = selections.map((selection: any) => {
     const hold = holds?.find(h => h.option_id === selection.option_id);
-    const groupTicketings = ticketings?.filter(t => 
+    const groupTicketings = ticketings?.filter((t: any) => 
       t.leg_id === selection.selection_groups?.leg_id &&
       selection.selection_groups?.passenger_ids?.includes(t.passenger_id)
     ) || [];
@@ -343,7 +350,7 @@ export async function getBookingQueue(artistId?: string) {
   });
 
   // BUSINESS_RULE: Sort by priority (expiring holds first, then departure date, then creation time)
-  enrichedItems.sort((a, b) => {
+  enrichedItems.sort((a: any, b: any) => {
     // Priority 1: Items with expiring holds (soonest first)
     if (a.hold && b.hold) {
       return new Date(a.hold.expires_at).getTime() - new Date(b.hold.expires_at).getTime();

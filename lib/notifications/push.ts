@@ -48,7 +48,7 @@ export interface PushNotificationParams {
 export async function pushNotification(params: PushNotificationParams): Promise<string> {
   const supabase = await createServerClient();
   
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('notification_events')
     .insert([{
       type: params.type,
@@ -90,11 +90,11 @@ export async function getUnreadCount(userId: string, artistId?: string): Promise
   const supabase = await createServerClient();
   
   // Build the query to count unread notifications
-  let query = supabase
+  let query = (supabase as any)
     .from('notification_events')
     .select('id', { count: 'exact', head: true })
     .not('id', 'in', 
-      supabase
+      (supabase as any)
         .from('notification_reads')
         .select('event_id')
         .eq('user_id', userId)
@@ -135,7 +135,7 @@ export async function markNotificationsAsRead(userId: string, eventIds: string[]
 
   const supabase = await createServerClient();
   
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('notification_reads')
     .upsert(
       eventIds.map(eventId => ({
@@ -192,7 +192,7 @@ export async function getRecentNotifications(
 }>> {
   const supabase = await createServerClient();
   
-  let query = supabase
+  let query = (supabase as any)
     .from('notification_events')
     .select(`
       id,
@@ -234,7 +234,7 @@ export async function getRecentNotifications(
   }
 
   // Transform the data to include read status
-  return (data || []).map(notification => ({
+  return (data || []).map((notification: any) => ({
     id: notification.id,
     type: notification.type as NotificationType,
     severity: notification.severity as NotificationSeverity,

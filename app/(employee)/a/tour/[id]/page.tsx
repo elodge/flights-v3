@@ -52,21 +52,7 @@ type TourWithDetails = Database['public']['Tables']['projects']['Row'] & {
       }
     }>
   }>
-  tour_personnel: Array<{
-    id: string
-    full_name: string
-    email: string | null
-    phone: string | null
-    role_title: string | null
-    is_vip: boolean
-    passport_number: string | null
-    nationality: string | null
-    party: string
-    seat_pref: string | null
-    ff_numbers: string | null
-    notes: string | null
-    status: string
-  }>
+  tour_personnel: Array<Database['public']['Tables']['tour_personnel']['Row']>
 }
 
 /**
@@ -138,11 +124,16 @@ async function getEmployeeTour(tourId: string): Promise<TourWithDetails | null> 
         is_vip,
         passport_number,
         nationality,
-        party,
-        seat_pref,
-        ff_numbers,
-        notes,
-        status
+        date_of_birth,
+        dietary_requirements,
+        emergency_contact_name,
+        emergency_contact_phone,
+        special_requests,
+        is_active,
+        created_at,
+        created_by,
+        project_id,
+        updated_at
       )
     `)
     .eq('id', tourId)

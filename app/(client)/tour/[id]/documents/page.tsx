@@ -85,7 +85,9 @@ export default async function ClientDocumentsPage({ params }: ClientDocumentsPag
   }
 
   // DATABASE: Load latest documents per kind for this project (client view)
-  const { data: documents, error: documentsError } = await supabase
+  // CONTEXT: tour_documents table exists but not in generated types
+  // DATABASE: Using type assertion for missing table in generated types
+  const { data: documents, error: documentsError } = await (supabase as any)
     .from('tour_documents')
     .select('*')
     .eq('project_id', projectId)
@@ -96,14 +98,14 @@ export default async function ClientDocumentsPage({ params }: ClientDocumentsPag
   }
 
   // CONTEXT: Filter to latest per kind for client view
-  const latestPerKind = documents ? documents.reduce((acc, doc) => {
+  const latestPerKind = documents ? documents.reduce((acc: Record<string, any>, doc: any) => {
     if (!acc[doc.kind]) {
       acc[doc.kind] = doc;
     }
     return acc;
-  }, {} as Record<string, typeof documents[0]>) : {};
+  }, {} as Record<string, any>) : {};
 
-  const clientDocuments = Object.values(latestPerKind);
+  const clientDocuments = Object.values(latestPerKind) as any[];
 
   return (
     <div className="container mx-auto py-6 space-y-6">

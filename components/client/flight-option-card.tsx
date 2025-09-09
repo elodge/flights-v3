@@ -346,15 +346,15 @@ export function FlightOptionCard({ option, legId, selectionType, passengerIds }:
                 
                 {/* Flight Status Badge */}
                 {flightData && (
-                  <Badge variant={getFlightStatusVariant(flightData.flightStatus)} className="text-xs">
-                    {formatFlightStatus(flightData.flightStatus)}
+                  <Badge variant={getFlightStatusVariant((flightData as any).flightStatus)} className="text-xs">
+                    {formatFlightStatus((flightData as any).flightStatus)}
                   </Badge>
                 )}
                 
                 {/* Delay Badge */}
-                {flightData?.departure.delayMin && flightData.departure.delayMin > 0 && (
+                {(flightData as any)?.departure.delayMin && (flightData as any).departure.delayMin > 0 && (
                   <Badge variant="destructive" className="text-xs">
-                    +{flightData.departure.delayMin}m delay
+                    +{(flightData as any).departure.delayMin}m delay
                   </Badge>
                 )}
               </div>
@@ -366,13 +366,13 @@ export function FlightOptionCard({ option, legId, selectionType, passengerIds }:
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                     <div>
                       <p className="font-medium">
-                        {flightData?.departure.iata || firstComponent?.dep_iata}
+                        {(flightData as any)?.departure.iata || firstComponent?.dep_iata}
                       </p>
                       <p className="text-muted-foreground">
                         {flightData ? formatFlightTime(
                           flightData.departure.scheduled,
                           flightData.departure.estimated,
-                          flightData.departure.actual
+                          flightData.departure.actual || undefined
                         ) : firstComponent?.dep_time_local ? 
                           new Date(firstComponent.dep_time_local).toLocaleTimeString('en-US', { 
                             hour: '2-digit', 
@@ -397,13 +397,13 @@ export function FlightOptionCard({ option, legId, selectionType, passengerIds }:
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <div>
                       <p className="font-medium">
-                        {flightData?.arrival.iata || firstComponent?.arr_iata}
+                        {(flightData as any)?.arrival.iata || firstComponent?.arr_iata}
                       </p>
                       <p className="text-muted-foreground">
                         {flightData ? formatFlightTime(
                           flightData.arrival.scheduled,
                           flightData.arrival.estimated,
-                          flightData.arrival.actual
+                          flightData.arrival.actual || undefined
                         ) : firstComponent?.arr_time_local ? 
                           new Date(firstComponent.arr_time_local).toLocaleTimeString('en-US', { 
                             hour: '2-digit', 
@@ -431,7 +431,7 @@ export function FlightOptionCard({ option, legId, selectionType, passengerIds }:
                 <div className="space-y-2">
                   {/* Header with first segment info */}
                   {option.option_components.length > 0 && (() => {
-                    const first = normalizeSegment(option.option_components[0]);
+                    const first = normalizeSegment(option.option_components[0] as any);
                     const headerAirline = getAirlineName(first.airline);
                     const headerFlight = first.airline && first.flightNumber ? `${first.airline} ${first.flightNumber}` : "";
                     
@@ -456,7 +456,7 @@ export function FlightOptionCard({ option, legId, selectionType, passengerIds }:
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <div className="font-medium text-sm">
-                                {getAirlineName(component.airline_iata || component.airline_code)} {component.flight_number}
+                                {getAirlineName(component.airline_iata || (component as any).airline_code)} {component.flight_number}
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 {component.dep_iata} → {component.arr_iata}

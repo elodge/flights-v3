@@ -41,7 +41,9 @@ export async function POST(request: NextRequest) {
 
     // CONTEXT: Validate invite token
     // SECURITY: Check token exists, not expired, and not already accepted
-    const { data: invite, error: inviteError } = await supabase
+    // CONTEXT: invites table exists but not in generated types
+    // DATABASE: Using type assertion for missing table in generated types
+    const { data: invite, error: inviteError } = await (supabase as any)
       .from('invites')
       .select('*')
       .eq('token', token)
@@ -186,7 +188,9 @@ export async function POST(request: NextRequest) {
 
     // CONTEXT: Mark invite as accepted
     // ALGORITHM: Set accepted_at timestamp to prevent reuse
-    const { error: acceptError } = await supabaseAdmin
+    // CONTEXT: invites table exists but not in generated types
+    // DATABASE: Using type assertion for missing table in generated types
+    const { error: acceptError } = await (supabaseAdmin as any)
       .from('invites')
       .update({ accepted_at: new Date().toISOString() })
       .eq('id', invite.id);

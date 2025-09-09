@@ -80,7 +80,7 @@ export type CreateManualOptionInput = {
  * ```
  */
 export async function createManualFlightOption(input: CreateManualOptionInput) {
-  const supabase = createSupabaseServerClient(cookies());
+  const supabase = await createServerClient();
 
   // CONTEXT: Authentication and authorization check
   // SECURITY: Only agents and admins can create manual options

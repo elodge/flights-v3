@@ -122,7 +122,7 @@ export async function createLeg(
       .insert({
         project_id: projectId,
         destination_city: validatedData.destination,
-        origin_city: validatedData.origin || null,
+        origin_city: validatedData.origin || '',
         departure_date: validatedData.departure_date || null,
         arrival_date: validatedData.arrival_date || null,
         label: validatedData.label || null,
@@ -150,7 +150,7 @@ export async function createLeg(
     
     if (error instanceof z.ZodError) {
       // CONTEXT: Access ZodError issues directly since errors property may not be serializable
-      const issues = (error as any).issues || error.errors || []
+      const issues = error.issues || []
       const firstIssue = issues[0]
       return { 
         success: false, 

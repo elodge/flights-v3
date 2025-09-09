@@ -39,7 +39,7 @@ import { toast } from 'sonner'
 const inviteUserSchema = z.object({
   email: z.string().email('Invalid email address'),
   role: z.enum(['client', 'agent', 'admin']),
-  artistIds: z.array(z.string()).default([])
+  artistIds: z.array(z.string())
 })
 
 type InviteUserForm = z.infer<typeof inviteUserSchema>

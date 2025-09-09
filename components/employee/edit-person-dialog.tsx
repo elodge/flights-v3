@@ -167,7 +167,7 @@ export function EditPersonDialog({ person }: EditPersonDialogProps) {
                       <FormLabel>Party *</FormLabel>
                       <Select onValueChange={(value) => {
                         field.onChange(value);
-                        form.setValue('party', value);
+                        form.setValue('party', value as "A Party" | "B Party" | "C Party" | "D Party");
                       }} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
@@ -194,7 +194,7 @@ export function EditPersonDialog({ person }: EditPersonDialogProps) {
                       <FormLabel>Status</FormLabel>
                       <Select onValueChange={(value) => {
                         field.onChange(value);
-                        form.setValue('status', value);
+                        form.setValue('status', value as "active" | "inactive");
                       }} value={field.value}>
                         <FormControl>
                           <SelectTrigger>

@@ -353,7 +353,7 @@ export default async function ClientLegPage({ params }: PageProps) {
                 ) : (
                   <IndividualSelectionTable
                     passengers={individualPassengers}
-                    options={leg.options}
+                    options={leg.options as any}
                     legId={legId}
                   />
                 )}

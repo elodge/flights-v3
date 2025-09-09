@@ -455,7 +455,7 @@ export function UserDetailTabs({ user }: UserDetailTabsProps) {
                   {new Date(user.pendingInvite.expires_at).toLocaleString()}
                 </p>
                 <p className="text-xs text-yellow-600 mt-1">
-                  Token: {user.pendingInvite.token}
+                  Expires: {new Date(user.pendingInvite.expires_at).toLocaleDateString()}
                 </p>
               </div>
             )}

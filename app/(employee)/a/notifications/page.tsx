@@ -151,7 +151,7 @@ export default async function NotificationsPage() {
             </CardHeader>
             <CardContent>
               <Suspense fallback={<div>Loading notifications...</div>}>
-                <NotificationsList userId={user.id} />
+                <NotificationsList userId={authUser.user?.id || ''} />
               </Suspense>
             </CardContent>
           </Card>

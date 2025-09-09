@@ -109,7 +109,7 @@ export async function markHeld(formData: FormData): Promise<ActionResult> {
   } catch (error) {
     console.error('Error in markHeld:', error)
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.errors[0].message }
+      return { success: false, error: error.issues[0].message }
     }
     return { success: false, error: 'An unexpected error occurred' }
   }
@@ -234,7 +234,7 @@ export async function markTicketed(formData: FormData): Promise<ActionResult> {
   } catch (error) {
     console.error('Error in markTicketed:', error)
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.errors[0].message }
+      return { success: false, error: error.issues[0].message }
     }
     return { success: false, error: 'An unexpected error occurred' }
   }
@@ -314,7 +314,7 @@ export async function revertToClientChoice(formData: FormData): Promise<ActionRe
   } catch (error) {
     console.error('Error in revertToClientChoice:', error)
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.errors[0].message }
+      return { success: false, error: error.issues[0].message }
     }
     return { success: false, error: 'An unexpected error occurred' }
   }

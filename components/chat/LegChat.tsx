@@ -116,8 +116,6 @@ export function LegChat({ legId }: LegChatProps) {
           leg_id,
           user_id,
           message,
-          body,
-          sender_role,
           created_at,
           users:user_id (
             full_name,
@@ -139,8 +137,8 @@ export function LegChat({ legId }: LegChatProps) {
         id: msg.id,
         leg_id: msg.leg_id,
         user_id: msg.user_id,
-        message: msg.message || msg.body, // Use message field primarily, fallback to body
-        sender_role: msg.sender_role || getUserRole(msg.users?.role),
+        message: msg.message, // Use message field
+        sender_role: getUserRole(msg.users?.role),
         created_at: msg.created_at,
         optimistic: false
       }))
@@ -201,7 +199,7 @@ export function LegChat({ legId }: LegChatProps) {
         leg_id: msg.leg_id,
         user_id: msg.user_id,
         message: msg.message,
-        sender_role: msg.sender_role || getUserRole(msg.users?.role),
+        sender_role: getUserRole(msg.users?.role),
         created_at: msg.created_at,
         optimistic: false
       }))
@@ -228,7 +226,7 @@ export function LegChat({ legId }: LegChatProps) {
     if (!user) return
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('chat_reads')
         .upsert({
           user_id: user.id,
@@ -265,7 +263,7 @@ export function LegChat({ legId }: LegChatProps) {
       leg_id: legId,
       user_id: user.id,
       message: text.trim(),
-      sender_role: role, // Use role from useUser hook
+      sender_role: role || 'client', // Use role from useUser hook, fallback to client
       created_at: new Date().toISOString(),
       optimistic: true
     }
@@ -287,8 +285,6 @@ export function LegChat({ legId }: LegChatProps) {
         leg_id: legId,
         user_id: user.id,
         message: text.trim(), // Required field
-        body: text.trim(),    // Also set body for consistency
-        sender_role: role, // Use role from useUser hook, not user.role
         is_system_message: false // Explicit false for user messages
       }
       
@@ -300,8 +296,7 @@ export function LegChat({ legId }: LegChatProps) {
           id,
           leg_id,
           user_id,
-          body,
-          sender_role,
+          message,
           created_at,
           users:user_id (
             full_name,
@@ -330,8 +325,8 @@ export function LegChat({ legId }: LegChatProps) {
                 id: data.id,
                 leg_id: data.leg_id,
                 user_id: data.user_id,
-                message: data.message || data.body, // Use message field primarily
-                sender_role: data.sender_role || getUserRole(data.users?.role),
+                message: data.message, // Use message field
+                sender_role: getUserRole(data.users?.role),
                 created_at: data.created_at,
                 optimistic: false
               }
@@ -342,10 +337,10 @@ export function LegChat({ legId }: LegChatProps) {
     } catch (error) {
       console.error('Error sending message:', error)
       console.error('Error details:', {
-        message: error?.message,
-        code: error?.code,
-        details: error?.details,
-        hint: error?.hint
+        message: (error as any)?.message,
+        code: (error as any)?.code,
+        details: (error as any)?.details,
+        hint: (error as any)?.hint
       })
       
       // CONTEXT: Mark optimistic message as failed
@@ -355,7 +350,7 @@ export function LegChat({ legId }: LegChatProps) {
           : msg
       ))
       
-      toast.error(`Failed to send message: ${error?.message || 'Unknown error'}`)
+      toast.error(`Failed to send message: ${(error as any)?.message || 'Unknown error'}`)
     } finally {
       setIsSending(false)
     }
@@ -381,7 +376,7 @@ export function LegChat({ legId }: LegChatProps) {
         event: 'typing',
         payload: {
           userId: user.id,
-          fullName: user.full_name || user.email,
+          fullName: (user as any).full_name || user.email,
           timestamp: now
         }
       })

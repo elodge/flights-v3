@@ -85,7 +85,7 @@ export function BudgetSidebar({ projectId }: BudgetSidebarProps) {
       const result = await getBudgetSnapshot(projectId)
       
       if (result.success) {
-        setBudget(result.data)
+        setBudget(result.data || null)
       } else {
         setError(result.error || 'Failed to load budget data')
       }

@@ -535,7 +535,6 @@ export async function adminGetUserDetail(userId: string): Promise<UserDetail | n
       full_name: user.full_name,
       role: user.role,
       is_active: toBool(user.is_active, true),
-      status: toBool(user.is_active, true) ? 'active' : 'inactive',
       created_at: required(user.created_at, 'User created_at is required'),
       updated_at: required(user.updated_at, 'User updated_at is required'),
       artistAssignments: (assignments as ArtistAssignment[]) || [],

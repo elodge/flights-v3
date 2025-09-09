@@ -468,7 +468,7 @@ export function ManualOptionForm({ legId }: ManualOptionFormProps) {
                   <Label htmlFor={`airline_name_${segment.id}`}>Airline Name</Label>
                   <Input
                     id={`airline_name_${segment.id}`}
-                    value={segment.airline_name}
+                    value={segment.airline_name || ''}
                     onChange={(e) => updateSegment(segment.id, 'airline_name', e.target.value)}
                     placeholder="e.g., United Airlines"
                   />

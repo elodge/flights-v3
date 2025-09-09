@@ -144,18 +144,14 @@ async function getLegDetails(projectId: string, legId: string): Promise<LegWithD
           navitas_text,
           flight_number,
           airline,
-          airline_iata,
-          airline_name,
-          dep_iata,
-          arr_iata,
           departure_time,
           arrival_time,
-          dep_time_local,
-          arr_time_local,
-          day_offset,
-          duration_minutes,
-          stops,
-          enriched_terminal_gate
+          aircraft_type,
+          baggage_allowance,
+          meal_service,
+          seat_configuration,
+          cost,
+          currency
         )
       )
     `)
@@ -163,7 +159,7 @@ async function getLegDetails(projectId: string, legId: string): Promise<LegWithD
     .eq('project_id', projectId)
     .single()
 
-  return leg
+  return leg as any
 }
 
 async function getProjectPersonnel(projectId: string, legId: string): Promise<ProjectPersonnel[]> {

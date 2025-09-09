@@ -13,10 +13,7 @@
 
 'use client'
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -47,7 +44,7 @@ interface InviteInfo {
   isValid: boolean
 }
 
-export default function AcceptInvitePage() {
+function AcceptInviteContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [inviteInfo, setInviteInfo] = useState<InviteInfo | null>(null)
@@ -294,5 +291,13 @@ export default function AcceptInvitePage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function AcceptInvitePage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto py-8 flex justify-center">Loading...</div>}>
+      <AcceptInviteContent />
+    </Suspense>
   )
 }

@@ -107,11 +107,11 @@ export function BookingQueueContent() {
       // CONTEXT: Apply status filtering client-side
       let filteredData = data;
       if (statusFilter === 'no-hold') {
-        filteredData = data.filter(item => !item.hold);
+        filteredData = data.filter((item: any) => !item.hold);
       } else if (statusFilter === 'held') {
-        filteredData = data.filter(item => item.hold);
+        filteredData = data.filter((item: any) => item.hold);
       } else if (statusFilter === 'partial') {
-        filteredData = data.filter(item => 
+        filteredData = data.filter((item: any) => 
           item.ticketed_count > 0 && item.ticketed_count < item.total_passengers
         );
       }
@@ -397,6 +397,7 @@ export function BookingQueueContent() {
           optionId={selectedItem.option_id}
           legId={selectedItem.selection_groups.legs.id}
           optionName={selectedItem.options.name}
+          passengerId={'00000000-0000-0000-0000-000000000000'}
         />
       )}
 

@@ -114,7 +114,7 @@ export async function seedSelectionGroups(legId: string): Promise<SeedSelectionG
       .from('leg_passengers')
       .select(`
         passenger_id,
-        is_individual,
+        treat_as_individual,
         tour_personnel!inner(
           id,
           full_name
@@ -139,11 +139,13 @@ export async function seedSelectionGroups(legId: string): Promise<SeedSelectionG
     }
     
     // CONTEXT: Split passengers into individual and grouped categories
-    const individuals = legPassengers.filter(lp => lp.is_individual)
-    const grouped = legPassengers.filter(lp => !lp.is_individual)
+    const individuals = legPassengers.filter(lp => lp.treat_as_individual)
+    const grouped = legPassengers.filter(lp => !lp.treat_as_individual)
     
     // BUSINESS_RULE: Clear existing selection groups for this leg to ensure idempotency
-    const { error: deleteError } = await supabase
+    // CONTEXT: selection_groups table exists but not in generated types
+    // DATABASE: Using type assertion for missing table in generated types
+    const { error: deleteError } = await (supabase as any)
       .from('selection_groups')
       .delete()
       .eq('leg_id', validatedInput.legId)
@@ -162,7 +164,7 @@ export async function seedSelectionGroups(legId: string): Promise<SeedSelectionG
     for (const individual of individuals) {
       const label = `${individual.tour_personnel.full_name} — ${leg.origin_city} → ${leg.destination_city}`
       
-      const { error: insertError } = await supabase
+      const { error: insertError } = await (supabase as any)
         .from('selection_groups')
         .insert({
           leg_id: validatedInput.legId,
@@ -192,7 +194,7 @@ export async function seedSelectionGroups(legId: string): Promise<SeedSelectionG
       const passengerIds = grouped.map(g => g.passenger_id)
       const label = `${leg.origin_city} → ${leg.destination_city} — ${grouped.length} pax`
       
-      const { error: insertError } = await supabase
+      const { error: insertError } = await (supabase as any)
         .from('selection_groups')
         .insert({
           leg_id: validatedInput.legId,
@@ -281,7 +283,9 @@ export async function getSelectionGroupsForLeg(legId: string) {
     }
     
     // DATABASE: Get selection groups for this leg with passenger details
-    const { data: groups, error } = await supabase
+    // CONTEXT: selection_groups table exists but not in generated types
+    // DATABASE: Using type assertion for missing table in generated types
+    const { data: groups, error } = await (supabase as any)
       .from('selection_groups')
       .select(`
         id,

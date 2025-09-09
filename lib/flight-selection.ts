@@ -67,7 +67,7 @@ export async function selectOption(params: SelectOptionParams): Promise<SelectOp
     const { data, error } = await supabase.rpc('rpc_client_select_option', {
       leg_id_param: leg_id,
       option_id_param: option_id,
-      passenger_ids_param: passenger_ids || null
+      passenger_ids_param: passenger_ids || undefined
     })
 
     if (error) {

@@ -30,7 +30,9 @@ export async function GET(request: NextRequest) {
 
     // CONTEXT: Validate invite token
     // SECURITY: Check token exists, not expired, and not already accepted
-    const { data: invite, error } = await supabase
+    // CONTEXT: invites table exists but not in generated types
+    // DATABASE: Using type assertion for missing table in generated types
+    const { data: invite, error } = await (supabase as any)
       .from('invites')
       .select('*')
       .eq('token', token)

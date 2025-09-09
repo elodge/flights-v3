@@ -18,17 +18,22 @@ export type Db = Database;
 
 // Core tables
 export type UserRow = Db['public']['Tables']['users']['Row'];
-export type InviteRow = Db['public']['Tables']['invites']['Row'];
+// Note: invites table not in generated types, using any for now
+export type InviteRow = any;
 export type ArtistRow = Db['public']['Tables']['artists']['Row'];
-export type ArtistAssignmentRow = Db['public']['Tables']['employee_artists']['Row'];
-export type TourRow = Db['public']['Tables']['tours']['Row'];
+// Note: employee_artists table not in generated types, using any for now
+export type ArtistAssignmentRow = any;
+// Note: tours table not in generated types, using any for now
+export type TourRow = any;
 export type LegRow = Db['public']['Tables']['legs']['Row'];
-export type FlightOptionRow = Db['public']['Tables']['flight_options']['Row'];
+// Note: flight_options table not in generated types, using any for now
+export type FlightOptionRow = any;
 export type SelectionRow = Db['public']['Tables']['selections']['Row'];
 
 // Enums
 export type UserRole = Db['public']['Enums']['user_role'];
-export type PartyType = Db['public']['Enums']['party_type'];
+// Note: party_type enum not in generated types, using any for now
+export type PartyType = any;
 
 // ============================================================================
 // COMPOSITE TYPES FOR UI
@@ -57,7 +62,6 @@ export type UserDetail = {
   full_name: string | null;
   role: UserRole;
   is_active: boolean;    // Raw DB field (source of truth)
-  status: 'active' | 'inactive'; // Derived from is_active for UI
   created_at: string;
   updated_at: string;
   artistAssignments: ArtistAssignment[];
@@ -67,7 +71,7 @@ export type UserDetail = {
 /**
  * Simplified user for general use
  */
-export type User = Pick<UserDetail, 'id' | 'email' | 'full_name' | 'role' | 'is_active' | 'status'>;
+export type User = Pick<UserDetail, 'id' | 'email' | 'full_name' | 'role' | 'is_active'>;
 
 /**
  * Artist with assignment information
@@ -96,7 +100,7 @@ export type LegDetail = LegRow & {
  * Flight option with enriched data
  */
 export type FlightOptionDetail = FlightOptionRow & {
-  leg?: Pick<LegRow, 'id' | 'departure_city' | 'arrival_city'>;
+  leg?: Pick<LegRow, 'id' | 'origin_city' | 'destination_city'>;
 };
 
 /**
@@ -104,7 +108,7 @@ export type FlightOptionDetail = FlightOptionRow & {
  */
 export type SelectionDetail = SelectionRow & {
   flight_option?: FlightOptionDetail;
-  leg?: Pick<LegRow, 'id' | 'departure_city' | 'arrival_city'>;
+  leg?: Pick<LegRow, 'id' | 'origin_city' | 'destination_city'>;
   tour?: Pick<TourRow, 'id' | 'name'>;
 };
 

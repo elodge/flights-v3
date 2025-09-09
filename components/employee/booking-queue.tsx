@@ -166,7 +166,7 @@ export function BookingQueue({ selections, totalCount }: BookingQueueProps) {
       if (urgencyA.expired && !urgencyB.expired) return -1
       if (!urgencyA.expired && urgencyB.expired) return 1
       
-      const urgencyOrder = { high: 3, medium: 2, low: 1, none: 0, expired: 4 }
+      const urgencyOrder: { [key: string]: number } = { high: 3, medium: 2, low: 1, none: 0, expired: 4 }
       return urgencyOrder[urgencyB.urgency] - urgencyOrder[urgencyA.urgency]
     })
 

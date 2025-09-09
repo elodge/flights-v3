@@ -62,7 +62,7 @@ export function useChatUnread(legId: string) {
         setIsLoading(true)
 
         // CONTEXT: Get user's last read timestamp for this leg
-        const { data: readData } = await supabase
+        const { data: readData } = await (supabase as any)
           .from('chat_reads')
           .select('last_read_at')
           .eq('user_id', user.id)
@@ -181,7 +181,7 @@ export async function markChatAsRead(legId: string): Promise<void> {
   if (!user) return
 
   try {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('chat_reads')
       .upsert({
         user_id: user.id,

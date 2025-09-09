@@ -57,6 +57,8 @@ interface PlaceHoldDialogProps {
   legId: string;
   /** Display name of the option */
   optionName: string;
+  /** UUID of the passenger to place hold for */
+  passengerId: string;
 }
 
 /**
@@ -88,7 +90,8 @@ export function PlaceHoldDialog({
   onSuccess,
   optionId,
   legId,
-  optionName
+  optionName,
+  passengerId
 }: PlaceHoldDialogProps) {
   const [duration, setDuration] = useState<string>('24');
   const [isPending, startTransition] = useTransition();
@@ -98,7 +101,7 @@ export function PlaceHoldDialog({
     startTransition(async () => {
       try {
         const hours = parseInt(duration);
-        await placeHold(optionId, legId, hours);
+        await placeHold(optionId, legId, passengerId, hours);
         
         toast.success(`Hold placed for ${hours} hours`);
         onSuccess();

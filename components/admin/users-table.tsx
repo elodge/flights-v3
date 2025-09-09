@@ -36,11 +36,12 @@ import { toast } from 'sonner'
 interface User {
   id: string
   email: string
-  full_name: string
+  full_name: string | null
   role: string
-  status: string
-  auth_user_id: string | null
+  is_active: boolean
   created_at: string
+  updated_at: string
+  avatar_url: string | null
   artist_assignments?: Array<{
     artist_id: string
     artists: { name: string }
@@ -72,7 +73,7 @@ export function UsersTable({ initialUsers = [], initialTotal = 0 }: UsersTablePr
       const result = await adminSearchUsers({
         q: searchQuery || undefined,
         role: roleFilter === 'all' ? undefined : roleFilter as any,
-        status: statusFilter === 'all' ? undefined : statusFilter as any,
+        is_active: statusFilter === 'all' ? undefined : statusFilter === 'active',
         page,
         limit: 20
       })
@@ -175,12 +176,8 @@ export function UsersTable({ initialUsers = [], initialTotal = 0 }: UsersTablePr
     }
   }
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'active': return 'default'
-      case 'suspended': return 'destructive'
-      default: return 'outline'
-    }
+  const getStatusBadgeVariant = (isActive: boolean) => {
+    return isActive ? 'default' : 'destructive'
   }
 
   return (
@@ -279,8 +276,8 @@ export function UsersTable({ initialUsers = [], initialTotal = 0 }: UsersTablePr
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getStatusBadgeVariant(user.status)}>
-                          {user.status}
+                        <Badge variant={getStatusBadgeVariant(user.is_active)}>
+                          {user.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -307,7 +304,7 @@ export function UsersTable({ initialUsers = [], initialTotal = 0 }: UsersTablePr
                             <Eye className="h-4 w-4" />
                           </Button>
                           
-                          {user.status === 'active' ? (
+                          {user.is_active ? (
                             <Button
                               variant="ghost"
                               size="sm"

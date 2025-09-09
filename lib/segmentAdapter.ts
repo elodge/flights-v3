@@ -95,6 +95,6 @@ export function normalizeSegment(s: Record<string, unknown>): NormalizedSegment 
     destination: String(destination || "").toUpperCase(),
     depTimeRaw: depTimeRaw ? String(depTimeRaw) : undefined,
     arrTimeRaw: arrTimeRaw ? String(arrTimeRaw) : undefined,
-    dayOffset: typeof dayOffset === "number" ? dayOffset : parseInt(dayOffset || "0", 10) || 0,
+    dayOffset: typeof dayOffset === "number" ? dayOffset : parseInt(String(dayOffset || "0"), 10) || 0,
   };
 }

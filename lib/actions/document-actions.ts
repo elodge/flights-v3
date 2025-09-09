@@ -134,13 +134,13 @@ export async function uploadDocument(formData: FormData): Promise<ActionResult> 
         passenger_id: validated.passenger_id,
         project_id: validated.project_id,
         type: validated.type,
-        file_name: validated.file_name,
+        filename: validated.file_name,
         file_path: validated.file_path,
         file_size: validated.file_size,
         is_current: true,
         uploaded_by: user.id
       })
-      .select('id, type, file_name, created_at')
+      .select('id, type, filename, created_at')
       .single()
 
     if (insertError) {
@@ -167,7 +167,7 @@ export async function uploadDocument(formData: FormData): Promise<ActionResult> 
   } catch (error) {
     console.error('Error in uploadDocument:', error)
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.errors[0].message }
+      return { success: false, error: error.issues[0].message }
     }
     return { success: false, error: 'An unexpected error occurred' }
   }
@@ -204,7 +204,7 @@ export async function deleteDocument(formData: FormData): Promise<ActionResult> 
     // Get document details for file deletion
     const { data: document, error: fetchError } = await supabase
       .from('documents')
-      .select('id, file_path, file_name')
+      .select('id, file_path, filename')
       .eq('id', validated.document_id)
       .single()
 
@@ -240,13 +240,13 @@ export async function deleteDocument(formData: FormData): Promise<ActionResult> 
 
     return { 
       success: true, 
-      data: { document_id: validated.document_id, file_name: document.file_name }
+      data: { document_id: validated.document_id, file_name: document.filename }
     }
 
   } catch (error) {
     console.error('Error in deleteDocument:', error)
     if (error instanceof z.ZodError) {
-      return { success: false, error: error.errors[0].message }
+      return { success: false, error: error.issues[0].message }
     }
     return { success: false, error: 'An unexpected error occurred' }
   }
@@ -279,7 +279,7 @@ export async function getDocumentUrl(documentId: string): Promise<ActionResult> 
       .select(`
         id,
         file_path,
-        file_name,
+        filename,
         is_current,
         passenger:tour_personnel!passenger_id (
           id,
@@ -330,7 +330,7 @@ export async function getDocumentUrl(documentId: string): Promise<ActionResult> 
       success: true, 
       data: { 
         url: signedUrl.signedUrl,
-        fileName: document.file_name,
+        fileName: document.filename,
         expiresIn: 3600
       }
     }

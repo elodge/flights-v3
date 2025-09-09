@@ -65,7 +65,9 @@ export default async function TourDocumentsPage({ params }: TourDocumentsPagePro
   }
 
   // DATABASE: Load all documents for this project
-  const { data: documents, error: documentsError } = await supabase
+  // CONTEXT: tour_documents table exists but not in generated types
+  // DATABASE: Using type assertion for missing table in generated types
+  const { data: documents, error: documentsError } = await (supabase as any)
     .from('tour_documents')
     .select(`
       *,

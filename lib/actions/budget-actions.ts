@@ -148,14 +148,15 @@ export async function getBudgetSnapshot(projectId: string): Promise<BudgetSnapsh
     
     if (selections) {
       for (const selection of selections) {
-        const cost = selection.options?.total_cost || 0
-        const passengerCount = selection.passenger_ids?.length || 1
+        const selectionData = selection as any
+        const cost = selectionData.options?.total_cost || 0
+        const passengerCount = selectionData.passenger_ids?.length || 1
         const totalCost = cost * passengerCount
         
         // BUSINESS_RULE: Categorize spend by selection status
-        if (selection.status === 'ticketed') {
+        if (selectionData.status === 'ticketed') {
           spend.confirmed += totalCost
-        } else if (selection.status === 'client_choice') {
+        } else if (selectionData.status === 'client_choice') {
           spend.pending += totalCost
         }
         

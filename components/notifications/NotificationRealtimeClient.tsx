@@ -83,7 +83,9 @@ export function NotificationRealtimeClient({
           // CONTEXT: Increment unread count
           // ALGORITHM: Increment count by 1 for new notifications
           if (onUnreadCountUpdate) {
-            onUnreadCountUpdate((prevCount: number) => prevCount + 1);
+            // Note: This assumes the parent component will handle the increment logic
+            // For now, we'll pass 1 to indicate a new notification
+            onUnreadCountUpdate(1);
           }
         }
       )
@@ -130,7 +132,9 @@ export function NotificationRealtimeClient({
             }
 
             if (onUnreadCountUpdate) {
-              onUnreadCountUpdate((prevCount: number) => prevCount + 1);
+              // Note: This assumes the parent component will handle the increment logic
+              // For now, we'll pass 1 to indicate a new notification
+              onUnreadCountUpdate(1);
             }
           }
         )

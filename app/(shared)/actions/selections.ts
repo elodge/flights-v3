@@ -81,7 +81,9 @@ export async function selectOptionForGroup(selectionGroupId: string, optionId: s
     }
     
     // DATABASE: Get selection group and validate access
-    const { data: selectionGroup, error: groupError } = await supabase
+    // CONTEXT: selection_groups table exists but not in generated types
+    // DATABASE: Using type assertion for missing table in generated types
+    const { data: selectionGroup, error: groupError } = await (supabase as any)
       .from('selection_groups')
       .select(`
         id,
@@ -112,7 +114,7 @@ export async function selectOptionForGroup(selectionGroupId: string, optionId: s
     // DATABASE: Get option details for price snapshot
     const { data: option, error: optionError } = await supabase
       .from('options')
-      .select('id, price_total, price_currency')
+      .select('id, total_cost, currency')
       .eq('id', validatedOptionId)
       .single()
 
@@ -121,7 +123,9 @@ export async function selectOptionForGroup(selectionGroupId: string, optionId: s
     }
 
     // BUSINESS_RULE: Deactivate any previous active selection for this group
-    const { error: deactivateError } = await supabase
+    // CONTEXT: client_selections table exists but not in generated types
+    // DATABASE: Using type assertion for missing table in generated types
+    const { error: deactivateError } = await (supabase as any)
       .from('client_selections')
       .update({ is_active: false })
       .eq('selection_group_id', validatedGroupId)
@@ -132,14 +136,16 @@ export async function selectOptionForGroup(selectionGroupId: string, optionId: s
     }
 
     // DATABASE: Insert new active selection with price snapshot
-    const { error: insertError } = await supabase
+    // CONTEXT: client_selections table exists but not in generated types
+    // DATABASE: Using type assertion for missing table in generated types
+    const { error: insertError } = await (supabase as any)
       .from('client_selections')
       .insert({
         selection_group_id: validatedGroupId,
         option_id: validatedOptionId,
         selected_by: user.id,
-        price_snapshot: option.price_total,
-        currency: option.price_currency
+        price_snapshot: option.total_cost,
+        currency: option.currency
       })
 
     if (insertError) {
@@ -149,7 +155,9 @@ export async function selectOptionForGroup(selectionGroupId: string, optionId: s
     // CONTEXT: Trigger notification event for client selection
     try {
       // TODO: In production, fetch artist_id and project_id through proper joins
-      await supabase
+      // CONTEXT: notification_events table exists but not in generated types
+      // DATABASE: Using type assertion for missing table in generated types
+      await (supabase as any)
         .from('notification_events')
         .insert({
           type: 'client_selection',
@@ -201,7 +209,9 @@ export async function getActiveSelectionsForLeg(legId: string) {
     }
     
     // DATABASE: Get active selections with related data
-    const { data: selections, error } = await supabase
+    // CONTEXT: client_selections table exists but not in generated types
+    // DATABASE: Using type assertion for missing table in generated types
+    const { data: selections, error } = await (supabase as any)
       .from('client_selections')
       .select(`
         id,

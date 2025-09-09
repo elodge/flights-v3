@@ -44,9 +44,9 @@ export interface SendChatMessageResult {
  */
 export async function sendChatMessage(params: SendChatMessageParams): Promise<SendChatMessageResult> {
   try {
-    const { user, profile } = await getServerUser();
+    const authUser = await getServerUser();
     
-    if (!user || !profile) {
+    if (!authUser?.user) {
       return {
         success: false,
         error: 'Authentication required'
@@ -69,10 +69,10 @@ export async function sendChatMessage(params: SendChatMessageParams): Promise<Se
       .from('chat_messages')
       .insert({
         leg_id: legId,
-        user_id: user.id,
+        user_id: authUser.user.id,
         message: message.trim(),
         body: message.trim(),
-        sender_role: profile.role,
+        sender_role: authUser.role || 'client',
         is_system_message: false
       })
       .select('id')
@@ -88,26 +88,35 @@ export async function sendChatMessage(params: SendChatMessageParams): Promise<Se
 
     // CONTEXT: Create notification if message is from client
     // BUSINESS_RULE: Only notify employees when clients send messages
-    if (profile.role === 'client') {
+    if (authUser.role === 'client') {
       try {
         // Get leg details for notification
         const { data: legData } = await supabase
           .from('legs')
-          .select('project_id, artist_id')
+          .select('project_id')
           .eq('id', legId)
           .single();
 
         if (legData) {
-          await pushNotification({
-            type: 'chat_message',
-            severity: 'info',
-            artistId: legData.artist_id,
-            projectId: legData.project_id,
-            legId: legId,
-            title: 'New client message',
-            body: `Client sent a message in leg chat`,
-            actorUserId: user.id
-          });
+          // Get project details to find artist_id
+          const { data: projectData } = await supabase
+            .from('projects')
+            .select('artist_id')
+            .eq('id', legData.project_id)
+            .single();
+
+          if (projectData) {
+            await pushNotification({
+              type: 'chat_message',
+              severity: 'info',
+              artistId: projectData.artist_id,
+              projectId: legData.project_id,
+              legId: legId,
+              title: 'New client message',
+              body: `Client sent a message in leg chat`,
+              actorUserId: authUser.user.id
+            });
+          }
         }
       } catch (notificationError) {
         console.error('Notification error:', notificationError);

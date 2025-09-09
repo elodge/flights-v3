@@ -104,7 +104,7 @@ export function PersonnelTab({ projectId, personnel }: PersonnelTabProps) {
                 {personnel.map((person) => (
                   <TableRow 
                     key={person.id}
-                    className={`border-border/50 hover:bg-muted/50 ${person.status === 'inactive' ? 'opacity-60' : ''}`}
+                    className={`border-border/50 hover:bg-muted/50 ${person.is_active === false ? 'opacity-60' : ''}`}
                   >
                     <TableCell>
                       <div className="flex items-center space-x-2">
@@ -117,9 +117,9 @@ export function PersonnelTab({ projectId, personnel }: PersonnelTabProps) {
                     <TableCell>
                       <InlinePartySelector
                         personId={person.id}
-                        currentParty={person.party}
+                        currentParty={(person as any).party || 'A Party'}
                         fullName={person.full_name}
-                        isInactive={person.status === 'inactive'}
+                        isInactive={person.is_active === false}
                       />
                     </TableCell>
                     <TableCell>
@@ -137,32 +137,42 @@ export function PersonnelTab({ projectId, personnel }: PersonnelTabProps) {
                     </TableCell>
                     <TableCell>
                       <Badge 
-                        variant={person.status === 'active' ? 'default' : 'secondary'} 
+                        variant={person.is_active ? 'default' : 'secondary'} 
                         className="text-xs"
                       >
-                        {person.status === 'active' ? 'Active' : 'Inactive'}
+                        {person.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm text-muted-foreground">
-                        {person.seat_pref && (
-                          <div>Seat: {person.seat_pref}</div>
+                        {(person as any).seat_pref && (
+                          <div>Seat: {(person as any).seat_pref}</div>
                         )}
-                        {person.ff_numbers && (
-                          <div>FF: {person.ff_numbers}</div>
+                        {(person as any).ff_numbers && (
+                          <div>FF: {(person as any).ff_numbers}</div>
                         )}
-                        {!person.seat_pref && !person.ff_numbers && (
+                        {!(person as any).seat_pref && !(person as any).ff_numbers && (
                           <span>No travel preferences</span>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <EditPersonDialog person={person} />
+                        <EditPersonDialog person={{
+                          id: person.id,
+                          full_name: person.full_name,
+                          party: (person as any).party || 'A Party',
+                          email: person.email || undefined,
+                          phone: person.phone || undefined,
+                          seat_pref: (person as any).seat_pref || undefined,
+                          ff_numbers: (person as any).ff_numbers || undefined,
+                          notes: person.special_requests || undefined,
+                          status: person.is_active ? 'active' : 'inactive'
+                        }} />
                         <DeletePersonDialog 
                           personId={person.id}
                           personName={person.full_name}
-                          disabled={person.status === 'inactive'}
+                          disabled={person.is_active === false}
                         />
                       </div>
                     </TableCell>

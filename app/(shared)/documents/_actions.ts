@@ -49,7 +49,9 @@ export async function listTourDocuments(projectId: string, roleView: 'employee' 
 
   if (validatedRoleView === 'employee') {
     // DATABASE: Employees see all documents
-    const { data, error } = await supabase
+    // CONTEXT: tour_documents table exists but not in generated types
+    // DATABASE: Using type assertion for missing table in generated types
+    const { data, error } = await (supabase as any)
       .from('tour_documents')
       .select('*')
       .eq('project_id', validatedProjectId)
@@ -59,7 +61,9 @@ export async function listTourDocuments(projectId: string, roleView: 'employee' 
     return data || [];
   } else {
     // DATABASE: Clients see latest per kind only
-    const { data, error } = await supabase
+    // CONTEXT: tour_documents table exists but not in generated types
+    // DATABASE: Using type assertion for missing table in generated types
+    const { data, error } = await (supabase as any)
       .from('tour_documents')
       .select('*')
       .eq('project_id', validatedProjectId)
@@ -69,7 +73,7 @@ export async function listTourDocuments(projectId: string, roleView: 'employee' 
     
     // BUSINESS_RULE: Filter to latest per kind for clients
     const seen = new Set<string>();
-    return (data || []).filter(d => {
+    return (data || []).filter((d: any) => {
       if (seen.has(d.kind)) return false;
       seen.add(d.kind);
       return true;
@@ -146,7 +150,9 @@ export async function deleteTourDocument(id: string) {
   }
 
   // DATABASE: Get file path before deletion
-  const { data: document, error: fetchError } = await supabase
+  // CONTEXT: tour_documents table exists but not in generated types
+  // DATABASE: Using type assertion for missing table in generated types
+  const { data: document, error: fetchError } = await (supabase as any)
     .from('tour_documents')
     .select('file_path')
     .eq('id', validatedId)
@@ -155,7 +161,9 @@ export async function deleteTourDocument(id: string) {
   if (fetchError) throw new Error(`Failed to fetch document: ${fetchError.message}`);
 
   // DATABASE: Delete document record
-  const { error: deleteError } = await supabase
+  // CONTEXT: tour_documents table exists but not in generated types
+  // DATABASE: Using type assertion for missing table in generated types
+  const { error: deleteError } = await (supabase as any)
     .from('tour_documents')
     .delete()
     .eq('id', validatedId);
@@ -226,7 +234,9 @@ export async function saveTourDocumentMeta(payload: {
   }
 
   // DATABASE: Insert document record
-  const { error } = await supabase.from('tour_documents').insert({
+  // CONTEXT: tour_documents table exists but not in generated types
+  // DATABASE: Using type assertion for missing table in generated types
+  const { error } = await (supabase as any).from('tour_documents').insert({
     project_id: validatedPayload.projectId,
     leg_id: validatedPayload.legId ?? null,
     passenger_id: validatedPayload.passengerId ?? null,
@@ -275,7 +285,9 @@ export async function updateDocumentTitle(id: string, title: string) {
   }
 
   // DATABASE: Update document title
-  const { error } = await supabase
+  // CONTEXT: tour_documents table exists but not in generated types
+  // DATABASE: Using type assertion for missing table in generated types
+  const { error } = await (supabase as any)
     .from('tour_documents')
     .update({ title: validatedTitle })
     .eq('id', validatedId);
@@ -360,7 +372,9 @@ export async function uploadTourDocument(payload: {
   if (uploadError) throw new Error(`Failed to upload file: ${uploadError.message}`);
 
   // DATABASE: Save document metadata
-  const { data: document, error: insertError } = await supabase
+  // CONTEXT: tour_documents table exists but not in generated types
+  // DATABASE: Using type assertion for missing table in generated types
+  const { data: document, error: insertError } = await (supabase as any)
     .from('tour_documents')
     .insert({
       project_id: validatedPayload.projectId,
