@@ -498,7 +498,9 @@ export async function adminGetUserDetail(userId: string): Promise<UserDetail | n
     }
     
     // Fetch artist assignments with proper typing
-    const { data: assignments, error: assignmentsError } = await supabase
+    // CONTEXT: employee_artists table exists but not in generated types
+    // DATABASE: Using type assertion for missing table in generated types
+    const { data: assignments, error: assignmentsError } = await (supabase as any)
       .from('employee_artists')
       .select(`
         artist_id,
@@ -511,13 +513,15 @@ export async function adminGetUserDetail(userId: string): Promise<UserDetail | n
     }
     
     // Fetch pending invite (if any) with proper typing
-    const { data: invite, error: inviteError } = await supabase
+    // CONTEXT: invites table exists but not in generated types
+    // DATABASE: Using type assertion for missing table in generated types
+    const { data: invite, error: inviteError } = await (supabase as any)
       .from('invites')
       .select('email, expires_at, accepted_at')
       .eq('email', user.email)
       .is('accepted_at', null)
       .gt('expires_at', new Date().toISOString())
-      .maybeSingle<Pick<InviteRow, 'email' | 'expires_at' | 'accepted_at'>>()
+      .maybeSingle()
     
     if (inviteError) {
       console.error('Error fetching pending invite:', inviteError)

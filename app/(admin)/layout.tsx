@@ -23,16 +23,16 @@ export default async function AdminLayout({
 }) {
   // CONTEXT: Server-side admin role verification
   // SECURITY: Ensure only admin users can access admin routes
-  const { user, role } = await getServerUser()
+  const authUser = await getServerUser()
   
-  if (!user) {
+  if (!authUser) {
     redirect('/login')
   }
   
-  if (role !== 'admin') {
+  if (authUser.role !== 'admin') {
     // CONTEXT: Redirect non-admin users to their appropriate portal
     // BUSINESS_RULE: Agents go to employee portal, clients to client portal
-    if (role === 'agent') {
+    if (authUser.role === 'agent') {
       redirect('/a')
     } else {
       redirect('/c')
