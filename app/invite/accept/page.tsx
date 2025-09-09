@@ -34,7 +34,7 @@ const acceptInviteSchema = z.object({
   confirmPassword: z.string(),
   fullName: z.string().min(1, 'Full name is required').max(100)
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: "Passwords don&apos;t match",
   path: ["confirmPassword"],
 })
 
@@ -211,7 +211,7 @@ export default function AcceptInvitePage() {
           <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
           <CardTitle>Accept Invitation</CardTitle>
           <CardDescription>
-            You've been invited to join as a <strong>{inviteInfo.role}</strong>
+            You&apos;ve been invited to join as a <strong>{inviteInfo.role}</strong>
           </CardDescription>
         </CardHeader>
         <CardContent>

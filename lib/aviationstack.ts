@@ -67,7 +67,7 @@ export interface AviationStackFlight {
     number: string;
     iata: string;
     icao: string;
-    codeshared: any | null;
+    codeshared: object | null;
   };
   aircraft: {
     registration: string | null;

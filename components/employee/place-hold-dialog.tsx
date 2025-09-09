@@ -165,7 +165,7 @@ export function PlaceHoldDialog({
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="text-sm">
               <strong>Important:</strong> Holds cannot be extended once placed. 
-              You'll need to ticket passengers before expiration or place a new hold.
+              You&apos;ll need to ticket passengers before expiration or place a new hold.
             </AlertDescription>
           </Alert>
         </div>

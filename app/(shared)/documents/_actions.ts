@@ -109,7 +109,8 @@ export async function createSignedDownloadURL(filePath: string) {
     .createSignedUrl(validatedFilePath, 60 * 10); // 10 minutes
   
   if (error) throw new Error(`Failed to create download URL: ${error.message}`);
-  return data?.signedUrl!;
+  if (!data?.signedUrl) throw new Error('No signed URL returned');
+  return data.signedUrl;
 }
 
 // CONTEXT: Schema for document deletion

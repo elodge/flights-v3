@@ -50,6 +50,9 @@ export function ChatButton({
   variant = 'outline', 
   size = 'sm' 
 }: ChatButtonProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const { unreadCount, isLoading } = useChatUnread(legId)
+
   // Skip chat functionality in test environment to avoid complex router mocking
   if (process.env.NODE_ENV === 'test') {
     return (
@@ -59,9 +62,6 @@ export function ChatButton({
       </Button>
     )
   }
-
-  const [isOpen, setIsOpen] = useState(false)
-  const { unreadCount, isLoading } = useChatUnread(legId)
 
   /**
    * Handles chat sheet opening
