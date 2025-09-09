@@ -237,7 +237,7 @@ export async function adminCreateInvite(params: z.infer<typeof createInviteSchem
     if (authError) {
       console.error('Error sending invite email:', authError)
       // Clean up the invite record if email sending fails
-      await supabase
+      await (supabase as any)
         .from('invites')
         .delete()
         .eq('token', token)
