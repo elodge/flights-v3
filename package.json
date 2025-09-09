@@ -11,6 +11,8 @@
     "test": "vitest",
     "test:artist-filter": "vitest tests/core/artist-filtering-core.test.ts",
     "test:regression": "vitest tests/regression/page-loading-regressions.test.ts",
+    "test:api:airlabs": "vitest run -t airlabs",
+    "test:ui:enrichment": "vitest run -t enrichment",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",

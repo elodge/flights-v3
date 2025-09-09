@@ -3,17 +3,20 @@
  * 
  * @description Normalizes different segment data formats from various sources
  * (Navitas, manual options, API responses) into a consistent structure.
- * Handles field name variations and provides type safety.
+ * Handles field name variations and provides type safety. Supports enrichment data.
  * 
  * @access Internal utility
  * @security No external dependencies, pure data transformation
  * @business_rule Adapts to existing data structures without breaking changes
  */
 
+import { type EnrichedFlight } from './enrichment';
+
 /**
  * Normalized segment data structure
  * 
- * @description Standardized format for flight segment data regardless of source
+ * @description Standardized format for flight segment data regardless of source.
+ * Includes optional enrichment data from external APIs.
  */
 export type NormalizedSegment = {
   /** IATA airline code (e.g., "AA", "UA") */
@@ -30,6 +33,30 @@ export type NormalizedSegment = {
   arrTimeRaw?: string;
   /** Day offset for arrival (0, 1, 2) */
   dayOffset?: number;
+  /** Enriched flight data from external APIs */
+  enrichment?: EnrichedFlight | null;
+};
+
+/**
+ * Extended flight segment with enrichment support
+ * 
+ * @description Complete flight segment structure with optional enrichment data
+ */
+export type FlightSegment = NormalizedSegment & {
+  /** Combined flight IATA code (airline + flight number) */
+  flight_iata?: string;
+  /** Full airline name (from enrichment or airlines database) */
+  airline_name?: string;
+  /** Aircraft type from enrichment data */
+  aircraft?: string | null;
+  /** Flight status from enrichment data */
+  status?: string | null;
+  /** Terminal information from enrichment */
+  terminals?: string | null;
+  /** Gate information from enrichment */
+  gates?: string | null;
+  /** Formatted scheduled times from enrichment */
+  scheduled_times?: string | null;
 };
 
 /**
@@ -96,5 +123,118 @@ export function normalizeSegment(s: Record<string, unknown>): NormalizedSegment 
     depTimeRaw: depTimeRaw ? String(depTimeRaw) : undefined,
     arrTimeRaw: arrTimeRaw ? String(arrTimeRaw) : undefined,
     dayOffset: typeof dayOffset === "number" ? dayOffset : parseInt(String(dayOffset || "0"), 10) || 0,
+    enrichment: s.enrichment as EnrichedFlight | null | undefined,
   };
+}
+
+/**
+ * Create flight IATA code from airline and flight number
+ * 
+ * @description Combines airline code and flight number into standard IATA format
+ * @param airline - IATA airline code
+ * @param flightNumber - Flight number
+ * @returns Combined flight IATA code
+ * 
+ * @example
+ * ```typescript
+ * getFlightIata("AA", "100") // Returns: "AA100"
+ * ```
+ */
+export function getFlightIata(airline: string, flightNumber: string): string {
+  return `${airline}${flightNumber}`;
+}
+
+/**
+ * Extend normalized segment with enrichment data
+ * 
+ * @description Adds enriched flight data and computed fields to a normalized segment
+ * @param segment - Normalized segment data
+ * @param enrichment - Enriched flight data from external API
+ * @returns Extended flight segment with enrichment
+ * 
+ * @business_rule Enrichment data takes precedence over original data for display
+ * @example
+ * ```typescript
+ * const enriched = extendWithEnrichment(segment, enrichmentData);
+ * ```
+ */
+export function extendWithEnrichment(
+  segment: NormalizedSegment, 
+  enrichment: EnrichedFlight | null
+): FlightSegment {
+  const flightIata = getFlightIata(segment.airline, segment.flightNumber);
+  
+  const extended: FlightSegment = {
+    ...segment,
+    enrichment,
+    flight_iata: flightIata,
+  };
+
+  if (enrichment) {
+    // CONTEXT: Use enrichment data to enhance display fields
+    extended.airline_name = enrichment.airline_name;
+    extended.aircraft = enrichment.aircraft;
+    extended.status = enrichment.status;
+    
+    // CONTEXT: Format terminal information
+    if (enrichment.dep_terminal && enrichment.arr_terminal) {
+      extended.terminals = `T${enrichment.dep_terminal} → T${enrichment.arr_terminal}`;
+    } else if (enrichment.dep_terminal) {
+      extended.terminals = `T${enrichment.dep_terminal}`;
+    } else if (enrichment.arr_terminal) {
+      extended.terminals = `T${enrichment.arr_terminal}`;
+    }
+    
+    // CONTEXT: Format gate information
+    if (enrichment.dep_gate && enrichment.arr_gate) {
+      extended.gates = `${enrichment.dep_gate} → ${enrichment.arr_gate}`;
+    } else if (enrichment.dep_gate) {
+      extended.gates = enrichment.dep_gate;
+    } else if (enrichment.arr_gate) {
+      extended.gates = enrichment.arr_gate;
+    }
+    
+    // CONTEXT: Format scheduled times
+    if (enrichment.dep_scheduled && enrichment.arr_scheduled) {
+      const depTime = new Date(enrichment.dep_scheduled).toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      const arrTime = new Date(enrichment.arr_scheduled).toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      extended.scheduled_times = `${depTime} → ${arrTime}`;
+    }
+  }
+
+  return extended;
+}
+
+/**
+ * Check if segment has enrichment data
+ * 
+ * @description Helper to determine if a segment has been enriched with external data
+ * @param segment - Flight segment to check
+ * @returns True if segment has enrichment data
+ */
+export function hasEnrichment(segment: NormalizedSegment | FlightSegment): boolean {
+  return !!(segment.enrichment && Object.keys(segment.enrichment).length > 0);
+}
+
+/**
+ * Get display name for airline
+ * 
+ * @description Returns enriched airline name or falls back to IATA code
+ * @param segment - Flight segment
+ * @returns Airline display name
+ */
+export function getAirlineDisplayName(segment: NormalizedSegment | FlightSegment): string {
+  if ('airline_name' in segment && segment.airline_name) {
+    return segment.airline_name;
+  }
+  if (segment.enrichment?.airline_name) {
+    return segment.enrichment.airline_name;
+  }
+  return segment.airline;
 }

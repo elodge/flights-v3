@@ -14,8 +14,10 @@
 import { Badge } from "@/components/ui/badge";
 import { getAirlineName } from "@/lib/airlines";
 import { computeDurationMin, formatClock, formatDuration } from "@/lib/time";
-import { normalizeSegment, NormalizedSegment } from "@/lib/segmentAdapter";
+import { normalizeSegment, NormalizedSegment, getAirlineDisplayName } from "@/lib/segmentAdapter";
 import { cn } from "@/lib/utils";
+import { useFlightEnrichment } from "@/hooks/use-flight-enrichment";
+import { extractFlightIdentifiers } from "@/lib/enrichment";
 
 interface FlightSegmentRowProps {
   /** Raw segment data from any source */
@@ -53,8 +55,22 @@ export function FlightSegmentRow({
   // CONTEXT: Normalize segment data to handle different source formats
   const segment: NormalizedSegment = normalizeSegment(raw);
 
-  // CONTEXT: Get airline name from IATA code lookup
-  const airlineName = getAirlineName(segment.airline);
+  // CONTEXT: Attempt flight enrichment for enhanced display
+  const flightQuery = extractFlightIdentifiers({
+    airline: segment.airline,
+    flightNumber: segment.flightNumber,
+    origin: segment.origin,
+    destination: segment.destination,
+  });
+
+  const { data: enrichment, loading: enrichmentLoading } = useFlightEnrichment(flightQuery, {
+    autoFetch: true,
+  });
+
+  // CONTEXT: Get airline name - prefer enrichment, fallback to airlines database
+  const airlineName = enrichment?.data?.airline_name 
+    || getAirlineName(segment.airline) 
+    || segment.airline;
   const flightCode = `${segment.airline}${segment.flightNumber}`;
   
   // CONTEXT: Format times and calculate duration
@@ -62,6 +78,10 @@ export function FlightSegmentRow({
   const arr = formatClock(segment.arrTimeRaw);
   const durMin = computeDurationMin(segment.depTimeRaw, segment.arrTimeRaw, segment.dayOffset ?? 0);
   const dur = formatDuration(durMin);
+
+  // CONTEXT: Extract enriched data for display
+  const enrichmentData = enrichment?.data;
+  const hasEnrichmentData = enrichment?.success && enrichmentData;
 
   return (
     <div
@@ -72,14 +92,39 @@ export function FlightSegmentRow({
       )}
     >
       <div className="grid grid-cols-12 items-center gap-3">
-        {/* Airline + flight code */}
+        {/* Airline + flight code + enriched info */}
         <div className="col-span-4 flex items-center gap-3">
           <div className="h-8 w-8 shrink-0 rounded-full bg-muted text-xs font-medium flex items-center justify-center">
             {segment.airline?.slice(0, 2).toUpperCase()}
           </div>
-          <div className="min-w-0">
-            <div className="truncate text-sm font-medium">{airlineName}</div>
-            <div className="text-xs text-muted-foreground">{flightCode}</div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <div className="truncate text-sm font-medium">{airlineName}</div>
+              {hasEnrichmentData && enrichmentData.aircraft && (
+                <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                  {enrichmentData.aircraft}
+                </Badge>
+              )}
+              {hasEnrichmentData && enrichmentData.status && (
+                <Badge 
+                  variant={getStatusVariant(enrichmentData.status)}
+                  className="text-xs px-1.5 py-0.5"
+                >
+                  {formatStatus(enrichmentData.status)}
+                </Badge>
+              )}
+              {enrichmentLoading && (
+                <div className="w-3 h-3 border border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-muted-foreground">{flightCode}</div>
+              {hasEnrichmentData && (enrichmentData.dep_terminal || enrichmentData.arr_terminal) && (
+                <div className="text-xs text-muted-foreground">
+                  • {formatTerminals(enrichmentData)}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -108,4 +153,52 @@ export function FlightSegmentRow({
       </div>
     </div>
   );
+}
+
+/**
+ * Get badge variant for flight status
+ */
+function getStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
+  const lowerStatus = status.toLowerCase();
+  
+  if (lowerStatus.includes('cancel') || lowerStatus.includes('divert')) {
+    return 'destructive';
+  }
+  if (lowerStatus.includes('delay')) {
+    return 'outline';
+  }
+  if (lowerStatus.includes('land') || lowerStatus.includes('arriv')) {
+    return 'secondary';
+  }
+  return 'default';
+}
+
+/**
+ * Format flight status for display
+ */
+function formatStatus(status: string): string {
+  const statusMap: Record<string, string> = {
+    'scheduled': 'Scheduled',
+    'active': 'Active',
+    'landed': 'Landed',
+    'cancelled': 'Cancelled',
+    'delayed': 'Delayed',
+    'diverted': 'Diverted',
+  };
+  
+  return statusMap[status.toLowerCase()] || status;
+}
+
+/**
+ * Format terminal information
+ */
+function formatTerminals(enrichmentData: any): string {
+  if (enrichmentData.dep_terminal && enrichmentData.arr_terminal) {
+    return `T${enrichmentData.dep_terminal} → T${enrichmentData.arr_terminal}`;
+  } else if (enrichmentData.dep_terminal) {
+    return `T${enrichmentData.dep_terminal}`;
+  } else if (enrichmentData.arr_terminal) {
+    return `T${enrichmentData.arr_terminal}`;
+  }
+  return '—';
 }

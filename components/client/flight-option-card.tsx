@@ -23,6 +23,115 @@ import { getAirlineName } from '@/lib/airlines'
 import { useHoldCountdown } from '@/hooks/use-hold-countdown'
 import { selectFlightOption } from '@/lib/actions/selection-actions'
 import { useAviationStack } from '@/hooks/useAviationstack'
+import { useFlightEnrichment } from '@/hooks/use-flight-enrichment'
+import { EnrichedFlightDisplay } from '@/components/flight/enriched-flight-display'
+import { extractFlightIdentifiers } from '@/lib/enrichment'
+
+/**
+ * Flight header component with enrichment
+ */
+function FlightHeaderWithEnrichment({ component }: { component: any }) {
+  const flightQuery = extractFlightIdentifiers({
+    airline: component.airline,
+    flightNumber: component.flightNumber,
+    origin: component.origin,
+    destination: component.destination,
+  });
+
+  const { data: enrichment, loading } = useFlightEnrichment(flightQuery, {
+    autoFetch: true,
+  });
+
+  return (
+    <EnrichedFlightDisplay
+      flight={{
+        airline: component.airline,
+        flightNumber: component.flightNumber,
+        origin: component.origin,
+        destination: component.destination,
+      }}
+      enrichment={enrichment}
+      loading={loading}
+      variant="header"
+    />
+  );
+}
+
+/**
+ * Enhanced segment display with enrichment
+ */
+function EnrichedSegmentDisplay({ component }: { component: OptionComponent }) {
+  const flightQuery = extractFlightIdentifiers({
+    airline_iata: component.airline_iata || component.airline,
+    flight_number: component.flight_number,
+    dep_iata: component.dep_iata,
+    arr_iata: component.arr_iata,
+  });
+
+  const { data: enrichment, loading } = useFlightEnrichment(flightQuery, {
+    autoFetch: true,
+  });
+
+  // FALLBACK: Use existing display if enrichment fails
+  if (!loading && (!enrichment || !enrichment.success)) {
+    return (
+      <div className="border rounded-lg p-3 bg-muted/50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="font-medium text-sm">
+              {getAirlineName(component.airline_iata || (component as any).airline_code)} {component.flight_number}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {component.dep_iata} → {component.arr_iata}
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {component.dep_time_local && component.arr_time_local && (
+              <>
+                {new Date(component.dep_time_local).toLocaleTimeString('en-US', { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })} - {new Date(component.arr_time_local).toLocaleTimeString('en-US', { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border rounded-lg p-3 bg-muted/50">
+      <EnrichedFlightDisplay
+        flight={{
+          airline: component.airline_iata || component.airline,
+          flightNumber: component.flight_number || '',
+          origin: component.dep_iata || '',
+          destination: component.arr_iata || '',
+        }}
+        enrichment={enrichment}
+        loading={loading}
+        variant="compact"
+      />
+      
+      {/* Local times from component data */}
+      {component.dep_time_local && component.arr_time_local && (
+        <div className="mt-2 text-xs text-muted-foreground">
+          Local: {new Date(component.dep_time_local).toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          })} → {new Date(component.arr_time_local).toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface OptionComponent {
   id: string
@@ -429,54 +538,21 @@ export function FlightOptionCard({ option, legId, selectionType, passengerIds }:
               {/* Fallback to segment rows if no enrichment data */}
               {!flightData && !hasStoredEnrichedData && !flightLoading && (
                 <div className="space-y-2">
-                  {/* Header with first segment info */}
+                  {/* Header with first segment info - Enhanced with enrichment */}
                   {option.option_components.length > 0 && (() => {
                     const first = normalizeSegment(option.option_components[0] as any);
-                    const headerAirline = getAirlineName(first.airline);
-                    const headerFlight = first.airline && first.flightNumber ? `${first.airline} ${first.flightNumber}` : "";
-                    
-                    return (
-                      <div className="text-lg font-semibold">
-                        {headerFlight}
-                        {headerAirline && (
-                          <span className="ml-2 text-xs font-normal text-muted-foreground align-middle">
-                            {headerAirline}
-                          </span>
-                        )}
-                      </div>
-                    );
+                    return <FlightHeaderWithEnrichment component={first} />;
                   })()}
                   
-                  {/* Segments list */}
+                  {/* Segments list - Enhanced with enrichment */}
                   <div className="space-y-2">
                     {option.option_components
                       .sort((a, b) => a.component_order - b.component_order)
-                      .map((component, i) => (
-                        <div key={component.id} className="border rounded-lg p-3 bg-muted/50">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="font-medium text-sm">
-                                {getAirlineName(component.airline_iata || (component as any).airline_code)} {component.flight_number}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {component.dep_iata} → {component.arr_iata}
-                              </div>
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {component.dep_time_local && component.arr_time_local && (
-                                <>
-                                  {new Date(component.dep_time_local).toLocaleTimeString('en-US', { 
-                                    hour: '2-digit', 
-                                    minute: '2-digit' 
-                                  })} - {new Date(component.arr_time_local).toLocaleTimeString('en-US', { 
-                                    hour: '2-digit', 
-                                    minute: '2-digit' 
-                                  })}
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
+                      .map((component) => (
+                        <EnrichedSegmentDisplay 
+                          key={component.id} 
+                          component={component} 
+                        />
                       ))}
                   </div>
                 </div>
