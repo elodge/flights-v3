@@ -30,7 +30,7 @@ describe('Personnel Validation Schemas', () => {
         full_name: 'John Doe',
         party: 'A Party',
         email: 'john@example.com',
-        phone: '+1 (555) 123-4567',
+        phone: '+1 (415) 555-0123',
         seat_pref: 'Window',
         ff_numbers: 'AA123456, UA789012',
         notes: 'Vegetarian meals preferred'
@@ -99,14 +99,45 @@ describe('Personnel Validation Schemas', () => {
       expect(result.email).toBeUndefined();
     });
 
-    it('should reject phone that is too long', () => {
+    it('should validate phone numbers using international format', () => {
+      const validPhoneData = {
+        full_name: 'John Doe',
+        party: 'A Party',
+        phone: '+1 (415) 555-0123'
+      };
+
+      const result = addPersonSchema.parse(validPhoneData);
+      expect(result.phone).toBe('+1 (415) 555-0123');
+    });
+
+    it('should reject invalid phone numbers', () => {
       const invalidData = {
         full_name: 'John Doe',
         party: 'A Party',
-        phone: 'A'.repeat(41)
+        phone: 'invalid-phone'
       };
 
-      expect(() => addPersonSchema.parse(invalidData)).toThrow('Phone must be less than 40 characters');
+      expect(() => addPersonSchema.parse(invalidData)).toThrow('Please enter a valid phone number');
+    });
+
+    it('should accept international phone numbers from different countries', () => {
+      const testCases = [
+        '+1 415 555 0123',    // US
+        '+44 20 7946 0958',   // UK
+        '+33 1 42 86 83 26',  // France
+        '+49 30 12345678',    // Germany
+      ];
+
+      testCases.forEach(phone => {
+        const data = {
+          full_name: 'John Doe',
+          party: 'A Party',
+          phone
+        };
+
+        const result = addPersonSchema.parse(data);
+        expect(result.phone).toBe(phone);
+      });
     });
 
     it('should reject seat preference that is too long', () => {
@@ -144,13 +175,13 @@ describe('Personnel Validation Schemas', () => {
         full_name: '  John Doe  ',
         party: 'A Party',
         email: 'john@example.com', // Don't add spaces to email as it would be invalid
-        phone: '  +1 (555) 123-4567  '
+        phone: '  +1 (415) 555-0123  '
       };
 
       const result = addPersonSchema.parse(data);
       expect(result.full_name).toBe('John Doe');
       expect(result.email).toBe('john@example.com');
-      expect(result.phone).toBe('+1 (555) 123-4567');
+      expect(result.phone).toBe('+1 (415) 555-0123');
     });
   });
 

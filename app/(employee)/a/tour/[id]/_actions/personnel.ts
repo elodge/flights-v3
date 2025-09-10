@@ -13,7 +13,7 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { addPersonSchema, updatePersonSchema, PartyEnum } from '@/lib/validation/personnel';
+import { addPersonSchema, updatePersonSchema, PartyEnum, parsePhoneInput } from '@/lib/validation/personnel';
 import { createServerClient } from '@/lib/supabase-server';
 
 /**
@@ -62,6 +62,10 @@ export async function addTourPerson(projectId: string, raw: unknown) {
     // CONTEXT: Normalize name by collapsing multiple spaces
     const full_name = input.full_name.replace(/\s+/g, ' ').trim();
 
+    // CONTEXT: Parse phone number into E.164 and component parts
+    // BUSINESS_RULE: Store E.164 format as primary, keep legacy field for backward compatibility
+    const phoneData = parsePhoneInput(input.phone);
+    
     const { data, error } = await supabase
       .from('tour_personnel')
       .insert([{
@@ -69,7 +73,13 @@ export async function addTourPerson(projectId: string, raw: unknown) {
         full_name,
         party: input.party,
         email: input.email ?? null,
+        // Legacy phone field for backward compatibility
         phone: input.phone ?? null,
+        // New E.164 phone fields
+        phone_e164: phoneData?.e164 ?? null,
+        phone_country: phoneData?.country ?? null,
+        phone_national_number: phoneData?.nationalNumber ?? null,
+        phone_extension: phoneData?.extension ?? null,
         seat_pref: input.seat_pref ?? null,
         ff_numbers: input.ff_numbers ?? null,
         notes: input.notes ?? null,
@@ -145,7 +155,21 @@ export async function updateTourPerson(personId: string, raw: unknown) {
     }
     if (input.party !== undefined) payload.party = input.party;
     if (input.email !== undefined) payload.email = input.email ?? null;
-    if (input.phone !== undefined) payload.phone = input.phone ?? null;
+    
+    // CONTEXT: Handle phone number update with E.164 parsing
+    if (input.phone !== undefined) {
+      const phoneData = parsePhoneInput(input.phone);
+      
+      // Update legacy phone field for backward compatibility
+      payload.phone = input.phone ?? null;
+      
+      // Update new E.164 phone fields
+      payload.phone_e164 = phoneData?.e164 ?? null;
+      payload.phone_country = phoneData?.country ?? null;
+      payload.phone_national_number = phoneData?.nationalNumber ?? null;
+      payload.phone_extension = phoneData?.extension ?? null;
+    }
+    
     if (input.seat_pref !== undefined) payload.seat_pref = input.seat_pref ?? null;
     if (input.ff_numbers !== undefined) payload.ff_numbers = input.ff_numbers ?? null;
     if (input.notes !== undefined) payload.notes = input.notes ?? null;

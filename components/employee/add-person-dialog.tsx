@@ -43,6 +43,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { PhoneNumberInput } from "@/components/ui/phone-number-input";
 import { Plus } from "lucide-react";
 import { addPersonSchema, type AddPersonInput } from "@/lib/validation/personnel";
 import { addTourPerson } from "@/app/(employee)/a/tour/[id]/_actions/personnel";
@@ -204,10 +205,14 @@ export function AddPersonDialog({ projectId }: AddPersonDialogProps) {
                     <FormItem>
                       <FormLabel>Phone</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="tel" 
-                          placeholder="+1 (555) 123-4567" 
-                          {...field} 
+                        <PhoneNumberInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          placeholder="Enter phone number"
+                          error={!!form.formState.errors.phone}
+                          errorMessage={form.formState.errors.phone?.message}
                         />
                       </FormControl>
                       <FormMessage />
