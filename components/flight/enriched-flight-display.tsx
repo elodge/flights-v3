@@ -14,9 +14,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plane, Clock, MapPin, Info } from 'lucide-react';
-import { getAirlineName } from '@/lib/airlines';
-import { type EnrichedFlight } from '@/lib/airlabs';
-import { type EnrichmentResult } from '@/lib/enrichment';
+import { getAirlineName, getAircraftName } from '@/lib/airlines';
 import { cn } from '@/lib/utils';
 
 /**
@@ -30,10 +28,21 @@ interface EnrichedFlightDisplayProps {
     origin?: string;
     destination?: string;
   };
-  /** Enrichment data and status */
-  enrichment?: EnrichmentResult | null;
-  /** Whether enrichment is loading */
-  loading?: boolean;
+  /** Stored enrichment data from database */
+  enrichment?: {
+    aircraft_type?: string | null;
+    aircraft_name?: string | null;
+    status?: string | null;
+    dep_terminal?: string | null;
+    arr_terminal?: string | null;
+    dep_gate?: string | null;
+    arr_gate?: string | null;
+    dep_scheduled?: string | null;
+    arr_scheduled?: string | null;
+    duration?: number | null;
+    source?: string | null;
+    fetched_at?: string | null;
+  } | null;
   /** Display variant */
   variant?: 'compact' | 'detailed' | 'header';
   /** Additional CSS classes */
@@ -72,43 +81,33 @@ export function EnrichedFlightDisplay({
     : '';
   
   // CONTEXT: Get airline name from enrichment or fallback to airlines database
-  const airlineName = enrichment?.data?.airline_name 
+  const airlineName = enrichment?.aircraft_name 
     || (flight.airline ? getAirlineName(flight.airline) : null)
     || flight.airline
     || '';
 
   // CONTEXT: Extract enrichment data safely
-  const enrichmentData = enrichment?.data;
-  const isEnriched = enrichment?.success && enrichmentData;
+  const enrichmentData = enrichment;
+  const isEnriched = enrichment && enrichment.source === 'airlabs';
 
   if (variant === 'compact') {
     return (
       <div className={cn("flex items-center gap-2", className)}>
-        {loading ? (
-          <>
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-4 w-16" />
-          </>
-        ) : (
-          <>
-            <div className="font-medium">
-              {airlineName || flight.airline} {flight.flightNumber}
-            </div>
-            {isEnriched && enrichmentData.aircraft && (
-              <Badge variant="secondary" className="text-xs">
-                {enrichmentData.aircraft}
-              </Badge>
-            )}
-            {isEnriched && enrichmentData.status && (
-              <Badge 
-                variant={getStatusVariant(enrichmentData.status)}
-                className="text-xs"
-              >
-                {formatStatus(enrichmentData.status)}
-              </Badge>
-            )}
-          </>
+        {(airlineName || flight.airline) && (
+          <div className="font-medium">
+            {airlineName || flight.airline}
+          </div>
         )}
+        <div className="flex items-center gap-2">
+          <div className="text-sm text-muted-foreground">
+            {flight.flightNumber}
+          </div>
+          {isEnriched && enrichmentData.aircraft_name && (
+            <Badge variant="secondary" className="text-xs">
+              {enrichmentData.aircraft_name}
+            </Badge>
+          )}
+        </div>
       </div>
     );
   }
@@ -116,42 +115,28 @@ export function EnrichedFlightDisplay({
   if (variant === 'header') {
     return (
       <div className={cn("space-y-1", className)}>
-        {loading ? (
-          <>
-            <Skeleton className="h-5 w-32" />
-            <Skeleton className="h-4 w-24" />
-          </>
-        ) : (
-          <>
-            <div className="flex items-center gap-2">
-              <div className="text-lg font-semibold">
-                {flightCode}
-              </div>
-              {isEnriched && enrichmentData.aircraft && (
-                <Badge variant="secondary">
-                  {enrichmentData.aircraft}
-                </Badge>
-              )}
-              {isEnriched && enrichmentData.status && (
-                <Badge variant={getStatusVariant(enrichmentData.status)}>
-                  {formatStatus(enrichmentData.status)}
-                </Badge>
-              )}
-            </div>
-            
-            {airlineName && (
-              <div className="text-sm text-muted-foreground">
-                {airlineName}
-              </div>
-            )}
-            
-            {isEnriched && (enrichmentData.dep_terminal || enrichmentData.arr_terminal) && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3" />
-                {formatTerminals(enrichmentData)}
-              </div>
-            )}
-          </>
+        <div className="flex items-center gap-2">
+          <div className="text-lg font-semibold">
+            {flightCode}
+          </div>
+          {isEnriched && enrichmentData.aircraft_name && (
+            <Badge variant="secondary">
+              {enrichmentData.aircraft_name}
+            </Badge>
+          )}
+        </div>
+        
+        {airlineName && (
+          <div className="text-sm text-muted-foreground">
+            {airlineName}
+          </div>
+        )}
+        
+        {isEnriched && (enrichmentData.dep_terminal || enrichmentData.arr_terminal) && (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <MapPin className="h-3 w-3" />
+            {formatTerminals(enrichmentData)}
+          </div>
         )}
       </div>
     );
@@ -163,40 +148,21 @@ export function EnrichedFlightDisplay({
       {/* Main flight info */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          {loading ? (
-            <>
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-4 w-24" />
-            </>
-          ) : (
-            <>
-              <div className="flex items-center gap-2">
-                <Plane className="h-4 w-4 text-muted-foreground" />
-                <span className="font-semibold">{flightCode}</span>
-                {isEnriched && enrichmentData.aircraft && (
-                  <Badge variant="secondary">{enrichmentData.aircraft}</Badge>
-                )}
-              </div>
-              
-              {airlineName && (
-                <div className="text-sm text-muted-foreground pl-6">
-                  {airlineName}
-                </div>
-              )}
-            </>
+          <div className="flex items-center gap-2">
+            <Plane className="h-4 w-4 text-muted-foreground" />
+            <span className="font-semibold">{flightCode}</span>
+            {isEnriched && enrichmentData.aircraft_name && (
+              <Badge variant="secondary">{enrichmentData.aircraft_name}</Badge>
+            )}
+          </div>
+          
+          {airlineName && (
+            <div className="text-sm text-muted-foreground pl-6">
+              {airlineName}
+            </div>
           )}
         </div>
 
-        {/* Status */}
-        {loading ? (
-          <Skeleton className="h-6 w-16" />
-        ) : (
-          isEnriched && enrichmentData.status && (
-            <Badge variant={getStatusVariant(enrichmentData.status)}>
-              {formatStatus(enrichmentData.status)}
-            </Badge>
-          )
-        )}
       </div>
 
       {/* Route info */}
@@ -259,39 +225,6 @@ export function EnrichedFlightDisplay({
   );
 }
 
-/**
- * Get badge variant for flight status
- */
-function getStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
-  const lowerStatus = status.toLowerCase();
-  
-  if (lowerStatus.includes('cancel') || lowerStatus.includes('divert')) {
-    return 'destructive';
-  }
-  if (lowerStatus.includes('delay')) {
-    return 'outline';
-  }
-  if (lowerStatus.includes('land') || lowerStatus.includes('arriv')) {
-    return 'secondary';
-  }
-  return 'default';
-}
-
-/**
- * Format flight status for display
- */
-function formatStatus(status: string): string {
-  const statusMap: Record<string, string> = {
-    'scheduled': 'Scheduled',
-    'active': 'Active',
-    'landed': 'Landed',
-    'cancelled': 'Cancelled',
-    'delayed': 'Delayed',
-    'diverted': 'Diverted',
-  };
-  
-  return statusMap[status.toLowerCase()] || status;
-}
 
 /**
  * Format terminal information

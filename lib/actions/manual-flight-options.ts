@@ -13,6 +13,7 @@
 'use server';
 
 import { createServerClient } from '@/lib/supabase-server';
+import { enrichFlightSegments } from '@/lib/enrichment-service';
 
 export type SegmentInput = {
   airline_iata: string;
@@ -145,27 +146,55 @@ export async function createManualFlightOption(input: CreateManualOptionInput) {
       throw new Error(`Failed to create option: ${optionError.message}`);
     }
 
-    // CONTEXT: Create segment components
-    // DATABASE: Insert into option_components table with proper ordering
-    const segmentRows = input.segments.map((segment, order) => ({
-      option_id: option.id,
-      component_order: order + 1,
-      navitas_text: `${segment.airline_iata}${segment.flight_number} ${segment.dep_iata}-${segment.arr_iata}`,
-      flight_number: segment.flight_number.trim(),
-      airline: segment.airline_iata.toUpperCase(),
-      airline_iata: segment.airline_iata.toUpperCase(),
-      airline_name: segment.airline_name?.trim() || null,
-      dep_iata: segment.dep_iata.toUpperCase(),
-      arr_iata: segment.arr_iata.toUpperCase(),
-      departure_time: segment.dep_time_local,
-      arrival_time: segment.arr_time_local,
-      dep_time_local: segment.dep_time_local,
-      arr_time_local: segment.arr_time_local,
-      day_offset: segment.day_offset || 0,
-      duration_minutes: segment.duration_minutes || null,
-      stops: segment.stops || 0,
-      enriched_terminal_gate: segment.enriched_terminal_gate || null,
-    }));
+    // CONTEXT: Enrich flight segments with external data
+    // BUSINESS_RULE: Fetch enrichment data once during creation
+    console.log('Enriching flight segments...');
+    const enrichedData = await enrichFlightSegments(
+      input.segments.map(segment => ({
+        flightNumber: segment.flight_number.trim(),
+        airlineIata: segment.airline_iata.toUpperCase(),
+        depIata: segment.dep_iata.toUpperCase(),
+        arrIata: segment.arr_iata.toUpperCase(),
+      }))
+    );
+
+    // CONTEXT: Create segment components with enrichment data
+    // DATABASE: Insert into option_components table with proper ordering and enrichment
+    const segmentRows = input.segments.map((segment, order) => {
+      const enrichment = enrichedData[order];
+      return {
+        option_id: option.id,
+        component_order: order + 1,
+        navitas_text: `${segment.airline_iata}${segment.flight_number} ${segment.dep_iata}-${segment.arr_iata}`,
+        flight_number: segment.flight_number.trim(),
+        airline: segment.airline_iata.toUpperCase(),
+        airline_iata: segment.airline_iata.toUpperCase(),
+        airline_name: segment.airline_name?.trim() || null,
+        dep_iata: segment.dep_iata.toUpperCase(),
+        arr_iata: segment.arr_iata.toUpperCase(),
+        departure_time: segment.dep_time_local,
+        arrival_time: segment.arr_time_local,
+        dep_time_local: segment.dep_time_local,
+        arr_time_local: segment.arr_time_local,
+        day_offset: segment.day_offset || 0,
+        duration_minutes: segment.duration_minutes || null,
+        stops: segment.stops || 0,
+        enriched_terminal_gate: segment.enriched_terminal_gate || null,
+        // CONTEXT: Add enrichment data from external API
+        enriched_aircraft_type: enrichment?.aircraft_type || null,
+        enriched_aircraft_name: enrichment?.aircraft_name || null,
+        enriched_status: enrichment?.status || null,
+        enriched_dep_terminal: enrichment?.dep_terminal || null,
+        enriched_arr_terminal: enrichment?.arr_terminal || null,
+        enriched_dep_gate: enrichment?.dep_gate || null,
+        enriched_arr_gate: enrichment?.arr_gate || null,
+        enriched_dep_scheduled: enrichment?.dep_scheduled || null,
+        enriched_arr_scheduled: enrichment?.arr_scheduled || null,
+        enriched_duration: enrichment?.duration || null,
+        enrichment_source: enrichment?.source || null,
+        enrichment_fetched_at: enrichment?.fetched_at || null,
+      };
+    });
 
     const { error: segmentsError } = await supabase
       .from('option_components')

@@ -12,7 +12,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { getAirlineName } from "@/lib/airlines";
+import { getAirlineName, getAircraftName } from "@/lib/airlines";
 import { computeDurationMin, formatClock, formatDuration } from "@/lib/time";
 import { normalizeSegment, NormalizedSegment, getAirlineDisplayName } from "@/lib/segmentAdapter";
 import { cn } from "@/lib/utils";
@@ -100,25 +100,17 @@ export function FlightSegmentRow({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <div className="truncate text-sm font-medium">{airlineName}</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-muted-foreground">{flightCode}</div>
               {hasEnrichmentData && enrichmentData.aircraft && (
                 <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-                  {enrichmentData.aircraft}
-                </Badge>
-              )}
-              {hasEnrichmentData && enrichmentData.status && (
-                <Badge 
-                  variant={getStatusVariant(enrichmentData.status)}
-                  className="text-xs px-1.5 py-0.5"
-                >
-                  {formatStatus(enrichmentData.status)}
+                  {getAircraftName(enrichmentData.aircraft)}
                 </Badge>
               )}
               {enrichmentLoading && (
                 <div className="w-3 h-3 border border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
               )}
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="text-xs text-muted-foreground">{flightCode}</div>
               {hasEnrichmentData && (enrichmentData.dep_terminal || enrichmentData.arr_terminal) && (
                 <div className="text-xs text-muted-foreground">
                   • {formatTerminals(enrichmentData)}
@@ -155,39 +147,6 @@ export function FlightSegmentRow({
   );
 }
 
-/**
- * Get badge variant for flight status
- */
-function getStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
-  const lowerStatus = status.toLowerCase();
-  
-  if (lowerStatus.includes('cancel') || lowerStatus.includes('divert')) {
-    return 'destructive';
-  }
-  if (lowerStatus.includes('delay')) {
-    return 'outline';
-  }
-  if (lowerStatus.includes('land') || lowerStatus.includes('arriv')) {
-    return 'secondary';
-  }
-  return 'default';
-}
-
-/**
- * Format flight status for display
- */
-function formatStatus(status: string): string {
-  const statusMap: Record<string, string> = {
-    'scheduled': 'Scheduled',
-    'active': 'Active',
-    'landed': 'Landed',
-    'cancelled': 'Cancelled',
-    'delayed': 'Delayed',
-    'diverted': 'Diverted',
-  };
-  
-  return statusMap[status.toLowerCase()] || status;
-}
 
 /**
  * Format terminal information

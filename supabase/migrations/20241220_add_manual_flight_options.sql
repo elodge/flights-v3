@@ -32,3 +32,4 @@ CREATE INDEX IF NOT EXISTS idx_flight_segments_option_sort ON flight_segments(op
 CREATE INDEX IF NOT EXISTS idx_flight_options_source ON flight_options(source);
 
 
+
