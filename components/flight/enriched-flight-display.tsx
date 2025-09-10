@@ -71,7 +71,6 @@ interface EnrichedFlightDisplayProps {
 export function EnrichedFlightDisplay({
   flight,
   enrichment,
-  loading = false,
   variant = 'compact',
   className,
   showSource = false,
