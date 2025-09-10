@@ -146,6 +146,7 @@ export const PhoneNumberInput = forwardRef<HTMLInputElement, PhoneNumberInputPro
             name={name}
             id={id}
             className="w-full"
+            flagUrl="https://purecatamphetamine.github.io/country-flag-icons/3x2/{XX}.svg"
           />
         </div>
         

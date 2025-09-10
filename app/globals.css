@@ -36,6 +36,13 @@
   height: 1.5rem;
   border-radius: 2px;
   margin-right: 0.5rem;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.PhoneInputCountryIcon--border {
+  border: 1px solid var(--border);
 }
 
 .PhoneInputCountrySelectArrow {
