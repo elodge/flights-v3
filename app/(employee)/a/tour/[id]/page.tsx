@@ -38,7 +38,7 @@ type TourWithDetails = Database['public']['Tables']['projects']['Row'] & {
   legs: Array<{
     id: string
     label: string | null
-    origin_city: string
+    origin_city: string | null
     destination_city: string
     departure_date: string | null
     arrival_date: string | null

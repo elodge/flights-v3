@@ -161,7 +161,7 @@ export const PhoneNumberInput = forwardRef<HTMLInputElement, PhoneNumberInputPro
             />
           )}
           // Custom country select styling  
-          countrySelectComponent={({ className: selectClassName, ...selectProps }) => (
+          countrySelectComponent={({ className: selectClassName, iconComponent, ...selectProps }) => (
             <select
               {...selectProps}
               className={cn(

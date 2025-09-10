@@ -27,10 +27,19 @@ type MagicLinkForm = z.infer<typeof magicLinkSchema>
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
+  const [isMagicLoading, setIsMagicLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [loginMode, setLoginMode] = useState<'password' | 'magic'>('password')
+  const [magicEmail, setMagicEmail] = useState('')
   const router = useRouter()
+
+  // Clear errors when switching modes
+  const handleModeChange = (mode: 'password' | 'magic') => {
+    setLoginMode(mode)
+    setError(null)
+    setSuccess(null)
+  }
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -164,14 +173,28 @@ export default function LoginPage() {
     }
   }
 
-  const onMagicLinkSubmit = async (data: MagicLinkForm) => {
-    setIsLoading(true)
+  const onMagicLinkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!magicEmail) {
+      setError('Please enter your email address')
+      return
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(magicEmail)) {
+      setError('Please enter a valid email address')
+      return
+    }
+
+    setIsMagicLoading(true)
     setError(null)
     setSuccess(null)
 
     try {
       const { error } = await supabase.auth.signInWithOtp({
-        email: data.email,
+        email: magicEmail,
         options: {
           // Redirect to auth callback page to handle token and sync user
           emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`
@@ -188,7 +211,7 @@ export default function LoginPage() {
       console.error('Magic link error:', error)
       setError('An unexpected error occurred. Please try again.')
     } finally {
-      setIsLoading(false)
+      setIsMagicLoading(false)
     }
   }
 
@@ -203,7 +226,7 @@ export default function LoginPage() {
           <div className="flex rounded-lg bg-muted p-1">
             <button
               type="button"
-              onClick={() => setLoginMode('password')}
+              onClick={() => handleModeChange('password')}
               className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 loginMode === 'password'
                   ? 'bg-background text-foreground shadow-sm'
@@ -214,7 +237,7 @@ export default function LoginPage() {
             </button>
             <button
               type="button"
-              onClick={() => setLoginMode('magic')}
+              onClick={() => handleModeChange('magic')}
               className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 loginMode === 'magic'
                   ? 'bg-background text-foreground shadow-sm'
@@ -280,45 +303,39 @@ export default function LoginPage() {
             </form>
           </Form>
           ) : (
-            <Form {...magicForm}>
-              <form onSubmit={magicForm.handleSubmit(onMagicLinkSubmit)} className="space-y-4">
-                <FormField
-                  control={magicForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="Enter your email"
-                          disabled={isLoading}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+            <form onSubmit={onMagicLinkSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="magic-email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Email
+                </label>
+                <Input
+                  id="magic-email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={magicEmail}
+                  onChange={(e) => setMagicEmail(e.target.value)}
+                  disabled={isMagicLoading}
+                  className="w-full"
                 />
+              </div>
 
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-                {success && (
-                  <Alert>
-                    <AlertDescription>{success}</AlertDescription>
-                  </Alert>
-                )}
+              {success && (
+                <Alert>
+                  <AlertDescription>{success}</AlertDescription>
+                </Alert>
+              )}
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Send Magic Link
-                </Button>
-              </form>
-            </Form>
+              <Button type="submit" className="w-full" disabled={isMagicLoading}>
+                {isMagicLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Send Magic Link
+              </Button>
+            </form>
           )}
         </CardContent>
       </Card>
