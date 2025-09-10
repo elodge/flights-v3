@@ -72,6 +72,33 @@ type ClientLegWithDetails = Database['public']['Tables']['legs']['Row'] & {
       baggage_allowance: string | null
       cost: number | null
       currency: string | null
+      airline_iata?: string | null
+      airline_name?: string | null
+      dep_iata?: string | null
+      arr_iata?: string | null
+      dep_time_local?: string | null
+      arr_time_local?: string | null
+      day_offset?: number | null
+      stops?: number | null
+      duration_minutes?: number | null
+      enriched_terminal_gate?: {
+        dep_terminal?: string | null
+        dep_gate?: string | null
+        arr_terminal?: string | null
+        arr_gate?: string | null
+      } | null
+      enriched_aircraft_type?: string | null
+      enriched_aircraft_name?: string | null
+      enriched_status?: string | null
+      enriched_dep_terminal?: string | null
+      enriched_arr_terminal?: string | null
+      enriched_dep_gate?: string | null
+      enriched_arr_gate?: string | null
+      enriched_dep_scheduled?: string | null
+      enriched_arr_scheduled?: string | null
+      enriched_duration?: number | null
+      enrichment_source?: string | null
+      enrichment_fetched_at?: string | null
     }>
     selections: Array<{
       id: string
