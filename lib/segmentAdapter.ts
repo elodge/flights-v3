@@ -10,7 +10,7 @@
  * @business_rule Adapts to existing data structures without breaking changes
  */
 
-import { type EnrichedFlight } from './enrichment';
+import { type EnrichmentResult } from './enrichment';
 
 /**
  * Normalized segment data structure
@@ -34,7 +34,7 @@ export type NormalizedSegment = {
   /** Day offset for arrival (0, 1, 2) */
   dayOffset?: number;
   /** Enriched flight data from external APIs */
-  enrichment?: EnrichedFlight | null;
+  enrichment?: EnrichmentResult | null;
 };
 
 /**
@@ -123,7 +123,7 @@ export function normalizeSegment(s: Record<string, unknown>): NormalizedSegment 
     depTimeRaw: depTimeRaw ? String(depTimeRaw) : undefined,
     arrTimeRaw: arrTimeRaw ? String(arrTimeRaw) : undefined,
     dayOffset: typeof dayOffset === "number" ? dayOffset : parseInt(String(dayOffset || "0"), 10) || 0,
-    enrichment: s.enrichment as EnrichedFlight | null | undefined,
+    enrichment: s.enrichment as EnrichmentResult | null | undefined,
   };
 }
 
@@ -160,7 +160,7 @@ export function getFlightIata(airline: string, flightNumber: string): string {
  */
 export function extendWithEnrichment(
   segment: NormalizedSegment, 
-  enrichment: EnrichedFlight | null
+  enrichment: EnrichmentResult | null
 ): FlightSegment {
   const flightIata = getFlightIata(segment.airline, segment.flightNumber);
   
