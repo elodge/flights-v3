@@ -13,6 +13,7 @@ import { Database } from '@/lib/database.types'
 // import { getBudgetSnapshot } from '@/lib/actions/budget-actions'
 
 type ProjectWithDetails = Database['public']['Tables']['projects']['Row'] & {
+  actualBudget?: number
   artists: {
     id: string
     name: string
@@ -114,7 +115,20 @@ async function getProject(projectId: string): Promise<ProjectWithDetails | null>
     .eq('is_active', true)
     .single()
 
-  return project
+  if (!project) return null
+
+  // Get tour-level budget from budgets table
+  const { data: tourBudget } = await supabase
+    .from('budgets')
+    .select('amount_cents')
+    .eq('project_id', projectId)
+    .eq('level', 'tour')
+    .single()
+
+  // Use budget from budgets table if available, otherwise fall back to project.budget_amount
+  const actualBudget = tourBudget?.amount_cents || project.budget_amount || undefined
+
+  return { ...project, actualBudget }
 }
 
 interface PageProps {
@@ -212,8 +226,8 @@ export default async function ProjectPage({ params }: PageProps) {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {project.budget_amount 
-                  ? `$${(project.budget_amount / 100).toLocaleString()}`
+                {project.actualBudget 
+                  ? `$${(project.actualBudget / 100).toLocaleString()}`
                   : '—'
                 }
               </div>

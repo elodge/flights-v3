@@ -4,6 +4,30 @@
 
 **Goal**: Every piece of code should be self-documenting and LLM-friendly. Future AI assistants should understand the codebase without extensive context.
 
+## 🚨 CRITICAL: Git & GitHub Rules
+
+### **MANDATORY: No Automatic Commits**
+- **NEVER commit or push to GitHub without explicit user request**
+- **ALWAYS ask permission before running `git add`, `git commit`, or `git push`**
+- **ONLY stage, commit, and push when user explicitly says "commit", "push", or "deploy"**
+- **When making changes, inform user what was changed and ask if they want to commit**
+
+### **Git Workflow Protocol**
+1. **Make code changes** ✅
+2. **Test build** ✅ 
+3. **Inform user of changes** ✅
+4. **Ask for permission to commit** ❌ **REQUIRED**
+5. **Only then commit and push** ✅
+
+### **Example Interaction**
+```
+User: "Fix the budget calculation bug"
+Assistant: [Makes changes, tests build]
+Assistant: "I've fixed the budget calculation. The changes are ready. Would you like me to commit and push these changes to GitHub?"
+User: "Yes, commit and push"
+Assistant: [Only then runs git commands]
+```
+
 ## 🎯 JSDoc Standards
 
 ### **Server Actions**
