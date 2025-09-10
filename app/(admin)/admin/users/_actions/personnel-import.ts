@@ -187,7 +187,7 @@ export async function getPersonnelImportStats(projectId: string) {
   try {
     const { data, error } = await supabase
       .from('tour_personnel')
-      .select('id, is_active')
+      .select('id, status')
       .eq('project_id', projectId)
 
     if (error) {
@@ -195,7 +195,7 @@ export async function getPersonnelImportStats(projectId: string) {
     }
 
     const totalCount = data?.length || 0
-    const activeCount = data?.filter(p => p.is_active === true).length || 0
+    const activeCount = data?.filter(p => p.status === 'active').length || 0
 
     return {
       totalCount,
