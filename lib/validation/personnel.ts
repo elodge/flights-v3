@@ -35,11 +35,8 @@ export const PartyEnum = z.enum(['A Party','B Party','C Party','D Party']);
 export const addPersonSchema = z.object({
   full_name: z.string().trim().min(3, "Full name must be at least 3 characters").max(120, "Full name must be less than 120 characters"),
   party: PartyEnum,
-  email: z.string().trim().optional().transform((val) => {
-    if (val === '') return undefined;
-    return val;
-  }).refine((val) => {
-    if (!val) return true;
+  email: z.string().trim().optional().refine((val) => {
+    if (!val || val === '') return true;
     return z.string().email().safeParse(val).success;
   }, {
     message: "Invalid email format"

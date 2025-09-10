@@ -135,12 +135,11 @@ export const PhoneNumberInput = forwardRef<HTMLInputElement, PhoneNumberInputPro
           className
         )}>
           <PhoneInput
-            ref={ref}
             international
             countryCallingCodeEditable={false}
             defaultCountry={detectedCountry}
             value={value}
-            onChange={onChange}
+            onChange={(value) => onChange?.(value || undefined)}
             onBlur={onBlur}
             placeholder={placeholder}
             disabled={disabled}

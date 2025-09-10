@@ -429,6 +429,17 @@ export async function createHold(formData: FormData) {
 
     const supabase = await createServerClient()
 
+    // Get the leg_id from the option
+    const { data: optionData } = await supabase
+      .from('options')
+      .select('leg_id')
+      .eq('id', validated.option_id)
+      .single()
+
+    if (!optionData) {
+      return { error: 'Option not found' }
+    }
+
     // Calculate expiry (24 hours from now)
     const expiresAt = new Date()
     expiresAt.setHours(expiresAt.getHours() + 24)
@@ -437,6 +448,7 @@ export async function createHold(formData: FormData) {
     const holds = validated.passenger_ids.map(passenger_id => ({
       option_id: validated.option_id,
       passenger_id: passenger_id,
+      leg_id: optionData.leg_id,
       expires_at: expiresAt.toISOString(),
     }))
 
@@ -447,7 +459,7 @@ export async function createHold(formData: FormData) {
     if (error) throw error
 
     // Get leg and project info for revalidation
-    const { data: option } = await supabase
+    const { data: optionForRevalidation } = await supabase
       .from('options')
       .select(`
         leg_id,
@@ -458,8 +470,8 @@ export async function createHold(formData: FormData) {
       .eq('id', validated.option_id)
       .single()
 
-    if (option) {
-      revalidatePath(`/a/project/${option.legs.project_id}/leg/${option.leg_id}`)
+    if (optionForRevalidation) {
+      revalidatePath(`/a/project/${optionForRevalidation.legs.project_id}/leg/${optionForRevalidation.leg_id}`)
     }
 
     return { success: true }
@@ -494,7 +506,7 @@ export async function toggleOptionRecommended(formData: FormData) {
     if (error) throw error
 
     // Get leg and project info for revalidation
-    const { data: option } = await supabase
+    const { data: optionForRevalidation } = await supabase
       .from('options')
       .select(`
         leg_id,
@@ -505,8 +517,8 @@ export async function toggleOptionRecommended(formData: FormData) {
       .eq('id', validated.option_id)
       .single()
 
-    if (option) {
-      revalidatePath(`/a/project/${option.legs.project_id}/leg/${option.leg_id}`)
+    if (optionForRevalidation) {
+      revalidatePath(`/a/project/${optionForRevalidation.legs.project_id}/leg/${optionForRevalidation.leg_id}`)
     }
 
     return { success: true }
@@ -528,7 +540,7 @@ export async function deleteOption(formData: FormData) {
     const supabase = await createServerClient()
 
     // Get leg and project info before deletion
-    const { data: option } = await supabase
+    const { data: optionForRevalidation } = await supabase
       .from('options')
       .select(`
         leg_id,
@@ -547,8 +559,8 @@ export async function deleteOption(formData: FormData) {
 
     if (error) throw error
 
-    if (option) {
-      revalidatePath(`/a/project/${option.legs.project_id}/leg/${option.leg_id}`)
+    if (optionForRevalidation) {
+      revalidatePath(`/a/project/${optionForRevalidation.legs.project_id}/leg/${optionForRevalidation.leg_id}`)
     }
 
     return { success: true }

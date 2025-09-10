@@ -104,7 +104,7 @@ export function PersonnelTab({ projectId, personnel }: PersonnelTabProps) {
                 {personnel.map((person) => (
                   <TableRow 
                     key={person.id}
-                    className={`border-border/50 hover:bg-muted/50 ${person.is_active === false ? 'opacity-60' : ''}`}
+                    className={`border-border/50 hover:bg-muted/50 ${person.status === 'inactive' ? 'opacity-60' : ''}`}
                   >
                     <TableCell>
                       <div className="flex items-center space-x-2">
@@ -119,7 +119,7 @@ export function PersonnelTab({ projectId, personnel }: PersonnelTabProps) {
                         personId={person.id}
                         currentParty={(person as any).party || 'A Party'}
                         fullName={person.full_name}
-                        isInactive={person.is_active === false}
+                        isInactive={person.status === 'inactive'}
                       />
                     </TableCell>
                     <TableCell>
@@ -137,10 +137,10 @@ export function PersonnelTab({ projectId, personnel }: PersonnelTabProps) {
                     </TableCell>
                     <TableCell>
                       <Badge 
-                        variant={person.is_active ? 'default' : 'secondary'} 
+                        variant={person.status === 'active' ? 'default' : 'secondary'} 
                         className="text-xs"
                       >
-                        {person.is_active ? 'Active' : 'Inactive'}
+                        {person.status === 'active' ? 'Active' : 'Inactive'}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -167,12 +167,12 @@ export function PersonnelTab({ projectId, personnel }: PersonnelTabProps) {
                           seat_pref: (person as any).seat_pref || undefined,
                           ff_numbers: (person as any).ff_numbers || undefined,
                           notes: person.special_requests || undefined,
-                          status: person.is_active ? 'active' : 'inactive'
+                          status: person.status
                         }} />
                         <DeletePersonDialog 
                           personId={person.id}
                           personName={person.full_name}
-                          disabled={person.is_active === false}
+                          disabled={person.status === 'inactive'}
                         />
                       </div>
                     </TableCell>
