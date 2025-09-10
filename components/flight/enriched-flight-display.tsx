@@ -101,7 +101,7 @@ export function EnrichedFlightDisplay({
           <div className="text-sm text-muted-foreground">
             {flight.flightNumber}
           </div>
-          {isEnriched && enrichmentData.aircraft_name && (
+          {isEnriched && enrichmentData?.aircraft_name && (
             <Badge variant="secondary" className="text-xs">
               {enrichmentData.aircraft_name}
             </Badge>
@@ -118,7 +118,7 @@ export function EnrichedFlightDisplay({
           <div className="text-lg font-semibold">
             {flightCode}
           </div>
-          {isEnriched && enrichmentData.aircraft_name && (
+          {isEnriched && enrichmentData?.aircraft_name && (
             <Badge variant="secondary">
               {enrichmentData.aircraft_name}
             </Badge>
@@ -131,7 +131,7 @@ export function EnrichedFlightDisplay({
           </div>
         )}
         
-        {isEnriched && (enrichmentData.dep_terminal || enrichmentData.arr_terminal) && (
+        {isEnriched && (enrichmentData?.dep_terminal || enrichmentData?.arr_terminal) && (
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <MapPin className="h-3 w-3" />
             {formatTerminals(enrichmentData)}
@@ -150,7 +150,7 @@ export function EnrichedFlightDisplay({
           <div className="flex items-center gap-2">
             <Plane className="h-4 w-4 text-muted-foreground" />
             <span className="font-semibold">{flightCode}</span>
-            {isEnriched && enrichmentData.aircraft_name && (
+            {isEnriched && enrichmentData?.aircraft_name && (
               <Badge variant="secondary">{enrichmentData.aircraft_name}</Badge>
             )}
           </div>
@@ -176,7 +176,7 @@ export function EnrichedFlightDisplay({
       {isEnriched && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
           {/* Terminals */}
-          {(enrichmentData.dep_terminal || enrichmentData.arr_terminal) && (
+          {(enrichmentData?.dep_terminal || enrichmentData?.arr_terminal) && (
             <div className="flex items-center gap-1">
               <MapPin className="h-3 w-3" />
               <span>Terminals: {formatTerminals(enrichmentData)}</span>
@@ -184,7 +184,7 @@ export function EnrichedFlightDisplay({
           )}
 
           {/* Gates */}
-          {(enrichmentData.dep_gate || enrichmentData.arr_gate) && (
+          {(enrichmentData?.dep_gate || enrichmentData?.arr_gate) && (
             <div className="flex items-center gap-1">
               <Info className="h-3 w-3" />
               <span>Gates: {formatGates(enrichmentData)}</span>
@@ -192,7 +192,7 @@ export function EnrichedFlightDisplay({
           )}
 
           {/* Scheduled times */}
-          {(enrichmentData.dep_scheduled || enrichmentData.arr_scheduled) && (
+          {(enrichmentData?.dep_scheduled || enrichmentData?.arr_scheduled) && (
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               <span>Scheduled: {formatScheduledTimes(enrichmentData)}</span>
@@ -200,7 +200,7 @@ export function EnrichedFlightDisplay({
           )}
 
           {/* Duration */}
-          {enrichmentData.duration && (
+          {enrichmentData?.duration && (
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
               <span>Duration: {Math.floor(enrichmentData.duration / 60)}h {enrichmentData.duration % 60}m</span>
