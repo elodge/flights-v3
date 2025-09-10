@@ -17,7 +17,6 @@ import React, { forwardRef, useEffect, useState } from 'react';
 import PhoneInput from 'react-phone-number-input';
 import { CountryCode } from 'libphonenumber-js';
 import { cn } from '@/lib/utils';
-import 'react-phone-number-input/rrui.css';
 import 'react-phone-number-input/style.css';
 import flags from 'react-phone-number-input/flags';
 
