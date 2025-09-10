@@ -170,37 +170,37 @@ export function extendWithEnrichment(
     flight_iata: flightIata,
   };
 
-  if (enrichment) {
+  if (enrichment?.data) {
     // CONTEXT: Use enrichment data to enhance display fields
-    extended.airline_name = enrichment.airline_name;
-    extended.aircraft = enrichment.aircraft;
-    extended.status = enrichment.status;
+    extended.airline_name = enrichment.data.airline_name;
+    extended.aircraft = enrichment.data.aircraft;
+    extended.status = enrichment.data.status;
     
     // CONTEXT: Format terminal information
-    if (enrichment.dep_terminal && enrichment.arr_terminal) {
-      extended.terminals = `T${enrichment.dep_terminal} → T${enrichment.arr_terminal}`;
-    } else if (enrichment.dep_terminal) {
-      extended.terminals = `T${enrichment.dep_terminal}`;
-    } else if (enrichment.arr_terminal) {
-      extended.terminals = `T${enrichment.arr_terminal}`;
+    if (enrichment.data.dep_terminal && enrichment.data.arr_terminal) {
+      extended.terminals = `T${enrichment.data.dep_terminal} → T${enrichment.data.arr_terminal}`;
+    } else if (enrichment.data.dep_terminal) {
+      extended.terminals = `T${enrichment.data.dep_terminal}`;
+    } else if (enrichment.data.arr_terminal) {
+      extended.terminals = `T${enrichment.data.arr_terminal}`;
     }
     
     // CONTEXT: Format gate information
-    if (enrichment.dep_gate && enrichment.arr_gate) {
-      extended.gates = `${enrichment.dep_gate} → ${enrichment.arr_gate}`;
-    } else if (enrichment.dep_gate) {
-      extended.gates = enrichment.dep_gate;
-    } else if (enrichment.arr_gate) {
-      extended.gates = enrichment.arr_gate;
+    if (enrichment.data.dep_gate && enrichment.data.arr_gate) {
+      extended.gates = `${enrichment.data.dep_gate} → ${enrichment.data.arr_gate}`;
+    } else if (enrichment.data.dep_gate) {
+      extended.gates = enrichment.data.dep_gate;
+    } else if (enrichment.data.arr_gate) {
+      extended.gates = enrichment.data.arr_gate;
     }
     
     // CONTEXT: Format scheduled times
-    if (enrichment.dep_scheduled && enrichment.arr_scheduled) {
-      const depTime = new Date(enrichment.dep_scheduled).toLocaleTimeString('en-US', {
+    if (enrichment.data.dep_scheduled && enrichment.data.arr_scheduled) {
+      const depTime = new Date(enrichment.data.dep_scheduled).toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit'
       });
-      const arrTime = new Date(enrichment.arr_scheduled).toLocaleTimeString('en-US', {
+      const arrTime = new Date(enrichment.data.arr_scheduled).toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit'
       });
