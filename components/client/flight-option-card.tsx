@@ -169,6 +169,19 @@ interface OptionComponent {
     arr_terminal?: string | null
     arr_gate?: string | null
   } | null
+  // Server-side enrichment fields
+  enriched_aircraft_type?: string | null
+  enriched_aircraft_name?: string | null
+  enriched_status?: string | null
+  enriched_dep_terminal?: string | null
+  enriched_arr_terminal?: string | null
+  enriched_dep_gate?: string | null
+  enriched_arr_gate?: string | null
+  enriched_dep_scheduled?: string | null
+  enriched_arr_scheduled?: string | null
+  enriched_duration?: number | null
+  enrichment_source?: string | null
+  enrichment_fetched_at?: string | null
 }
 
 interface Selection {
