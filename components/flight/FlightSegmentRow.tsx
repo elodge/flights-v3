@@ -12,6 +12,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { AirlineLogo } from "@/components/ui/airline-logo";
 import { getAirlineName, getAircraftName } from "@/lib/airlines";
 import { computeDurationMin, formatClock, formatDuration } from "@/lib/time";
 import { normalizeSegment, NormalizedSegment, getAirlineDisplayName } from "@/lib/segmentAdapter";
@@ -94,9 +95,11 @@ export function FlightSegmentRow({
       <div className="grid grid-cols-12 items-center gap-3">
         {/* Airline + flight code + enriched info */}
         <div className="col-span-4 flex items-center gap-3">
-          <div className="h-8 w-8 shrink-0 rounded-full bg-muted text-xs font-medium flex items-center justify-center">
-            {segment.airline?.slice(0, 2).toUpperCase()}
-          </div>
+          <AirlineLogo 
+            airline={segment.airline}
+            className="h-12 w-12 shrink-0"
+            size={48}
+          />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <div className="truncate text-sm font-medium">{airlineName}</div>

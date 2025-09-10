@@ -3,6 +3,7 @@
  * 
  * @description Provides airline name lookup by IATA code using the airlines data.
  * Handles case-insensitive lookups and provides fallback to IATA code for unknown airlines.
+ * This module exports existing airline data. Do not alter the data shape. Helpers below operate on the current structure.
  * 
  * @access Internal utility
  * @security No external dependencies, uses local data
@@ -13,95 +14,95 @@
 // Comprehensive list of major airlines worldwide for flight segment display
 const AIRLINES = [
   // US Airlines
-  { "iata": "AA", "name": "American Airlines" },
-  { "iata": "UA", "name": "United Airlines" },
-  { "iata": "DL", "name": "Delta Air Lines" },
-  { "iata": "WN", "name": "Southwest Airlines" },
-  { "iata": "B6", "name": "JetBlue Airways" },
-  { "iata": "AS", "name": "Alaska Airlines" },
-  { "iata": "NK", "name": "Spirit Airlines" },
-  { "iata": "F9", "name": "Frontier Airlines" },
-  { "iata": "HA", "name": "Hawaiian Airlines" },
-  { "iata": "VX", "name": "Virgin America" },
+  { "iata": "AA", "name": "American Airlines", "domain": "aa.com" },
+  { "iata": "UA", "name": "United Airlines", "domain": "united.com" },
+  { "iata": "DL", "name": "Delta Air Lines", "domain": "delta.com" },
+  { "iata": "WN", "name": "Southwest Airlines", "domain": "southwest.com" },
+  { "iata": "B6", "name": "JetBlue Airways", "domain": "jetblue.com" },
+  { "iata": "AS", "name": "Alaska Airlines", "domain": "alaskaair.com" },
+  { "iata": "NK", "name": "Spirit Airlines", "domain": "spirit.com" },
+  { "iata": "F9", "name": "Frontier Airlines", "domain": "flyfrontier.com" },
+  { "iata": "HA", "name": "Hawaiian Airlines", "domain": "hawaiianairlines.com" },
+  { "iata": "VX", "name": "Virgin America", "domain": "virginamerica.com" },
   
   // European Airlines
-  { "iata": "LH", "name": "Lufthansa" },
-  { "iata": "BA", "name": "British Airways" },
-  { "iata": "AF", "name": "Air France" },
-  { "iata": "KL", "name": "KLM Royal Dutch Airlines" },
-  { "iata": "LX", "name": "Swiss International Air Lines" },
-  { "iata": "OS", "name": "Austrian Airlines" },
-  { "iata": "SN", "name": "Brussels Airlines" },
-  { "iata": "IB", "name": "Iberia" },
-  { "iata": "AZ", "name": "Alitalia" },
-  { "iata": "TP", "name": "TAP Air Portugal" },
-  { "iata": "SK", "name": "Scandinavian Airlines" },
-  { "iata": "AY", "name": "Finnair" },
-  { "iata": "VS", "name": "Virgin Atlantic" },
-  { "iata": "EI", "name": "Aer Lingus" },
-  { "iata": "FR", "name": "Ryanair" },
-  { "iata": "U2", "name": "easyJet" },
-  { "iata": "TK", "name": "Turkish Airlines" },
+  { "iata": "LH", "name": "Lufthansa", "domain": "lufthansa.com" },
+  { "iata": "BA", "name": "British Airways", "domain": "britishairways.com" },
+  { "iata": "AF", "name": "Air France", "domain": "airfrance.com" },
+  { "iata": "KL", "name": "KLM Royal Dutch Airlines", "domain": "klm.com" },
+  { "iata": "LX", "name": "Swiss International Air Lines", "domain": "swiss.com" },
+  { "iata": "OS", "name": "Austrian Airlines", "domain": "austrian.com" },
+  { "iata": "SN", "name": "Brussels Airlines", "domain": "brusselsairlines.com" },
+  { "iata": "IB", "name": "Iberia", "domain": "iberia.com" },
+  { "iata": "AZ", "name": "Alitalia", "domain": "alitalia.com" },
+  { "iata": "TP", "name": "TAP Air Portugal", "domain": "flytap.com" },
+  { "iata": "SK", "name": "Scandinavian Airlines", "domain": "flysas.com" },
+  { "iata": "AY", "name": "Finnair", "domain": "finnair.com" },
+  { "iata": "VS", "name": "Virgin Atlantic", "domain": "virgin-atlantic.com" },
+  { "iata": "EI", "name": "Aer Lingus", "domain": "aerlingus.com" },
+  { "iata": "FR", "name": "Ryanair", "domain": "ryanair.com" },
+  { "iata": "U2", "name": "easyJet", "domain": "easyjet.com" },
+  { "iata": "TK", "name": "Turkish Airlines", "domain": "turkishairlines.com" },
   
   // Asian Airlines
-  { "iata": "SQ", "name": "Singapore Airlines" },
-  { "iata": "CX", "name": "Cathay Pacific" },
-  { "iata": "JL", "name": "Japan Airlines" },
-  { "iata": "NH", "name": "All Nippon Airways" },
-  { "iata": "CZ", "name": "China Southern Airlines" },
-  { "iata": "MU", "name": "China Eastern Airlines" },
-  { "iata": "CA", "name": "Air China" },
-  { "iata": "KE", "name": "Korean Air" },
-  { "iata": "OZ", "name": "Asiana Airlines" },
-  { "iata": "TG", "name": "Thai Airways" },
-  { "iata": "MH", "name": "Malaysia Airlines" },
-  { "iata": "GA", "name": "Garuda Indonesia" },
-  { "iata": "PR", "name": "Philippine Airlines" },
-  { "iata": "AI", "name": "Air India" },
-  { "iata": "6E", "name": "IndiGo" },
+  { "iata": "SQ", "name": "Singapore Airlines", "domain": "singaporeair.com" },
+  { "iata": "CX", "name": "Cathay Pacific", "domain": "cathaypacific.com" },
+  { "iata": "JL", "name": "Japan Airlines", "domain": "jal.com" },
+  { "iata": "NH", "name": "All Nippon Airways", "domain": "ana.co.jp" },
+  { "iata": "CZ", "name": "China Southern Airlines", "domain": "csair.com" },
+  { "iata": "MU", "name": "China Eastern Airlines", "domain": "ceair.com" },
+  { "iata": "CA", "name": "Air China", "domain": "airchina.com" },
+  { "iata": "KE", "name": "Korean Air", "domain": "koreanair.com" },
+  { "iata": "OZ", "name": "Asiana Airlines", "domain": "flyasiana.com" },
+  { "iata": "TG", "name": "Thai Airways", "domain": "thaiairways.com" },
+  { "iata": "MH", "name": "Malaysia Airlines", "domain": "malaysiaairlines.com" },
+  { "iata": "GA", "name": "Garuda Indonesia", "domain": "garuda-indonesia.com" },
+  { "iata": "PR", "name": "Philippine Airlines", "domain": "philippineairlines.com" },
+  { "iata": "AI", "name": "Air India", "domain": "airindia.com" },
+  { "iata": "6E", "name": "IndiGo", "domain": "goindigo.in" },
   
   // Australian/Oceania Airlines
-  { "iata": "QF", "name": "Qantas" },
-  { "iata": "JQ", "name": "Jetstar Airways" },
-  { "iata": "VA", "name": "Virgin Australia" },
-  { "iata": "NZ", "name": "Air New Zealand" },
+  { "iata": "QF", "name": "Qantas", "domain": "qantas.com" },
+  { "iata": "JQ", "name": "Jetstar Airways", "domain": "jetstar.com" },
+  { "iata": "VA", "name": "Virgin Australia", "domain": "virginaustralia.com" },
+  { "iata": "NZ", "name": "Air New Zealand", "domain": "airnewzealand.com" },
   
   // Middle Eastern Airlines
-  { "iata": "EK", "name": "Emirates" },
-  { "iata": "QR", "name": "Qatar Airways" },
-  { "iata": "EY", "name": "Etihad Airways" },
-  { "iata": "MS", "name": "EgyptAir" },
-  { "iata": "RJ", "name": "Royal Jordanian" },
-  { "iata": "GF", "name": "Gulf Air" },
+  { "iata": "EK", "name": "Emirates", "domain": "emirates.com" },
+  { "iata": "QR", "name": "Qatar Airways", "domain": "qatarairways.com" },
+  { "iata": "EY", "name": "Etihad Airways", "domain": "etihad.com" },
+  { "iata": "MS", "name": "EgyptAir", "domain": "egyptair.com" },
+  { "iata": "RJ", "name": "Royal Jordanian", "domain": "rj.com" },
+  { "iata": "GF", "name": "Gulf Air", "domain": "gulfair.com" },
   
   // Canadian Airlines
-  { "iata": "AC", "name": "Air Canada" },
-  { "iata": "WS", "name": "WestJet" },
+  { "iata": "AC", "name": "Air Canada", "domain": "aircanada.com" },
+  { "iata": "WS", "name": "WestJet", "domain": "westjet.com" },
   
   // Latin American Airlines
-  { "iata": "LA", "name": "LATAM Airlines" },
-  { "iata": "AM", "name": "Aeroméxico" },
-  { "iata": "AV", "name": "Avianca" },
-  { "iata": "G3", "name": "Gol Transportes Aéreos" },
-  { "iata": "AR", "name": "Aerolíneas Argentinas" },
+  { "iata": "LA", "name": "LATAM Airlines", "domain": "latam.com" },
+  { "iata": "AM", "name": "Aeroméxico", "domain": "aeromexico.com" },
+  { "iata": "AV", "name": "Avianca", "domain": "avianca.com" },
+  { "iata": "G3", "name": "Gol Transportes Aéreos", "domain": "voegol.com.br" },
+  { "iata": "AR", "name": "Aerolíneas Argentinas", "domain": "aerolineas.com.ar" },
   
   // African Airlines
-  { "iata": "SA", "name": "South African Airways" },
-  { "iata": "ET", "name": "Ethiopian Airlines" },
-  { "iata": "AT", "name": "Royal Air Maroc" },
-  { "iata": "KQ", "name": "Kenya Airways" },
+  { "iata": "SA", "name": "South African Airways", "domain": "flysaa.com" },
+  { "iata": "ET", "name": "Ethiopian Airlines", "domain": "ethiopianairlines.com" },
+  { "iata": "AT", "name": "Royal Air Maroc", "domain": "royalairmaroc.com" },
+  { "iata": "KQ", "name": "Kenya Airways", "domain": "kenya-airways.com" },
   
   // Low-cost Carriers
-  { "iata": "4U", "name": "Germanwings" },
-  { "iata": "VY", "name": "Vueling" },
-  { "iata": "W6", "name": "Wizz Air" },
-  { "iata": "PC", "name": "Pegasus Airlines" },
-  { "iata": "3K", "name": "Jetstar Asia" },
+  { "iata": "4U", "name": "Germanwings", "domain": "germanwings.com" },
+  { "iata": "VY", "name": "Vueling", "domain": "vueling.com" },
+  { "iata": "W6", "name": "Wizz Air", "domain": "wizzair.com" },
+  { "iata": "PC", "name": "Pegasus Airlines", "domain": "flypgs.com" },
+  { "iata": "3K", "name": "Jetstar Asia", "domain": "jetstar.com" },
   
   // Cargo/Charter Airlines (common ones)
-  { "iata": "FX", "name": "FedEx Express" },
-  { "iata": "5X", "name": "UPS Airlines" },
-  { "iata": "GI", "name": "Atlas Air" }
+  { "iata": "FX", "name": "FedEx Express", "domain": "fedex.com" },
+  { "iata": "5X", "name": "UPS Airlines", "domain": "ups.com" },
+  { "iata": "GI", "name": "Atlas Air", "domain": "atlasair.com" }
 ] as const;
 
 // CONTEXT: Aircraft data for converting IATA/ICAO codes to full names
@@ -240,5 +241,62 @@ export function getAircraftName(code?: string | null): string {
   if (!code) return "";
   const key = String(code).toUpperCase();
   return AIRCRAFT_MAP[key] ?? key;
+}
+
+// CONTEXT: Logo.dev helper functions - operate on existing airline data without shape changes
+// These functions enable airline logo lookup while preserving the current data structure
+
+/**
+ * Airline type definition for logo helpers
+ * 
+ * @description Type definition that matches the structure of airline objects in AIRLINES array
+ */
+export type Airline = {
+  iata?: string;
+  icao?: string;
+  name: string;
+  domain?: string;
+};
+
+/**
+ * Find airline by IATA or ICAO code
+ * 
+ * @description Case-insensitive lookup of airline data by IATA or ICAO code
+ * @param opts - Object with optional iata and icao properties
+ * @returns Airline object if found, undefined otherwise
+ * 
+ * @example
+ * ```typescript
+ * findAirline({ iata: "AA" }) // { iata: "AA", name: "American Airlines", domain: "aa.com" }
+ * findAirline({ iata: "unknown" }) // undefined
+ * ```
+ */
+export function findAirline(opts: { iata?: string; icao?: string }): Airline | undefined {
+  const iata = opts.iata?.toUpperCase();
+  const icao = opts.icao?.toUpperCase();
+  
+  return AIRLINES.find(airline => {
+    const airlineTyped = airline as unknown as Airline;
+    return (iata && airlineTyped.iata?.toUpperCase() === iata) ||
+           (icao && (airlineTyped as any).icao?.toUpperCase() === icao);
+  }) as Airline | undefined;
+}
+
+/**
+ * Get display name for an airline
+ * 
+ * @description Extracts the display name from an airline object
+ * @param airline - Airline object (can be undefined)
+ * @returns Airline name or undefined if no airline provided
+ * 
+ * @example
+ * ```typescript
+ * const airline = findAirline({ iata: "AA" });
+ * airlineDisplayName(airline) // "American Airlines"
+ * airlineDisplayName(undefined) // undefined
+ * ```
+ */
+export function airlineDisplayName(airline?: Airline): string | undefined {
+  return airline?.name;
 }
 
