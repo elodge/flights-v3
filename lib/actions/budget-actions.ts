@@ -135,7 +135,7 @@ export async function getBudgetSnapshot(projectId: string): Promise<BudgetSnapsh
     
     if (budgets) {
       for (const budget of budgets) {
-        const amount = budget.amount_cents / 100 // Convert cents to dollars
+        const amount = budget.amount_cents // Keep amounts in cents for consistency
         
         switch (budget.level) {
           case 'tour':
