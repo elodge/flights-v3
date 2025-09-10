@@ -213,7 +213,7 @@ export default async function ProjectPage({ params }: PageProps) {
             <CardContent>
               <div className="text-2xl font-bold">
                 {project.budget_amount 
-                  ? `$${(project.budget_amount / 1000000).toFixed(1)}M`
+                  ? `$${(project.budget_amount / 100).toLocaleString()}`
                   : '—'
                 }
               </div>
