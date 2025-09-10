@@ -76,7 +76,7 @@ export default async function ClientDocumentsPage({ params }: ClientDocumentsPag
   const { data: assignment } = await supabase
     .from('artist_assignments')
     .select('id')
-    .eq('client_id', user.id)
+    .eq('user_id', user.id)
     .eq('artist_id', project.artist_id)
     .single();
 
