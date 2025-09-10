@@ -18,11 +18,18 @@ const loginSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters')
 })
 
+const magicLinkSchema = z.object({
+  email: z.string().email('Please enter a valid email address')
+})
+
 type LoginForm = z.infer<typeof loginSchema>
+type MagicLinkForm = z.infer<typeof magicLinkSchema>
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [loginMode, setLoginMode] = useState<'password' | 'magic'>('password')
   const router = useRouter()
 
   const form = useForm<LoginForm>({
@@ -30,6 +37,13 @@ export default function LoginPage() {
     defaultValues: {
       email: '',
       password: ''
+    }
+  })
+
+  const magicForm = useForm<MagicLinkForm>({
+    resolver: zodResolver(magicLinkSchema),
+    defaultValues: {
+      email: ''
     }
   })
 
@@ -150,6 +164,34 @@ export default function LoginPage() {
     }
   }
 
+  const onMagicLinkSubmit = async (data: MagicLinkForm) => {
+    setIsLoading(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: data.email,
+        options: {
+          // Redirect to auth callback page to handle token and sync user
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`
+        }
+      })
+
+      if (error) {
+        setError(error.message)
+        return
+      }
+
+      setSuccess('Magic link sent! Check your email and click the link to sign in.')
+    } catch (error) {
+      console.error('Magic link error:', error)
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -158,10 +200,35 @@ export default function LoginPage() {
           <CardDescription className="text-center">
             Sign in to your Daysheets Flight Management account
           </CardDescription>
+          <div className="flex rounded-lg bg-muted p-1">
+            <button
+              type="button"
+              onClick={() => setLoginMode('password')}
+              className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                loginMode === 'password'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Password
+            </button>
+            <button
+              type="button"
+              onClick={() => setLoginMode('magic')}
+              className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                loginMode === 'magic'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Magic Link
+            </button>
+          </div>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {loginMode === 'password' ? (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="email"
@@ -212,6 +279,47 @@ export default function LoginPage() {
               </Button>
             </form>
           </Form>
+          ) : (
+            <Form {...magicForm}>
+              <form onSubmit={magicForm.handleSubmit(onMagicLinkSubmit)} className="space-y-4">
+                <FormField
+                  control={magicForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="Enter your email"
+                          disabled={isLoading}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+
+                {success && (
+                  <Alert>
+                    <AlertDescription>{success}</AlertDescription>
+                  </Alert>
+                )}
+
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Send Magic Link
+                </Button>
+              </form>
+            </Form>
+          )}
         </CardContent>
       </Card>
     </div>
