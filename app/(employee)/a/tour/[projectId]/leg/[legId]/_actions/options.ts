@@ -131,7 +131,7 @@ export async function createManualFlightOption(input: CreateManualOptionInput) {
         source: 'manual',
         class_of_service: input.class_of_service || null,
         seats_available: input.seats_available || null,
-        price_total: input.price_total || null,
+        price_total: input.price_total || undefined,
         price_currency: input.price_currency || 'USD',
         expires_at: input.hold_expires_at || null, // Using expires_at for hold_expires_at
         notes: input.notes?.trim() || null,
