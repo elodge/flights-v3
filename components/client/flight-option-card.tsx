@@ -23,24 +23,27 @@ import { getAirlineName } from '@/lib/airlines'
 import { useHoldCountdown } from '@/hooks/use-hold-countdown'
 import { selectFlightOption } from '@/lib/actions/selection-actions'
 import { useAviationStack } from '@/hooks/useAviationstack'
-import { useFlightEnrichment } from '@/hooks/use-flight-enrichment'
 import { EnrichedFlightDisplay } from '@/components/flight/enriched-flight-display'
-import { extractFlightIdentifiers } from '@/lib/enrichment'
 
 /**
  * Flight header component with enrichment
  */
 function FlightHeaderWithEnrichment({ component }: { component: any }) {
-  const flightQuery = extractFlightIdentifiers({
-    airline: component.airline,
-    flightNumber: component.flightNumber,
-    origin: component.origin,
-    destination: component.destination,
-  });
-
-  const { data: enrichment, loading } = useFlightEnrichment(flightQuery, {
-    autoFetch: true,
-  });
+  // Use stored enrichment data from database
+  const enrichment = {
+    aircraft_type: component.enriched_aircraft_type,
+    aircraft_name: component.enriched_aircraft_name,
+    status: component.enriched_status,
+    dep_terminal: component.enriched_dep_terminal,
+    arr_terminal: component.enriched_arr_terminal,
+    dep_gate: component.enriched_dep_gate,
+    arr_gate: component.enriched_arr_gate,
+    dep_scheduled: component.enriched_dep_scheduled,
+    arr_scheduled: component.enriched_arr_scheduled,
+    duration: component.enriched_duration,
+    source: component.enrichment_source,
+    fetched_at: component.enrichment_fetched_at,
+  };
 
   return (
     <EnrichedFlightDisplay
@@ -51,7 +54,6 @@ function FlightHeaderWithEnrichment({ component }: { component: any }) {
         destination: component.destination,
       }}
       enrichment={enrichment}
-      loading={loading}
       variant="header"
     />
   );
@@ -61,19 +63,24 @@ function FlightHeaderWithEnrichment({ component }: { component: any }) {
  * Enhanced segment display with enrichment
  */
 function EnrichedSegmentDisplay({ component }: { component: OptionComponent }) {
-  const flightQuery = extractFlightIdentifiers({
-    airline_iata: component.airline_iata || component.airline,
-    flight_number: component.flight_number,
-    dep_iata: component.dep_iata,
-    arr_iata: component.arr_iata,
-  });
+  // Use stored enrichment data from database
+  const enrichment = {
+    aircraft_type: component.enriched_aircraft_type,
+    aircraft_name: component.enriched_aircraft_name,
+    status: component.enriched_status,
+    dep_terminal: component.enriched_dep_terminal,
+    arr_terminal: component.enriched_arr_terminal,
+    dep_gate: component.enriched_dep_gate,
+    arr_gate: component.enriched_arr_gate,
+    dep_scheduled: component.enriched_dep_scheduled,
+    arr_scheduled: component.enriched_arr_scheduled,
+    duration: component.enriched_duration,
+    source: component.enrichment_source,
+    fetched_at: component.enrichment_fetched_at,
+  };
 
-  const { data: enrichment, loading } = useFlightEnrichment(flightQuery, {
-    autoFetch: true,
-  });
-
-  // FALLBACK: Use existing display if enrichment fails
-  if (!loading && (!enrichment || !enrichment.success)) {
+  // FALLBACK: Use existing display if no enrichment data available
+  if (!enrichment || (!enrichment.aircraft_type && !enrichment.aircraft_name)) {
     return (
       <div className="border rounded-lg p-3 bg-muted/50">
         <div className="flex items-center justify-between">
@@ -113,7 +120,6 @@ function EnrichedSegmentDisplay({ component }: { component: OptionComponent }) {
           destination: component.arr_iata || '',
         }}
         enrichment={enrichment}
-        loading={loading}
         variant="compact"
       />
       
