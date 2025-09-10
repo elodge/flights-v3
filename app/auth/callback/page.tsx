@@ -20,17 +20,56 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // CONTEXT: Handle the auth callback from magic link
-        // SECURITY: Supabase automatically validates the token in the URL
-        const { data, error } = await supabase.auth.getSession()
+        // CONTEXT: Extract auth parameters from URL
+        const urlParams = new URLSearchParams(window.location.search)
+        const token = urlParams.get('token')
+        const type = urlParams.get('type')
         
-        if (error) {
-          console.error('Auth callback error:', error)
-          router.push('/login?error=auth-callback-failed')
-          return
+        // CONTEXT: Handle magic link authentication
+        if (token && type === 'magiclink') {
+          console.log('Processing magic link token...')
+          
+          // SECURITY: Verify the magic link token
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: token,
+            type: 'magiclink'
+          })
+          
+          if (error) {
+            console.error('Magic link verification error:', error)
+            router.push('/login?error=magic-link-verification-failed')
+            return
+          }
+          
+          if (data.session?.user) {
+            console.log('Magic link authentication successful')
+            // Continue with user sync below
+          } else {
+            console.error('No session after magic link verification')
+            router.push('/login?error=no-session-after-verification')
+            return
+          }
+        } else {
+          // CONTEXT: Handle other auth callbacks (OAuth, etc.)
+          const { data, error } = await supabase.auth.getSession()
+          
+          if (error) {
+            console.error('Auth callback error:', error)
+            router.push('/login?error=auth-callback-failed')
+            return
+          }
+          
+          if (!data.session?.user) {
+            console.error('No session found')
+            router.push('/login?error=no-session')
+            return
+          }
         }
 
-        if (data.session?.user) {
+        // CONTEXT: Get the current session (either from magic link or other auth)
+        const { data: sessionData } = await supabase.auth.getSession()
+        
+        if (sessionData.session?.user) {
           // CONTEXT: Sync the user to our database (same as password login)
           // SECURITY: Ensures user exists in our users table with proper role
           const response = await fetch('/api/auth/sync', {
@@ -39,8 +78,8 @@ export default function AuthCallbackPage() {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              userId: data.session.user.id,
-              email: data.session.user.email
+              userId: sessionData.session.user.id,
+              email: sessionData.session.user.email
             })
           })
 
