@@ -40,6 +40,23 @@ export interface BudgetSnapshotResult {
   data?: BudgetSnapshot
 }
 
+export interface BudgetRecord {
+  id: string
+  level: 'tour' | 'party' | 'person'
+  party?: string
+  passenger_id?: string
+  amount_cents: number
+  notes?: string
+  created_at?: string
+  created_by: string
+}
+
+export interface BudgetRecordsResult {
+  success: boolean
+  error?: string
+  data?: BudgetRecord[]
+}
+
 /**
  * Gets comprehensive budget snapshot for a project
  * 
@@ -198,6 +215,87 @@ export async function getBudgetSnapshot(projectId: string): Promise<BudgetSnapsh
     return {
       success: false,
       error: 'Failed to calculate budget snapshot'
+    }
+  }
+}
+
+/**
+ * Gets all budget records for a project
+ * 
+ * @description Retrieves all budget records (tour, party, person level) for a project.
+ * Used by budget management interface to display current budget settings.
+ * 
+ * @param projectId - UUID of the project
+ * @returns Promise<BudgetRecordsResult> - All budget records for the project
+ * 
+ * @security Requires authenticated user with access to project
+ * @database Reads from budgets table with RLS
+ * @business_rule Returns budgets at all levels (tour, party, person)
+ * 
+ * @example
+ * ```typescript
+ * const result = await getProjectBudgets('project-uuid')
+ * if (result.success) {
+ *   const tourBudget = result.data?.find(b => b.level === 'tour')
+ * }
+ * ```
+ */
+export async function getProjectBudgets(projectId: string): Promise<BudgetRecordsResult> {
+  try {
+    // SECURITY: Verify user authentication
+    const user = await getServerUser()
+    if (!user) {
+      return {
+        success: false,
+        error: 'Authentication required'
+      }
+    }
+    
+    if (!projectId) {
+      return {
+        success: false,
+        error: 'Project ID is required'
+      }
+    }
+    
+    const supabase = await createServerClient()
+    
+    // CONTEXT: Get all budget records for this project
+    // SECURITY: RLS ensures user can only access their assigned projects
+    const { data: budgets, error } = await supabase
+      .from('budgets')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('level', { ascending: true })
+      .order('party', { ascending: true })
+      .order('passenger_id', { ascending: true })
+    
+    if (error) {
+      console.error('Budget fetch error:', error)
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch budgets'
+      }
+    }
+    
+    return {
+      success: true,
+      data: (budgets || []).map(budget => ({
+        ...budget,
+        level: budget.level as 'tour' | 'party' | 'person',
+        party: budget.party || undefined,
+        passenger_id: budget.passenger_id || undefined,
+        notes: budget.notes || undefined,
+        created_at: budget.created_at || undefined,
+        updated_at: budget.updated_at || undefined
+      }))
+    }
+    
+  } catch (error) {
+    console.error('Get project budgets error:', error)
+    return {
+      success: false,
+      error: 'An unexpected error occurred'
     }
   }
 }

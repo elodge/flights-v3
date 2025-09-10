@@ -344,7 +344,7 @@ export default async function ProjectPage({ params }: PageProps) {
                   View and download tour documents.
                 </p>
                 <Button asChild>
-                  <Link href={`/c/tour/${project.id}/documents`}>
+                  <Link href={`/tour/${project.id}/documents`}>
                     <FileText className="mr-2 h-4 w-4" />
                     View Documents
                   </Link>

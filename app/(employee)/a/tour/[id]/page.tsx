@@ -24,9 +24,8 @@ import { getServerUser } from '@/lib/auth'
 import { Database } from '@/lib/database.types'
 import { AddLegDialog } from '@/components/employee/add-leg-dialog'
 import { PersonnelTab } from '@/components/employee/personnel-tab'
-// Temporarily disabled budget features for authentication fix
-// import { BudgetManagement } from '@/components/employee/budget-management'
-// import { getProjectBudgets, getBudgetSnapshot } from '@/lib/actions/budget-actions'
+import { BudgetManagement } from '@/components/employee/budget-management'
+import { getProjectBudgets, getBudgetSnapshot } from '@/lib/actions/budget-actions'
 
 type TourWithDetails = Database['public']['Tables']['projects']['Row'] & {
   artists: {
@@ -175,9 +174,11 @@ export default async function EmployeeTourPage({ params }: PageProps) {
   const sortedLegs = tour.legs.sort((a, b) => a.leg_order - b.leg_order)
 
   // Get budget data
-  // Temporarily disabled budget features for authentication fix
-  // const budgets = await getProjectBudgets(id)
-  // const budgetSnapshot = await getBudgetSnapshot(id)
+  const budgetsResult = await getProjectBudgets(id)
+  const budgets = budgetsResult.success ? budgetsResult.data || [] : []
+  
+  const snapshotResult = await getBudgetSnapshot(id)
+  const budgetSnapshot = snapshotResult.success ? snapshotResult.data || null : null
 
   return (
     <div className="space-y-6">
@@ -274,7 +275,7 @@ export default async function EmployeeTourPage({ params }: PageProps) {
         <TabsList>
           <TabsTrigger value="legs">Legs</TabsTrigger>
           <TabsTrigger value="personnel">Personnel</TabsTrigger>
-          {/* <TabsTrigger value="budget">Budget</TabsTrigger> */}
+          <TabsTrigger value="budget">Budget</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
         </TabsList>
 
@@ -392,10 +393,9 @@ export default async function EmployeeTourPage({ params }: PageProps) {
           />
         </TabsContent>
 
-        {/* Temporarily disabled budget tab for authentication fix */}
-        {/* <TabsContent value="budget" className="space-y-4">
+        <TabsContent value="budget" className="space-y-4">
           <BudgetManagement 
-            projectId={params.id}
+            projectId={id}
             budgets={budgets}
             snapshot={budgetSnapshot}
             tourPersonnel={tour.tour_personnel.map(p => ({
@@ -404,7 +404,7 @@ export default async function EmployeeTourPage({ params }: PageProps) {
               party: p.party
             }))}
           />
-        </TabsContent> */}
+        </TabsContent>
 
         <TabsContent value="documents" className="space-y-4">
           <div className="card-muted">
