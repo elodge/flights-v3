@@ -17,7 +17,9 @@ import React, { forwardRef, useEffect, useState } from 'react';
 import PhoneInput from 'react-phone-number-input';
 import { CountryCode } from 'libphonenumber-js';
 import { cn } from '@/lib/utils';
+import 'react-phone-number-input/rrui.css';
 import 'react-phone-number-input/style.css';
+import flags from 'react-phone-number-input/flags';
 
 interface PhoneNumberInputProps {
   /** Current phone number value (E.164 format) */
@@ -146,7 +148,7 @@ export const PhoneNumberInput = forwardRef<HTMLInputElement, PhoneNumberInputPro
             name={name}
             id={id}
             className="w-full"
-            flagUrl="https://purecatamphetamine.github.io/country-flag-icons/3x2/{XX}.svg"
+            flags={flags}
           />
         </div>
         
