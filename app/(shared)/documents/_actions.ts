@@ -314,7 +314,7 @@ const UploadDocumentSchema = z.object({
  * @returns Success confirmation with document ID
  * @security Requires agent/admin role, validates file type and size
  * @database Inserts into tour_documents table
- * @business_rule Only PDF files allowed, max 10MB size, generates unique file paths
+ * @business_rule Only PDF files allowed, max 50MB size, generates unique file paths
  * @example
  * ```typescript
  * await uploadTourDocument({
@@ -350,9 +350,9 @@ export async function uploadTourDocument(payload: {
     throw new Error('Only PDF files are allowed');
   }
 
-  // BUSINESS_RULE: Validate file size (10MB limit)
-  if (validatedPayload.file.size > 10 * 1024 * 1024) {
-    throw new Error('File size must be less than 10MB');
+  // BUSINESS_RULE: Validate file size (50MB limit)
+  if (validatedPayload.file.size > 50 * 1024 * 1024) {
+    throw new Error('File size must be less than 50MB');
   }
 
   // CONTEXT: Generate unique file path

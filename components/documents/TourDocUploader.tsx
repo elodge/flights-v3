@@ -67,9 +67,9 @@ export function TourDocUploader({ projectId, onUploadSuccess }: TourDocUploaderP
         return;
       }
 
-      // BUSINESS_RULE: Limit file size to 10MB
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error(`File "${file.name}" is too large. Maximum size is 10MB.`);
+      // BUSINESS_RULE: Limit file size to 50MB
+      if (file.size > 50 * 1024 * 1024) {
+        toast.error(`File "${file.name}" is too large. Maximum size is 50MB.`);
         return;
       }
 
