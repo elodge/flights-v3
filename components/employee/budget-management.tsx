@@ -411,20 +411,71 @@ export function BudgetManagement({
                         <div className="space-y-2">
                           {personnel.map((person) => {
                             const personBudget = personBudgets.find(b => b.passenger_id === person.id)
+                            const isEditingPerson = editingBudget === `person-${person.id}`
+                            
                             return (
                               <div key={person.id} className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded">
                                 <span className="text-sm">{person.full_name}</span>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium">
-                                    {personBudget ? formatCurrency(personBudget.amount_cents) : 'No budget'}
-                                  </span>
-                                  <Button 
-                                    size="sm" 
-                                    variant="ghost"
-                                    onClick={() => setEditingBudget(`person-${person.id}`)}
-                                  >
-                                    <Edit className="h-3 w-3" />
-                                  </Button>
+                                  {isEditingPerson ? (
+                                    <div className="flex items-center gap-2">
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="5000.00"
+                                        className="w-24 h-8 text-sm"
+                                        value={newBudget.amount_cents ? newBudget.amount_cents / 100 : ''}
+                                        onChange={(e) => setNewBudget({
+                                          ...newBudget,
+                                          amount_cents: Math.round(parseFloat(e.target.value || '0') * 100)
+                                        })}
+                                      />
+                                      <Button 
+                                        size="sm"
+                                        className="h-8 w-8 p-0"
+                                        onClick={() => handleSetBudget({
+                                          level: 'person',
+                                          passenger_id: person.id,
+                                          amount_cents: newBudget.amount_cents || 0,
+                                          notes: newBudget.notes
+                                        })}
+                                        disabled={loading}
+                                      >
+                                        <Save className="h-3 w-3" />
+                                      </Button>
+                                      <Button 
+                                        size="sm"
+                                        variant="ghost"
+                                        className="h-8 w-8 p-0"
+                                        onClick={() => {
+                                          setEditingBudget(null)
+                                          setNewBudget({})
+                                        }}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <span className="text-sm font-medium">
+                                        {personBudget ? formatCurrency(personBudget.amount_cents) : 'No budget'}
+                                      </span>
+                                      <Button 
+                                        size="sm" 
+                                        variant="ghost"
+                                        className="h-8 w-8 p-0"
+                                        onClick={() => {
+                                          setEditingBudget(`person-${person.id}`)
+                                          setNewBudget({
+                                            amount_cents: personBudget?.amount_cents || 0,
+                                            notes: personBudget?.notes || ''
+                                          })
+                                        }}
+                                      >
+                                        <Edit className="h-3 w-3" />
+                                      </Button>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             )
