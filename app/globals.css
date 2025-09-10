@@ -185,3 +185,32 @@
     @apply bg-slate-50 dark:bg-slate-900/50 text-card-foreground border-2 border-slate-200 dark:border-slate-700 rounded-lg shadow-none;
   }
 }
+
+/* Toast notification styles */
+@layer utilities {
+  .toaster {
+    z-index: 9999;
+  }
+  
+  .toaster [data-sonner-toast] {
+    margin-bottom: 0.5rem;
+    max-width: 400px;
+    word-wrap: break-word;
+  }
+  
+  .toaster [data-sonner-toast][data-type="error"] {
+    border-left: 4px solid #ef4444;
+  }
+  
+  .toaster [data-sonner-toast][data-type="success"] {
+    border-left: 4px solid #22c55e;
+  }
+  
+  .toaster [data-sonner-toast][data-type="warning"] {
+    border-left: 4px solid #f59e0b;
+  }
+  
+  .toaster [data-sonner-toast][data-type="info"] {
+    border-left: 4px solid #3b82f6;
+  }
+}
