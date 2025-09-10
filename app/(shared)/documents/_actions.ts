@@ -400,16 +400,17 @@ export async function uploadTourDocument(payload: {
   }
 
   // CONTEXT: Revalidate relevant pages to show new document
-  try {
-    revalidatePath(`/a/tour/${validatedPayload.projectId}`);
-    revalidatePath(`/a/tour/${validatedPayload.projectId}/documents`);
-    if (validatedPayload.legId) {
-      revalidatePath(`/a/tour/${validatedPayload.projectId}/leg/${validatedPayload.legId}`);
-    }
-  } catch (revalidateError) {
-    console.warn('Failed to revalidate paths after document upload:', revalidateError);
-    // Don't throw - upload was successful, just revalidation failed
-  }
+  // TEMPORARILY DISABLED: Investigating Server Components render error
+  // try {
+  //   revalidatePath(`/a/tour/${validatedPayload.projectId}`);
+  //   revalidatePath(`/a/tour/${validatedPayload.projectId}/documents`);
+  //   if (validatedPayload.legId) {
+  //     revalidatePath(`/a/tour/${validatedPayload.projectId}/leg/${validatedPayload.legId}`);
+  //   }
+  // } catch (revalidateError) {
+  //   console.warn('Failed to revalidate paths after document upload:', revalidateError);
+  //   // Don't throw - upload was successful, just revalidation failed
+  // }
 
   return { success: true, documentId: document.id };
 }
