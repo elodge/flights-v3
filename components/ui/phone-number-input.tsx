@@ -124,54 +124,30 @@ export const PhoneNumberInput = forwardRef<HTMLInputElement, PhoneNumberInputPro
 
     return (
       <div className="space-y-1">
-        <PhoneInput
-          ref={ref}
-          international
-          countryCallingCodeEditable={false}
-          defaultCountry={detectedCountry}
-          value={value}
-          onChange={onChange}
-          onBlur={onBlur}
-          placeholder={placeholder}
-          disabled={disabled}
-          name={name}
-          id={id}
-          className={cn(
-            // Base styling to match our design system
-            'flex w-full rounded-md border border-input bg-background text-sm ring-offset-background',
-            'file:border-0 file:bg-transparent file:text-sm file:font-medium',
-            'placeholder:text-muted-foreground',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-            'disabled:cursor-not-allowed disabled:opacity-50',
-            // Error state styling
-            error && 'border-destructive focus-visible:ring-destructive',
-            className
-          )}
-          // Custom input component styling
-          inputComponent={({ className: inputClassName, ...inputProps }) => (
-            <input
-              {...inputProps}
-              type="tel"
-              autoComplete="tel"
-              className={cn(
-                'flex-1 px-3 py-2 bg-transparent outline-none',
-                'placeholder:text-muted-foreground',
-                inputClassName
-              )}
-            />
-          )}
-          // Custom country select styling  
-          countrySelectComponent={({ className: selectClassName, iconComponent, ...selectProps }) => (
-            <select
-              {...selectProps}
-              className={cn(
-                'px-2 py-2 bg-transparent border-r border-input outline-none text-sm',
-                'focus:ring-0 focus:border-input',
-                selectClassName
-              )}
-            />
-          )}
-        />
+        <div className={cn(
+          // Container styling to match our design system
+          'flex w-full rounded-md border border-input bg-background text-sm ring-offset-background',
+          'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
+          'disabled:cursor-not-allowed disabled:opacity-50',
+          // Error state styling
+          error && 'border-destructive focus-within:ring-destructive',
+          className
+        )}>
+          <PhoneInput
+            ref={ref}
+            international
+            countryCallingCodeEditable={false}
+            defaultCountry={detectedCountry}
+            value={value}
+            onChange={onChange}
+            onBlur={onBlur}
+            placeholder={placeholder}
+            disabled={disabled}
+            name={name}
+            id={id}
+            className="w-full"
+          />
+        </div>
         
         {/* Error message display */}
         {error && errorMessage && (

@@ -1,6 +1,61 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Phone number input styles */
+.PhoneInput {
+  display: flex;
+  align-items: center;
+}
+
+.PhoneInputCountry {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+
+.PhoneInputCountrySelect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.PhoneInputCountrySelect:focus + .PhoneInputCountryIcon {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.PhoneInputCountryIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 2px;
+  margin-right: 0.5rem;
+}
+
+.PhoneInputCountrySelectArrow {
+  display: none;
+}
+
+.PhoneInputInput {
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.PhoneInputInput::placeholder {
+  color: var(--muted-foreground);
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
