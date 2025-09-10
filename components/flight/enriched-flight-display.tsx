@@ -223,7 +223,7 @@ export function EnrichedFlightDisplay({
 /**
  * Format terminal information
  */
-function formatTerminals(enrichment: EnrichedFlight): string {
+function formatTerminals(enrichment: NonNullable<EnrichedFlightDisplayProps['enrichment']>): string {
   if (enrichment.dep_terminal && enrichment.arr_terminal) {
     return `T${enrichment.dep_terminal} → T${enrichment.arr_terminal}`;
   } else if (enrichment.dep_terminal) {
@@ -237,7 +237,7 @@ function formatTerminals(enrichment: EnrichedFlight): string {
 /**
  * Format gate information
  */
-function formatGates(enrichment: EnrichedFlight): string {
+function formatGates(enrichment: NonNullable<EnrichedFlightDisplayProps['enrichment']>): string {
   if (enrichment.dep_gate && enrichment.arr_gate) {
     return `${enrichment.dep_gate} → ${enrichment.arr_gate}`;
   } else if (enrichment.dep_gate) {
@@ -251,7 +251,7 @@ function formatGates(enrichment: EnrichedFlight): string {
 /**
  * Format scheduled times
  */
-function formatScheduledTimes(enrichment: EnrichedFlight): string {
+function formatScheduledTimes(enrichment: NonNullable<EnrichedFlightDisplayProps['enrichment']>): string {
   if (enrichment.dep_scheduled && enrichment.arr_scheduled) {
     const depTime = new Date(enrichment.dep_scheduled).toLocaleTimeString('en-US', {
       hour: '2-digit',
