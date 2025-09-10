@@ -26,6 +26,14 @@ export default function AuthCallbackPage() {
         const tokenHash = urlParams.get('token_hash')
         const type = urlParams.get('type')
         
+        // DEBUG: Log all URL parameters for troubleshooting
+        console.log('Auth callback URL parameters:', {
+          token: token ? `${token.substring(0, 10)}...` : null,
+          tokenHash: tokenHash ? `${tokenHash.substring(0, 10)}...` : null,
+          type,
+          fullUrl: window.location.href
+        })
+        
         // CONTEXT: Handle magic link authentication
         if ((token || tokenHash) && (type === 'magiclink' || type === 'email')) {
           console.log('Processing magic link token...')
@@ -46,15 +54,27 @@ export default function AuthCallbackPage() {
           
           if (error) {
             console.error('Magic link verification error:', error)
+            console.error('Error details:', {
+              message: error.message,
+              status: error.status,
+              name: error.name
+            })
             router.push('/login?error=magic-link-verification-failed')
             return
           }
           
           if (data.session?.user) {
-            console.log('Magic link authentication successful')
+            console.log('Magic link authentication successful', {
+              userId: data.session.user.id,
+              email: data.session.user.email
+            })
             // Continue with user sync below
           } else {
-            console.error('No session after magic link verification')
+            console.error('No session after magic link verification', {
+              data: data,
+              session: data?.session,
+              user: data?.session?.user
+            })
             router.push('/login?error=no-session-after-verification')
             return
           }
