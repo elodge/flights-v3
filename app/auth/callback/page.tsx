@@ -23,16 +23,25 @@ export default function AuthCallbackPage() {
         // CONTEXT: Extract auth parameters from URL
         const urlParams = new URLSearchParams(window.location.search)
         const token = urlParams.get('token')
+        const tokenHash = urlParams.get('token_hash')
         const type = urlParams.get('type')
         
         // CONTEXT: Handle magic link authentication
-        if (token && type === 'magiclink') {
+        if ((token || tokenHash) && (type === 'magiclink' || type === 'email')) {
           console.log('Processing magic link token...')
           
           // SECURITY: Verify the magic link token
+          // Handle both 'token' and 'token_hash' parameters for compatibility
+          const tokenToUse = tokenHash || token
+          if (!tokenToUse) {
+            console.error('No token found in URL parameters')
+            router.push('/login?error=no-token')
+            return
+          }
+          
           const { data, error } = await supabase.auth.verifyOtp({
-            token_hash: token,
-            type: 'magiclink'
+            token_hash: tokenToUse,
+            type: 'email'
           })
           
           if (error) {
