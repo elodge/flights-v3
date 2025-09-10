@@ -2,12 +2,15 @@
  * @fileoverview Flight option card component for client selection interface
  * 
  * @description Interactive card displaying flight option details with selection
- * actions, status visualization, and hold countdown. Supports both group and
- * individual selection modes with real-time status updates.
+ * actions, status visualization, and hold countdown. Uses FlightSegmentRow for
+ * consistent flight display across client and agent interfaces. Parses both
+ * structured data and Navitas text for maximum compatibility.
  * 
  * @access Client-side component
  * @security Client-only operations via RLS-protected RPC calls
- * @database Calls rpc_client_select_option for selections
+ * @database Reads option_components with airline_iata, flight_number, navitas_text
+ * @business_rule Uses same flight parsing logic as agent interface via normalizeSegment
+ * @business_rule Displays airline logos via Logo.dev proxy when available
  */
 
 'use client'
@@ -22,7 +25,19 @@ import { useHoldCountdown } from '@/hooks/use-hold-countdown'
 import { selectFlightOption } from '@/lib/actions/selection-actions'
 import { FlightSegmentRow } from '@/components/flight/FlightSegmentRow'
 
-
+/**
+ * DECISION: Use FlightSegmentRow instead of custom enrichment display
+ * 
+ * RATIONALE: Client and agent interfaces should display flight data identically.
+ * FlightSegmentRow uses normalizeSegment which handles both structured data and
+ * Navitas text parsing, eliminating the need for client-side API enrichment.
+ * 
+ * MIGRATION: Removed complex enrichment logic, useAviationStack hook, and 
+ * conditional rendering in favor of simple FlightSegmentRow mapping.
+ * 
+ * ALTERNATIVES: Could have kept separate enrichment logic, but this creates
+ * inconsistency and maintenance burden between client and agent displays.
+ */
 
 interface OptionComponent {
   id: string
@@ -110,18 +125,20 @@ interface FlightOptionCardProps {
  * Flight option card component for client selection
  * 
  * @description Interactive card showing flight option details with status-aware
- * selection interface. Handles group and individual selection modes with
- * real-time hold countdown and status visualization.
+ * selection interface. Uses FlightSegmentRow components for consistent flight
+ * display matching agent interface. Handles both manual and Navitas options.
  * 
  * @param option - Flight option data with components, selections, and holds
  * @param legId - UUID of the leg this option belongs to
  * @param selectionType - Whether this is for group or individual selection
  * @param passengerIds - Array of passenger UUIDs for individual selection, null for group
- * @returns JSX.Element - Interactive option card with selection button
+ * @returns JSX.Element - Interactive option card with selection button and flight segments
  * 
  * @security Uses RLS-protected RPC calls for selections
+ * @database Uses option_components with both structured fields and navitas_text fallback
  * @business_rule Group selections apply to all passengers, individual use specific passenger_id
  * @business_rule Cannot select expired or ticketed options
+ * @business_rule FlightSegmentRow handles data parsing via normalizeSegment function
  * 
  * @example
  * ```tsx
@@ -281,6 +298,9 @@ export function FlightOptionCard({ option, legId, selectionType, passengerIds }:
       <CardContent>
         <div className="space-y-4">
           {/* Flight Segments */}
+          {/* CONTEXT: Unified flight display using same component as agent interface */}
+          {/* BUSINESS_RULE: FlightSegmentRow handles both structured data and Navitas text parsing */}
+          {/* DATABASE: Uses option_components with airline_iata, flight_number, navitas_text fields */}
           {option.option_components.length > 0 && (
             <div className="space-y-2">
               <h5 className="font-medium text-sm text-muted-foreground">Flight Segments</h5>

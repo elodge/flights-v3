@@ -235,15 +235,16 @@ interface PageProps {
  * Client leg detail page component with flight selection interface
  * 
  * @description Comprehensive client interface for reviewing and selecting flight
- * options. Supports both group selection (default) and individual overrides.
- * Includes real-time status updates and budget tracking sidebar.
+ * options. Uses FlightSegmentRow for consistent display with agent interface.
+ * Supports both group selection (default) and individual overrides with budget tracking.
  * 
  * @param params - Promise containing route parameters (id: project UUID, legId: leg UUID)
  * @returns Promise<JSX.Element> - Flight selection page with group/individual views
  * 
  * @security Requires authenticated client with access to this project
- * @database Fetches leg data via getClientLegDetails with RLS protection
+ * @database Fetches option_components with basic fields, relies on FlightSegmentRow for parsing
  * @business_rule Shows 404 for non-existent legs or unauthorized access
+ * @business_rule FlightOptionCard displays same data as agent interface via unified component
  * 
  * @nextjs_15_fix Awaits params before accessing id/legId properties
  * 

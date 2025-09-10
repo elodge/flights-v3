@@ -135,6 +135,7 @@ describe('integration tests', () => {
     const airline = findAirline({ iata: 'NK' }); // Spirit Airlines
     expect(airline).toBeDefined();
     expect(airline?.name).toBe('Spirit Airlines');
-    expect(airline?.domain).toBeUndefined();
+    // Spirit Airlines now has a domain after comprehensive research
+    expect(airline?.domain).toBe('spirit.com');
   });
 });

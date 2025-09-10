@@ -2,15 +2,17 @@
  * @fileoverview Integration tests for client leg selection interface
  * 
  * @description React Testing Library tests for the client flight selection
- * interface including option cards, individual selection table, budget sidebar,
- * and selection confirmation components working together.
+ * interface using FlightSegmentRow for consistent display with agent interface.
+ * Tests flight option cards, individual selection table, budget sidebar, and
+ * selection confirmation components working together.
  * 
  * @coverage
- * - Flight option card rendering and interaction
+ * - Flight option card rendering with FlightSegmentRow components
  * - Group vs individual selection modes
  * - Budget sidebar updates on selection
  * - Selection confirmation workflow
  * - Real-time status updates
+ * - Navitas text parsing and structured data display
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
@@ -42,6 +44,17 @@ vi.mock('sonner', () => ({
   }
 }))
 
+vi.mock('@/components/flight/FlightSegmentRow', () => ({
+  FlightSegmentRow: ({ segment }: { segment: any }) => (
+    <div data-testid="flight-segment-row">
+      <span data-testid="airline">{segment.airline || segment.airline_iata}</span>
+      <span data-testid="flight-number">{segment.flight_number}</span>
+      <span data-testid="route">{segment.dep_iata}-{segment.arr_iata}</span>
+      <span data-testid="navitas-text">{segment.navitas_text}</span>
+    </div>
+  )
+}))
+
 // Import mocked modules
 const { selectFlightOption, confirmGroupSelection } = await import('@/lib/actions/selection-actions')
 const { getBudgetSnapshot } = await import('@/lib/actions/budget-actions')
@@ -61,9 +74,12 @@ describe('Client Leg Selection Integration', () => {
       {
         id: 'comp-1',
         component_order: 1,
-        navitas_text: 'LAX → JFK',
-        flight_number: 'UA123',
-        airline: 'United',
+        navitas_text: 'UA 123 LAX-JFK 01JAN 10:00A-6:00P',
+        flight_number: '123',
+        airline: 'UA',
+        airline_iata: 'UA',
+        dep_iata: 'LAX',
+        arr_iata: 'JFK',
         departure_time: '2024-01-01T10:00:00Z',
         arrival_time: '2024-01-01T18:00:00Z',
         aircraft_type: 'Boeing 737',
@@ -135,7 +151,7 @@ describe('Client Leg Selection Integration', () => {
 
   describe('FlightOptionCard Component', () => {
     it('should render option details correctly', () => {
-      // CONTEXT: Test basic option card rendering
+      // CONTEXT: Test basic option card rendering with FlightSegmentRow
       render(
         <FlightOptionCard
           option={mockFlightOption}
@@ -149,8 +165,12 @@ describe('Client Leg Selection Integration', () => {
       expect(screen.getByText('Non-stop service')).toBeInTheDocument()
       expect(screen.getAllByText('$500')[0]).toBeInTheDocument()
       expect(screen.getByText('per person')).toBeInTheDocument()
-      // CONTEXT: Component now shows loading state initially due to AviationStack integration
-      expect(screen.getByText('Loading flight data...')).toBeInTheDocument()
+      
+      // CONTEXT: Component now uses FlightSegmentRow instead of loading states
+      expect(screen.getByTestId('flight-segment-row')).toBeInTheDocument()
+      expect(screen.getByTestId('airline')).toHaveTextContent('UA')
+      expect(screen.getByTestId('flight-number')).toHaveTextContent('123')
+      expect(screen.getByTestId('route')).toHaveTextContent('LAX-JFK')
     })
 
     it('should show recommended badge for recommended options', () => {
@@ -320,6 +340,60 @@ describe('Client Leg Selection Integration', () => {
       expect(screen.getAllByText('Ticketed')[0]).toBeInTheDocument()
       const button = screen.getByRole('button', { name: /ticketed/i })
       expect(button).toBeDisabled()
+    })
+
+    it('should handle Navitas text parsing for flight display', () => {
+      // CONTEXT: Test that FlightSegmentRow receives correct Navitas data
+      const navitasOption = {
+        ...mockFlightOption,
+        option_components: [
+          {
+            id: 'comp-1',
+            component_order: 1,
+            navitas_text: 'UA 0099 MEL-LAX 30APR 9:30A-6:40A',
+            flight_number: null, // Test fallback parsing from navitas_text
+            airline: null,
+            airline_iata: null,
+            dep_iata: null,
+            arr_iata: null,
+            departure_time: null,
+            arrival_time: null,
+            aircraft_type: null,
+            seat_configuration: null,
+            meal_service: null,
+            baggage_allowance: null,
+            cost: null,
+            currency: null
+          }
+        ]
+      }
+
+      render(
+        <FlightOptionCard
+          option={navitasOption}
+          legId="leg-123"
+          selectionType="group"
+          passengerIds={null}
+        />
+      )
+
+      // CONTEXT: FlightSegmentRow should receive the navitas_text for parsing
+      expect(screen.getByTestId('flight-segment-row')).toBeInTheDocument()
+      expect(screen.getByTestId('navitas-text')).toHaveTextContent('UA 0099 MEL-LAX 30APR 9:30A-6:40A')
+    })
+
+    it('should display flight segments section header', () => {
+      // CONTEXT: Test flight segments section rendering
+      render(
+        <FlightOptionCard
+          option={mockFlightOption}
+          legId="leg-123"
+          selectionType="group"
+          passengerIds={null}
+        />
+      )
+
+      expect(screen.getByText('Flight Segments')).toBeInTheDocument()
     })
   })
 
