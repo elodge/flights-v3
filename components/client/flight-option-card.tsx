@@ -48,7 +48,7 @@ function FlightHeaderWithEnrichment({ component }: { component: any }) {
   return (
     <EnrichedFlightDisplay
       flight={{
-        airline: component.airline,
+        airline: component.airline || undefined,
         flightNumber: component.flightNumber,
         origin: component.origin,
         destination: component.destination,
@@ -114,7 +114,7 @@ function EnrichedSegmentDisplay({ component }: { component: OptionComponent }) {
     <div className="border rounded-lg p-3 bg-muted/50">
       <EnrichedFlightDisplay
         flight={{
-          airline: component.airline_iata || component.airline,
+          airline: component.airline_iata || component.airline || undefined,
           flightNumber: component.flight_number || '',
           origin: component.dep_iata || '',
           destination: component.arr_iata || '',
