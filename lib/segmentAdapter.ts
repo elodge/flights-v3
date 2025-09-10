@@ -233,8 +233,8 @@ export function getAirlineDisplayName(segment: NormalizedSegment | FlightSegment
   if ('airline_name' in segment && segment.airline_name) {
     return segment.airline_name;
   }
-  if (segment.enrichment?.airline_name) {
-    return segment.enrichment.airline_name;
+  if (segment.enrichment?.data?.airline_name) {
+    return segment.enrichment.data.airline_name;
   }
   return segment.airline;
 }
