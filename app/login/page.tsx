@@ -131,11 +131,16 @@ export default function LoginPage() {
 
         // CONTEXT: Wait for auth state to be fully synchronized before navigation
         // ALGORITHM: Give the useUser hook time to process the auth state change
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise(resolve => setTimeout(resolve, 500))
 
-        // Redirect to home - role-based redirects will happen in layouts
-        // Use router.replace to allow error handling, not immediate page reload
-        router.replace('/')
+        // CONTEXT: Force a hard refresh to ensure auth state is properly synced on Vercel
+        // SECURITY: This prevents the "sign in button still showing" issue after successful login
+        // FALLBACK: Use window.location.href for Vercel deployment compatibility
+        if (typeof window !== 'undefined') {
+          window.location.href = '/'
+        } else {
+          router.replace('/')
+        }
       }
     } catch (error) {
       console.error('Login error:', error)

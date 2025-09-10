@@ -61,8 +61,19 @@ export function Header() {
   useEffect(() => {
     if (user && profile) {
       setAuthKey(prev => prev + 1)
+      // CONTEXT: Force a small delay to ensure state is fully propagated
+      setTimeout(() => setAuthKey(prev => prev + 1), 100)
     }
   }, [user, profile])
+  
+  // CONTEXT: Additional state sync for Vercel deployment auth issues
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  useEffect(() => {
+    if (user?.email !== userEmail) {
+      setUserEmail(user?.email || null)
+      setAuthKey(prev => prev + 1)
+    }
+  }, [user?.email, userEmail])
   
   const [artists, setArtists] = useState<Array<{id: string, name: string}>>([])
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null)

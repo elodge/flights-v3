@@ -171,7 +171,7 @@ export function useUser(): UseUserReturn {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        // console.log('Auth state change:', event, session?.user?.email)
+        console.log('Auth state change:', event, session?.user?.email)
         
         // CONTEXT: Handle different auth events appropriately
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
@@ -179,9 +179,11 @@ export function useUser(): UseUserReturn {
           if (session?.user) {
             await fetchProfile(session.user.id)
           }
+          setLoading(false)
         } else if (event === 'SIGNED_OUT') {
           setUser(null)
           setProfile(null)
+          setLoading(false)
         } else {
           // For other events, just update the user state
           setUser(session?.user || null)
@@ -190,9 +192,8 @@ export function useUser(): UseUserReturn {
           } else {
             setProfile(null)
           }
+          setLoading(false)
         }
-        
-        setLoading(false)
       }
     )
 
