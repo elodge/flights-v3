@@ -337,22 +337,24 @@ export async function uploadTourDocument(payload: {
 
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('Unauthorized: User not authenticated');
+  if (!user) throw new Error('Authentication required: Please log in to upload documents');
 
   // SECURITY: Verify user has employee permissions
   const { data: me } = await supabase.from('users').select('role').eq('id', user.id).single();
   if (!me || (me.role !== 'agent' && me.role !== 'admin')) {
-    throw new Error('Unauthorized: Agent or admin role required');
+    throw new Error('Access denied: Only agents and administrators can upload tour documents');
   }
 
   // BUSINESS_RULE: Validate file type
   if (validatedPayload.file.type !== 'application/pdf') {
-    throw new Error('Only PDF files are allowed');
+    const fileExtension = validatedPayload.file.name.split('.').pop()?.toUpperCase() || 'UNKNOWN';
+    throw new Error(`Invalid file type: "${fileExtension}" files are not supported. Only PDF files can be uploaded for tour documents.`);
   }
 
   // BUSINESS_RULE: Validate file size (50MB limit)
   if (validatedPayload.file.size > 50 * 1024 * 1024) {
-    throw new Error('File size must be less than 50MB');
+    const fileSizeMB = (validatedPayload.file.size / (1024 * 1024)).toFixed(1);
+    throw new Error(`File too large: "${validatedPayload.file.name}" is ${fileSizeMB}MB. Maximum allowed size is 50MB. Please compress the file or split it into smaller parts.`);
   }
 
   // CONTEXT: Generate unique file path
@@ -369,7 +371,9 @@ export async function uploadTourDocument(payload: {
       upsert: false
     });
 
-  if (uploadError) throw new Error(`Failed to upload file: ${uploadError.message}`);
+  if (uploadError) {
+    throw new Error(`Storage upload failed: Unable to save "${validatedPayload.file.name}" to the server. ${uploadError.message}. Please check your internet connection and try again.`);
+  }
 
   // DATABASE: Save document metadata
   // CONTEXT: tour_documents table exists but not in generated types
@@ -391,7 +395,7 @@ export async function uploadTourDocument(payload: {
   if (insertError) {
     // FALLBACK: Clean up uploaded file if database insert fails
     await supabase.storage.from('tour-docs').remove([filePath]).catch(() => {});
-    throw new Error(`Failed to save document metadata: ${insertError.message}`);
+    throw new Error(`Database error: File uploaded successfully but failed to create document record. ${insertError.message}. Please try uploading again.`);
   }
 
   return { success: true, documentId: document.id };

@@ -60,7 +60,8 @@ export function DocumentUpload({ passengerId, projectId, onUploadComplete }: Doc
       }))
 
     if (newFiles.length < selectedFiles.length) {
-      toast.error('Only PDF files are allowed')
+      const rejectedCount = selectedFiles.length - newFiles.length;
+      toast.error(`File type error: ${rejectedCount} file${rejectedCount > 1 ? 's' : ''} rejected. Only PDF documents are allowed for passenger documents.`);
     }
 
     setFiles(prev => [...prev, ...newFiles])
@@ -121,7 +122,7 @@ export function DocumentUpload({ passengerId, projectId, onUploadComplete }: Doc
       setFiles(prev => prev.map((file, i) => 
         i === index ? { ...file, status: 'error', error: result.error } : file
       ))
-      toast.error(result.error || 'Upload failed')
+      toast.error(`Upload failed for "${fileData.file.name}": ${result.error || 'An unexpected error occurred. Please try again.'}`)
     }
   }
 
@@ -129,7 +130,7 @@ export function DocumentUpload({ passengerId, projectId, onUploadComplete }: Doc
     const readyFiles = files.filter(file => file.type && file.status === 'pending')
     
     if (readyFiles.length === 0) {
-      toast.error('No files ready for upload. Please select document types.')
+      toast.error('Upload preparation required: Please select document types (Itinerary or Invoice) for all files before uploading.')
       return
     }
 

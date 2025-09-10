@@ -63,13 +63,15 @@ export function TourDocUploader({ projectId, onUploadSuccess }: TourDocUploaderP
     Array.from(files).forEach(file => {
       // SECURITY: Only allow PDF files
       if (file.type !== 'application/pdf') {
-        toast.error(`File "${file.name}" is not a PDF. Only PDF files are allowed.`);
+        const fileExtension = file.name.split('.').pop()?.toUpperCase() || 'UNKNOWN';
+        toast.error(`Invalid file type: "${file.name}" is a ${fileExtension} file. Only PDF documents can be uploaded for tour documents.`);
         return;
       }
 
       // BUSINESS_RULE: Limit file size to 50MB
       if (file.size > 50 * 1024 * 1024) {
-        toast.error(`File "${file.name}" is too large. Maximum size is 50MB.`);
+        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        toast.error(`File too large: "${file.name}" is ${fileSizeMB}MB. Maximum allowed size is 50MB. Please compress the file or split it into smaller parts.`);
         return;
       }
 
@@ -144,7 +146,8 @@ export function TourDocUploader({ projectId, onUploadSuccess }: TourDocUploaderP
         } catch (error) {
           console.error('Upload error:', error);
           errorCount++;
-          toast.error(`Failed to upload "${uploadFile.file.name}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+          const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+          toast.error(`Upload failed for "${uploadFile.file.name}": ${errorMessage}`);
         }
       }
 
@@ -156,7 +159,7 @@ export function TourDocUploader({ projectId, onUploadSuccess }: TourDocUploaderP
       }
 
       if (errorCount > 0) {
-        toast.error(`Failed to upload ${errorCount} document${errorCount > 1 ? 's' : ''}`);
+        toast.error(`Upload incomplete: ${errorCount} of ${uploadFiles.length} document${uploadFiles.length > 1 ? 's' : ''} failed to upload. Please check the individual error messages above and try again.`);
       }
     } finally {
       setIsUploading(false);
