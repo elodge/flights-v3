@@ -10,6 +10,7 @@
 'use server';
 
 import { createServerClient } from '@/lib/supabase-server';
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 // CONTEXT: Schema for document listing with role-based access
@@ -396,6 +397,18 @@ export async function uploadTourDocument(payload: {
     // FALLBACK: Clean up uploaded file if database insert fails
     await supabase.storage.from('tour-docs').remove([filePath]).catch(() => {});
     throw new Error(`Database error: File uploaded successfully but failed to create document record. ${insertError.message}. Please try uploading again.`);
+  }
+
+  // CONTEXT: Revalidate relevant pages to show new document
+  try {
+    revalidatePath(`/a/tour/${validatedPayload.projectId}`);
+    revalidatePath(`/a/tour/${validatedPayload.projectId}/documents`);
+    if (validatedPayload.legId) {
+      revalidatePath(`/a/tour/${validatedPayload.projectId}/leg/${validatedPayload.legId}`);
+    }
+  } catch (revalidateError) {
+    console.warn('Failed to revalidate paths after document upload:', revalidateError);
+    // Don't throw - upload was successful, just revalidation failed
   }
 
   return { success: true, documentId: document.id };
