@@ -91,10 +91,11 @@ export async function placeHold(optionId: string, legId: string, passengerId: st
   const expiresAt = new Date(Date.now() + validatedHours * 3600 * 1000).toISOString();
 
   // DATABASE: Insert hold record
-  // CONTEXT: holds table only has option_id and passenger_id, not leg_id
+  // CONTEXT: holds table requires leg_id, option_id, and passenger_id
   const { error } = await supabase
     .from('holds')
     .insert({
+      leg_id: validatedLegId,
       option_id: validatedOptionId,
       passenger_id: validatedPassengerId,
       created_by: user.id,
