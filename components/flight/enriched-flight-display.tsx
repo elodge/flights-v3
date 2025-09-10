@@ -210,14 +210,9 @@ export function EnrichedFlightDisplay({
       )}
 
       {/* Source indicator */}
-      {showSource && enrichment && (
+      {showSource && enrichment?.source && (
         <div className="text-xs text-muted-foreground">
-          {enrichment.success 
-            ? `Data from ${enrichment.source}${enrichment.cached ? ' (cached)' : ''}`
-            : enrichment.error 
-              ? `Enrichment failed: ${enrichment.error}`
-              : 'No enrichment data'
-          }
+          {`Data from ${enrichment.source}`}
         </div>
       )}
     </div>
