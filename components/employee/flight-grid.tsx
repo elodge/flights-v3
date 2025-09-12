@@ -146,13 +146,13 @@ export function FlightGrid({ passengers, options, legId }: FlightGridProps) {
           return
         }
 
-        // CONTEXT: Extract route info from navitas_text (e.g., "AA 1234 BNA-MIA 01MAR 10:30A-1:45P")
-        const navitasMatch = component.navitas_text.match(/^([A-Z]{2})\s*(\d+)\s+([A-Z]{3})-([A-Z]{3})/i)
+        // CONTEXT: Extract route info and times from navitas_text (e.g., "AA 1234 BNA-MIA 01MAR 10:30A-1:45P")
+        const navitasMatch = component.navitas_text.match(/^([A-Z]{2})\s*(\d+)\s+([A-Z]{3})-([A-Z]{3})(?:\s+\d{2}[A-Z]{3}\s+([\d:]+[AP]?)-([\d:]+[AP]?))?/i)
         if (!navitasMatch) {
           return
         }
 
-        const [, airline, flightNum, depIata, arrIata] = navitasMatch
+        const [, airline, flightNum, depIata, arrIata, depTime, arrTime] = navitasMatch
 
         // CONTEXT: Create normalized flight key for grouping
         const flightKey = createNormalizedFlightKey({
@@ -164,6 +164,10 @@ export function FlightGrid({ passengers, options, legId }: FlightGridProps) {
         })
 
         if (!groups.has(flightKey)) {
+          // CONTEXT: Use saved times first, then parsed navitas times as fallback
+          const depTimeRaw = component.departure_time || depTime || ''
+          const arrTimeRaw = component.arrival_time || arrTime || ''
+          
           groups.set(flightKey, {
             key: flightKey,
             flight: {
@@ -171,9 +175,13 @@ export function FlightGrid({ passengers, options, legId }: FlightGridProps) {
               flightNumber: component.flight_number,
               origin: depIata,
               destination: arrIata,
-              depTimeRaw: component.departure_time || '',
-              arrTimeRaw: component.arrival_time || '',
-              dayOffset: 0
+              depTimeRaw,
+              arrTimeRaw,
+              dayOffset: 0,
+              // Also include the full component data for access to navitas_text
+              navitas_text: component.navitas_text,
+              departure_time: component.departure_time,
+              arrival_time: component.arrival_time
             },
             options: [],
             assignedPassengers: [],
@@ -312,12 +320,7 @@ export function FlightGrid({ passengers, options, legId }: FlightGridProps) {
                       )}
                       <div className="flex items-center space-x-2">
                         <FlightSegmentRow
-                          segment={{
-                            ...groupedFlight.flight,
-                            // CONTEXT: Use saved times from database for consistent display
-                            depTimeRaw: groupedFlight.flight.departure_time || groupedFlight.flight.depTimeRaw,
-                            arrTimeRaw: groupedFlight.flight.arrival_time || groupedFlight.flight.arrTimeRaw
-                          }}
+                          segment={groupedFlight.flight}
                         />
                       </div>
                     </div>
@@ -386,23 +389,6 @@ export function FlightGrid({ passengers, options, legId }: FlightGridProps) {
                       )}
                     </div>
 
-                    {/* Flight Details */}
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium">Flight Details</h4>
-                      <div className="space-y-2">
-                        {groupedFlight.options.length > 0 && 
-                          groupedFlight.options[0].option_components
-                            .sort((a, b) => a.component_order - b.component_order)
-                            .map(component => (
-                              <FlightSegmentRow
-                                key={component.id}
-                                segment={component}
-                                className="text-sm"
-                              />
-                            ))
-                        }
-                      </div>
-                    </div>
 
                     {/* Assigned Passengers */}
                     <div className="space-y-2">

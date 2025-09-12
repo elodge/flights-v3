@@ -248,7 +248,7 @@ export async function createOptionsForPassengers(
 
     // CONTEXT: Revalidate the leg page to show new options
     revalidatePath(`/a/tour/${leg.project_id}/leg/${legId}`)
-    revalidatePath(`/a/tour/${leg.project_id}/leg/${legId}/manage`)
+    // Note: Main leg route now uses the compact manager
 
     return { success: true, count: createdCount }
 
@@ -313,12 +313,17 @@ export async function removeHold(request: {
     // CONTEXT: Revalidate the leg page to refresh data
     const { data: optionData } = await supabase
       .from('options')
-      .select('leg_id')
+      .select(`
+        leg_id,
+        legs (
+          project_id
+        )
+      `)
       .eq('id', optionId)
       .single()
 
-    if (optionData) {
-      revalidatePath(`/a/tour/[id]/leg/[legId]/manage`)
+    if (optionData?.legs?.project_id) {
+      revalidatePath(`/a/tour/${optionData.legs.project_id}/leg/${optionData.leg_id}`)
     }
 
     return { success: true }
@@ -443,8 +448,8 @@ export async function revalidateManagePage(legId: string): Promise<{ success: tr
     }
 
     // Force revalidation
-    revalidatePath(`/a/tour/${leg.project_id}/leg/${legId}/manage`)
     revalidatePath(`/a/tour/${leg.project_id}/leg/${legId}`)
+    // Note: Main leg route now uses the compact manager
     
     return { success: true }
   } catch (error) {

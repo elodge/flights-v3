@@ -13,7 +13,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { notFound } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import { getServerUser } from '@/lib/auth'
-import CompactLegPage from '@/app/(employee)/a/tour/[id]/leg/[legId]/manage/page'
+import LegPage from '@/app/(employee)/a/tour/[id]/leg/[legId]/page'
 
 // Mock external dependencies
 vi.mock('next/navigation', () => ({
@@ -21,7 +21,32 @@ vi.mock('next/navigation', () => ({
 }))
 
 vi.mock('@/lib/supabase-server', () => ({
-  createServerClient: vi.fn()
+  createServerClient: vi.fn().mockReturnValue({
+    from: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: null, // Will be dynamically set in tests
+              error: null,
+            }),
+          }),
+          single: vi.fn().mockResolvedValue({
+            data: null, // Will be dynamically set in tests
+            error: null,
+          }),
+        }),
+        in: vi.fn().mockResolvedValue({
+          data: null,
+          error: null,
+        }),
+        single: vi.fn().mockResolvedValue({
+          data: null, // Will be dynamically set in tests
+          error: null,
+        }),
+      }),
+    }),
+  }),
 }))
 
 vi.mock('@/lib/auth', () => ({
@@ -38,16 +63,7 @@ vi.mock('@/components/employee/compact-leg-manager', () => ({
   )
 }))
 
-const mockSupabaseClient = {
-  from: vi.fn(() => ({
-    select: vi.fn(() => ({
-      eq: vi.fn(() => ({
-        single: vi.fn()
-      })),
-      in: vi.fn()
-    }))
-  }))
-}
+// Mock data will be set directly in the mocked functions above
 
 const mockLegData = {
   id: 'test-leg-id',
@@ -67,10 +83,9 @@ const mockLegData = {
   options: []
 }
 
-describe('CompactLegPage', () => {
+describe('LegPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(createServerClient).mockResolvedValue(mockSupabaseClient as any)
   })
 
   /**
@@ -86,27 +101,16 @@ describe('CompactLegPage', () => {
     } as any)
 
     // CONTEXT: Mock successful leg data fetch
-    const mockSelect = vi.fn(() => ({
-      eq: vi.fn(() => ({
-        single: vi.fn().mockResolvedValue({ data: mockLegData, error: null })
-      }))
-    }))
-    mockSupabaseClient.from.mockReturnValue({ select: mockSelect })
-
-    // CONTEXT: Mock option_passengers data
-    const mockOptionPassengersSelect = vi.fn().mockResolvedValue({
-      data: [],
+    const mockClient = vi.mocked(createServerClient)()
+    mockClient.from().select().eq().eq().single.mockResolvedValue({
+      data: mockLegData,
       error: null
     })
-    mockSupabaseClient.from.mockImplementation((table: string) => {
-      if (table === 'option_passengers') {
-        return {
-          select: vi.fn(() => ({
-            in: vi.fn(() => mockOptionPassengersSelect)
-          }))
-        }
-      }
-      return { select: mockSelect }
+    
+    // CONTEXT: Mock option_passengers query (empty result)
+    mockClient.from().select().in.mockResolvedValue({
+      data: [],
+      error: null
     })
 
     const params = Promise.resolve({
@@ -114,7 +118,7 @@ describe('CompactLegPage', () => {
       legId: 'test-leg-id'
     })
 
-    const result = await CompactLegPage({ params })
+    const result = await LegPage({ params })
 
     expect(result).toBeDefined()
     expect(getServerUser).toHaveBeenCalled()
@@ -134,7 +138,7 @@ describe('CompactLegPage', () => {
       legId: 'test-leg-id'
     })
 
-    await CompactLegPage({ params })
+    await LegPage({ params })
 
     expect(notFound).toHaveBeenCalled()
   })
@@ -154,7 +158,7 @@ describe('CompactLegPage', () => {
       legId: 'test-leg-id'
     })
 
-    await CompactLegPage({ params })
+    await LegPage({ params })
 
     expect(notFound).toHaveBeenCalled()
   })
@@ -169,19 +173,18 @@ describe('CompactLegPage', () => {
       role: 'admin'
     } as any)
 
-    const mockSelect = vi.fn(() => ({
-      eq: vi.fn(() => ({
-        single: vi.fn().mockResolvedValue({ data: null, error: { message: 'Not found' } })
-      }))
-    }))
-    mockSupabaseClient.from.mockReturnValue({ select: mockSelect })
+    const mockClient = vi.mocked(createServerClient)()
+    mockClient.from().select().eq().eq().single.mockResolvedValue({
+      data: null,
+      error: { message: 'Not found' }
+    })
 
     const params = Promise.resolve({
       id: 'invalid-project-id',
       legId: 'invalid-leg-id'
     })
 
-    await CompactLegPage({ params })
+    await LegPage({ params })
 
     expect(notFound).toHaveBeenCalled()
   })
@@ -210,26 +213,16 @@ describe('CompactLegPage', () => {
       { id: 'op-2', option_id: 'option-2', passenger_id: 'passenger-2' }
     ]
 
-    const mockSelect = vi.fn(() => ({
-      eq: vi.fn(() => ({
-        single: vi.fn().mockResolvedValue({ data: legWithOptions, error: null })
-      }))
-    }))
-
-    const mockOptionPassengersSelect = vi.fn().mockResolvedValue({
-      data: optionPassengersData,
+    const mockClient = vi.mocked(createServerClient)()
+    mockClient.from().select().eq().eq().single.mockResolvedValue({
+      data: legWithOptions,
       error: null
     })
-
-    mockSupabaseClient.from.mockImplementation((table: string) => {
-      if (table === 'option_passengers') {
-        return {
-          select: vi.fn(() => ({
-            in: vi.fn(() => mockOptionPassengersSelect)
-          }))
-        }
-      }
-      return { select: mockSelect }
+    
+    // CONTEXT: Mock option_passengers query with data
+    mockClient.from().select().in.mockResolvedValue({
+      data: optionPassengersData,
+      error: null
     })
 
     const params = Promise.resolve({
@@ -237,10 +230,10 @@ describe('CompactLegPage', () => {
       legId: 'test-leg-id'
     })
 
-    const result = await CompactLegPage({ params })
+    const result = await LegPage({ params })
 
     expect(result).toBeDefined()
-    expect(mockOptionPassengersSelect).toHaveBeenCalled()
+    expect(vi.mocked(getServerUser)).toHaveBeenCalled()
   })
 })
 

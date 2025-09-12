@@ -106,7 +106,7 @@ const mockLeg = {
         {
           id: 'component-1',
           component_order: 1,
-          navitas_text: 'AA 1234 LAX JFK',
+          navitas_text: 'AA 1234 LAX-JFK 15JAN 10:00A-6:00P',
           flight_number: '1234',
           airline: 'AA',
           airline_iata: 'AA',
