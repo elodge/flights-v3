@@ -22,6 +22,7 @@ import { FlightSegmentRow } from '@/components/flight/FlightSegmentRow'
 import { createNormalizedFlightKey } from '@/lib/flight-utils'
 import { removePassengerFromOption } from '@/lib/actions/compact-leg-actions'
 import { toast } from 'sonner'
+import { AddPassengersModal } from './add-passengers-modal'
 
 interface Passenger {
   treat_as_individual: boolean
@@ -128,6 +129,8 @@ interface GroupedFlight {
  */
 export function FlightGrid({ passengers, options, legId }: FlightGridProps) {
   const [expandedFlights, setExpandedFlights] = useState<Set<string>>(new Set())
+  const [showAddPassengersModal, setShowAddPassengersModal] = useState(false)
+  const [selectedFlightGroup, setSelectedFlightGroup] = useState<GroupedFlight | null>(null)
 
   // CONTEXT: Group flights by normalized key
   const groupedFlights = useMemo(() => {
@@ -257,6 +260,21 @@ export function FlightGrid({ passengers, options, legId }: FlightGridProps) {
     }
   }
 
+  // CONTEXT: Handle opening add passengers modal for a specific flight
+  const handleAddPassengers = (flightGroup: GroupedFlight) => {
+    setSelectedFlightGroup(flightGroup)
+    setShowAddPassengersModal(true)
+  }
+
+  // CONTEXT: Convert passengers to modal format
+  const modalPassengers = passengers.map(p => ({
+    id: p.tour_personnel.id,
+    full_name: p.tour_personnel.full_name,
+    role_title: p.tour_personnel.role_title,
+    is_vip: p.tour_personnel.is_vip,
+    party: p.tour_personnel.party
+  }))
+
   if (groupedFlights.length === 0) {
     return (
       <Card>
@@ -368,7 +386,11 @@ export function FlightGrid({ passengers, options, legId }: FlightGridProps) {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <h4 className="text-sm font-medium">Assigned Passengers</h4>
-                        <Button size="sm" variant="outline">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => handleAddPassengers(groupedFlight)}
+                        >
                           <Plus className="mr-2 h-3 w-3" />
                           Add Passenger(s)
                         </Button>
@@ -436,6 +458,21 @@ export function FlightGrid({ passengers, options, legId }: FlightGridProps) {
           </Card>
         )
       })}
+      
+      {/* Add Passengers Modal */}
+      {selectedFlightGroup && (
+        <AddPassengersModal
+          isOpen={showAddPassengersModal}
+          onClose={() => {
+            setShowAddPassengersModal(false)
+            setSelectedFlightGroup(null)
+          }}
+          flightGroup={selectedFlightGroup}
+          allPassengers={modalPassengers}
+          legId={legId}
+          defaultPrice={selectedFlightGroup.priceRange.min * 100} // Convert to cents
+        />
+      )}
     </div>
   )
 }
