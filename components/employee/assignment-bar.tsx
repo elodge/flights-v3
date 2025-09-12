@@ -20,7 +20,6 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Search, Users, Plus, ChevronDown, ChevronUp } from 'lucide-react'
 import { NavitasPanel } from './navitas-panel'
-import { ManualEntryPanel } from './manual-entry-panel'
 
 interface Passenger {
   treat_as_individual: boolean
@@ -88,14 +87,13 @@ export function AssignmentBar({
   legId
 }: AssignmentBarProps) {
   const [showNavitasPanel, setShowNavitasPanel] = useState(false)
-  const [showManualPanel, setShowManualPanel] = useState(false)
 
   // CONTEXT: Get unique parties from passengers
   const availableParties = Array.from(new Set(
     passengers
       .map(p => p.tour_personnel.role_title)
       .filter(Boolean)
-  ))
+  )) as string[]
 
   // CONTEXT: Handle passenger selection
   const handleSelectPassenger = (passengerId: string, checked: boolean) => {
@@ -263,24 +261,6 @@ export function AssignmentBar({
             </CollapsibleContent>
           </Collapsible>
 
-          <Collapsible open={showManualPanel} onOpenChange={setShowManualPanel}>
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full">
-                <ChevronDown className="mr-2 h-4 w-4" />
-                Advanced / Manual Entry
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-2">
-              <ManualEntryPanel
-                selectedPassengers={selectedPassengers}
-                legId={legId}
-                onSuccess={() => {
-                  setShowManualPanel(false)
-                  onSelectionChange([])
-                }}
-              />
-            </CollapsibleContent>
-          </Collapsible>
         </div>
       </CardContent>
     </Card>

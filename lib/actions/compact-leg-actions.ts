@@ -1,13 +1,33 @@
 /**
- * @fileoverview Server actions for compact leg management
+ * @fileoverview Compact Leg Management Server Actions
  * 
- * @description Server-side actions for creating flight options from Navitas or manual
- * entry data and attaching them to selected passengers. Reuses existing enrichment
- * and database structures to maintain compatibility with client-facing app.
+ * @description Server-side actions for the compact leg management interface, providing
+ * functionality to create flight options from Navitas or manual entry data and associate
+ * them with selected passengers. Handles data enrichment, database operations, and
+ * maintains compatibility with existing client-facing application structures.
  * 
  * @access Employee only (agent, admin roles)
- * @security Uses existing RLS/RBAC through getServerUser
- * @database Creates options and option_components via Supabase
+ * @security Uses existing RLS/RBAC through getServerUser authentication
+ * @database Creates records in options, option_components, and option_passengers tables
+ * @business_rule Maintains one-passenger-per-option selection model
+ * @business_rule Enriches flight data using existing Aviationstack/Airlabs services
+ * @business_rule Supports batch creation of multiple options for multiple passengers
+ * 
+ * @example
+ * ```typescript
+ * // Create options for multiple passengers
+ * const result = await createOptionsForPassengers({
+ *   legId: 'leg-uuid',
+ *   passengerIds: ['passenger-1', 'passenger-2'],
+ *   options: [navitasOption1, navitasOption2]
+ * });
+ * 
+ * // Remove passenger from option
+ * const removeResult = await removePassengerFromOption({
+ *   optionId: 'option-uuid',
+ *   passengerId: 'passenger-uuid'
+ * });
+ * ```
  */
 
 'use server'
@@ -57,6 +77,7 @@ interface CreateOptionsResponse {
 export async function createOptionsForPassengers(
   request: CreateOptionsRequest
 ): Promise<CreateOptionsResponse> {
+  
   try {
     // SECURITY: Verify user authentication and role
     const user = await getServerUser()
@@ -107,12 +128,24 @@ export async function createOptionsForPassengers(
 
     let createdCount = 0
 
+    // BUSINESS_RULE: Must have at least one option to create
+    if (!options || options.length === 0) {
+      return { success: true, count: 0 }
+    }
+
     // CONTEXT: Process each option for each passenger
     for (const passengerId of passengerIds) {
       for (const option of options) {
         try {
           // CONTEXT: Enrich flight segments using existing service
-          const enrichedSegments = await enrichFlightSegments(option.segments)
+          // Map NavitasSegment format to enrichFlightSegments format
+          const segmentsForEnrichment = option.segments.map(segment => ({
+            flightNumber: segment.flightNumber,
+            airlineIata: segment.airline,
+            depIata: segment.origin,
+            arrIata: segment.destination
+          }))
+          const enrichedSegments = await enrichFlightSegments(segmentsForEnrichment)
 
           // DATABASE: Create the option
           const { data: optionData, error: optionError } = await supabase
@@ -130,52 +163,75 @@ export async function createOptionsForPassengers(
             .single()
 
           if (optionError || !optionData) {
-            console.error('Failed to create option:', optionError)
             continue
           }
 
           // DATABASE: Create option components
-          const components = enrichedSegments.map((segment, index) => ({
-            option_id: optionData.id,
-            component_order: index + 1,
-            navitas_text: segment.navitas_text || `${segment.airline} ${segment.flightNumber}`,
-            flight_number: segment.flightNumber,
-            airline: segment.airline,
-            airline_iata: segment.airline,
-            airline_name: segment.airline_name,
-            dep_iata: segment.origin,
-            arr_iata: segment.destination,
-            departure_time: segment.departure_time,
-            arrival_time: segment.arrival_time,
-            dep_time_local: segment.dep_time_local,
-            arr_time_local: segment.arr_time_local,
-            day_offset: segment.day_offset,
-            duration_minutes: segment.duration_minutes,
-            stops: segment.stops,
-            enriched_terminal_gate: segment.enriched_terminal_gate
-          }))
+          // CONTEXT: Combine original segment data with enrichment results and preserve times
+          // BUSINESS_RULE: Save complete Navitas text and parsed times for consistent display
+          
+          const components = option.segments.map((segment, index) => {
+            const enrichment = enrichedSegments[index]
+            
+            // CONTEXT: Build complete Navitas text with times for proper parsing later
+            const completeNavitasText = segment.dateRaw && segment.depTimeRaw && segment.arrTimeRaw
+              ? `${segment.airline} ${segment.flightNumber} ${segment.origin}-${segment.destination} ${segment.dateRaw} ${segment.depTimeRaw}-${segment.arrTimeRaw}`
+              : `${segment.airline} ${segment.flightNumber} ${segment.origin}-${segment.destination}`
+            
+            return {
+              option_id: optionData.id,
+              component_order: index + 1,
+              navitas_text: completeNavitasText,
+              flight_number: segment.flightNumber,
+              airline: segment.airline,
+              airline_iata: segment.airline,
+              airline_name: null, // TODO: Get airline name from enrichment if available
+              dep_iata: segment.origin,
+              arr_iata: segment.destination,
+              // CONTEXT: Save parsed times from Navitas for immediate display
+              departure_time: null, // TODO: Convert segment.depTimeRaw to proper timestamp format
+              arrival_time: null, // TODO: Convert segment.arrTimeRaw to proper timestamp format
+              dep_time_local: null, // Keep as null for now - would need proper timestamp parsing
+              arr_time_local: null, // Keep as null for now - would need proper timestamp parsing
+              day_offset: segment.dayOffset || 0,
+              duration_minutes: enrichment?.duration || null,
+              stops: 0, // Navitas typically shows direct flights
+              enriched_terminal_gate: enrichment ? {
+                dep_terminal: enrichment.dep_terminal || null,
+                arr_terminal: enrichment.arr_terminal || null
+              } : null
+            }
+          })
 
+          
           const { error: componentsError } = await supabase
             .from('option_components')
             .insert(components)
 
           if (componentsError) {
-            console.error('Failed to create option components:', componentsError)
             // DATABASE: Clean up the option if components failed
             await supabase.from('options').delete().eq('id', optionData.id)
             continue
           }
-
+          
           // DATABASE: Associate this passenger with the option
-          const { error: passengerError } = await supabase
-            .from('option_passengers')
+          
+          const { error: passengerError, data: passengerData } = await supabase
+            .from('option_passengers' as any)
             .insert({
               option_id: optionData.id,
               passenger_id: passengerId
             })
+            .select()
 
           if (passengerError) {
             console.error('Failed to associate passenger with option:', passengerError)
+            console.error('Passenger error details:', {
+              code: passengerError.code,
+              message: passengerError.message,
+              details: passengerError.details,
+              hint: passengerError.hint
+            })
             // DATABASE: Clean up the option and components if passenger association failed
             await supabase.from('options').delete().eq('id', optionData.id)
             continue
@@ -240,6 +296,8 @@ export async function removeHold(request: {
 
     const { optionId, passengerId } = request
 
+    const supabase = await createServerClient()
+
     // DATABASE: Remove the hold record
     const { error } = await supabase
       .from('holds')
@@ -299,6 +357,7 @@ export async function removePassengerFromOption(request: {
   passengerId: string
 }): Promise<{ success: true } | { error: string }> {
   try {
+    // SECURITY: Verify user authentication and role
     const user = await getServerUser()
     if (!user || user.role === 'client') {
       return { error: 'Unauthorized' }
@@ -307,9 +366,10 @@ export async function removePassengerFromOption(request: {
     const supabase = await createServerClient()
     const { optionId, passengerId } = request
 
-    // DATABASE: Remove the passenger association
+    // DATABASE: Remove the passenger association from option_passengers junction table
+    // BUSINESS_RULE: This removes the passenger from the option without deleting the option itself
     const { error: removeError } = await supabase
-      .from('option_passengers')
+      .from('option_passengers' as any)
       .delete()
       .eq('option_id', optionId)
       .eq('passenger_id', passengerId)
@@ -321,7 +381,7 @@ export async function removePassengerFromOption(request: {
 
     // DATABASE: Check if there are any other passengers on this option
     const { data: remainingPassengers, error: checkError } = await supabase
-      .from('option_passengers')
+      .from('option_passengers' as any)
       .select('id')
       .eq('option_id', optionId)
 

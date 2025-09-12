@@ -265,13 +265,41 @@ export function PassengerGrid({ passengers, options, legId }: PassengerGridProps
                               <div className="space-y-2">
                                 {option.option_components
                                   .sort((a, b) => a.component_order - b.component_order)
-                                  .map(component => (
-                                    <FlightSegmentRow
-                                      key={component.id}
-                                      segment={component}
-                                      className="text-sm"
-                                    />
-                                  ))}
+                                  .map(component => {
+                                    // CONTEXT: Enhance component data with times for FlightSegmentRow display
+                                    // BUSINESS_RULE: Use saved times first, then parse from navitas_text as fallback
+                                    let enhancedComponent = { ...component }
+                                    
+                                    // ALGORITHM: Priority order - saved times, parsed Navitas times, then fallback
+                                    if (component.departure_time && component.arrival_time) {
+                                      // Use saved times from database
+                                      enhancedComponent = {
+                                        ...component,
+                                        depTimeRaw: component.departure_time,
+                                        arrTimeRaw: component.arrival_time
+                                      }
+                                    } else if (component.navitas_text && (!component.departure_time || !component.arrival_time)) {
+                                      // Parse times from complete navitas_text as fallback
+                                      const navitasMatch = component.navitas_text.match(/([A-Z]{2})\s*(\d+)\s+([A-Z]{3})-([A-Z]{3})(?:\s+\d{2}[A-Z]{3}\s+([\d:]+[AP]?)-([\d:]+[AP]?))?/i)
+                                      if (navitasMatch && navitasMatch[5] && navitasMatch[6]) {
+                                        enhancedComponent = {
+                                          ...component,
+                                          depTimeRaw: navitasMatch[5],
+                                          arrTimeRaw: navitasMatch[6],
+                                          departure_time: navitasMatch[5],
+                                          arrival_time: navitasMatch[6]
+                                        }
+                                      }
+                                    }
+                                    
+                                    console.log('DEBUG PassengerGrid - Component data for FlightSegmentRow:', enhancedComponent)
+                                    return (
+                                      <FlightSegmentRow
+                                        key={component.id}
+                                        segment={enhancedComponent}
+                                      />
+                                    )
+                                  })}
                               </div>
 
                               {/* Active Holds */}

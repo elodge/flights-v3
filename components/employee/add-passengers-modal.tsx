@@ -225,8 +225,7 @@ export function AddPassengersModal({
           origin: flightGroup.flight.origin,
           destination: flightGroup.flight.destination,
           depTimeRaw: flightGroup.flight.depTimeRaw || '',
-          arrTimeRaw: flightGroup.flight.arrTimeRaw || '',
-          dayOffset: flightGroup.flight.dayOffset || 0
+          arrTimeRaw: flightGroup.flight.arrTimeRaw || ''
         }],
         totalFare: 0, // Will be set per passenger
         currency: flightGroup.priceRange.currency,

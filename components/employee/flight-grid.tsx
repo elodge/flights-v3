@@ -272,7 +272,7 @@ export function FlightGrid({ passengers, options, legId }: FlightGridProps) {
     full_name: p.tour_personnel.full_name,
     role_title: p.tour_personnel.role_title,
     is_vip: p.tour_personnel.is_vip,
-    party: p.tour_personnel.party
+    party: null // TODO: Add party field to tour_personnel type
   }))
 
   if (groupedFlights.length === 0) {
@@ -312,8 +312,12 @@ export function FlightGrid({ passengers, options, legId }: FlightGridProps) {
                       )}
                       <div className="flex items-center space-x-2">
                         <FlightSegmentRow
-                          segment={groupedFlight.flight}
-                          className="border-none bg-transparent p-0"
+                          segment={{
+                            ...groupedFlight.flight,
+                            // CONTEXT: Use saved times from database for consistent display
+                            depTimeRaw: groupedFlight.flight.departure_time || groupedFlight.flight.depTimeRaw,
+                            arrTimeRaw: groupedFlight.flight.arrival_time || groupedFlight.flight.arrTimeRaw
+                          }}
                         />
                       </div>
                     </div>
@@ -497,7 +501,7 @@ export function FlightGrid({ passengers, options, legId }: FlightGridProps) {
             setShowAddPassengersModal(false)
             setSelectedFlightGroup(null)
           }}
-          flightGroup={selectedFlightGroup}
+          flightGroup={selectedFlightGroup as any}
           allPassengers={modalPassengers}
           legId={legId}
           defaultPrice={selectedFlightGroup.priceRange.min * 100} // Convert to cents

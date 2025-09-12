@@ -1,14 +1,27 @@
 /**
- * @fileoverview Compact leg management page for agents
+ * @fileoverview Compact Leg Management Page - High-density flight option interface
  * 
- * @description High-density interface for managing flight options on tour legs.
- * Provides passenger filtering, Navitas parsing, and dual view modes (By Passenger/By Flight).
- * Replaces the existing leg workflow while keeping the old page intact for reference.
+ * @description Server-side page component for the compact leg management interface that
+ * provides a high-density workflow for agents to manage flight options on tour legs.
+ * Features passenger filtering, Navitas parsing, dual view modes (By Passenger/By Flight),
+ * and integrated option creation. Replaces the existing leg workflow while maintaining
+ * the old page for reference. Integrates with the EnhancedNavitasModal for streamlined
+ * multi-option creation.
  * 
  * @route /a/tour/[id]/leg/[legId]/manage
  * @access Employee only (agent, admin roles)
- * @security Requires authenticated employee via getServerUser
- * @database Reads from legs, projects, artists, leg_passengers, tour_personnel, options
+ * @security Requires authenticated employee via getServerUser with non-client role
+ * @database Reads from legs, projects, artists, leg_passengers, tour_personnel, options, option_components, option_passengers tables
+ * @business_rule Provides 404 for non-existent legs or unauthorized access
+ * @business_rule Merges option_passengers data with options for complete passenger associations
+ * @business_rule Supports both legacy holds-based and new option_passengers-based data structures
+ * 
+ * @example
+ * ```tsx
+ * // Automatically rendered for route /a/tour/[id]/leg/[legId]/manage
+ * // where [id] is tour UUID and [legId] is leg UUID
+ * <CompactLegPage params={Promise.resolve({ id: 'tour-uuid', legId: 'leg-uuid' })} />
+ * ```
  */
 
 import { notFound } from 'next/navigation'
@@ -36,6 +49,7 @@ type LegWithDetails = Database['public']['Tables']['legs']['Row'] & {
       email: string | null
       role_title: string | null
       is_vip: boolean
+      party: string | null
     }
   }>
   options: Array<{
@@ -62,7 +76,7 @@ type LegWithDetails = Database['public']['Tables']['legs']['Row'] & {
         full_name: string
         is_vip: boolean
         role_title: string | null
-        party: string
+        party: string | null
       }
     }>
     option_components: Array<{
@@ -129,7 +143,8 @@ async function getLegDetails(projectId: string, legId: string): Promise<LegWithD
           full_name,
           email,
           role_title,
-          is_vip
+          is_vip,
+          party
         )
       ),
       options (
@@ -154,14 +169,18 @@ async function getLegDetails(projectId: string, legId: string): Promise<LegWithD
           navitas_text,
           flight_number,
           airline,
+          airline_iata,
+          airline_name,
+          dep_iata,
+          arr_iata,
           departure_time,
           arrival_time,
-          aircraft_type,
-          baggage_allowance,
-          meal_service,
-          seat_configuration,
-          cost,
-          currency
+          dep_time_local,
+          arr_time_local,
+          day_offset,
+          duration_minutes,
+          stops,
+          enriched_terminal_gate
         )
       )
     `)
@@ -173,23 +192,23 @@ async function getLegDetails(projectId: string, legId: string): Promise<LegWithD
 
   // CONTEXT: Separately fetch option_passengers data and merge it
   const { data: optionPassengers, error: optionPassengersError } = await supabase
-    .from('option_passengers')
+    .from('option_passengers' as any)
     .select('id, option_id, passenger_id')
     .in('option_id', leg.options.map(o => o.id))
 
   // CONTEXT: Separately fetch tour_personnel data for the passengers
-  let tourPersonnelData = []
+  let tourPersonnelData: any[] = []
   if (optionPassengers && optionPassengers.length > 0) {
     const { data: personnelData } = await supabase
       .from('tour_personnel')
       .select('id, full_name, is_vip, role_title, party')
-      .in('id', optionPassengers.map(op => op.passenger_id))
+      .in('id', (optionPassengers as any[]).map(op => op.passenger_id))
     
     tourPersonnelData = personnelData || []
   }
 
   // CONTEXT: Merge personnel data into option_passengers
-  const enrichedOptionPassengers = optionPassengers?.map(op => ({
+  const enrichedOptionPassengers = optionPassengers?.map((op: any) => ({
     ...op,
     tour_personnel: tourPersonnelData.find(tp => tp.id === op.passenger_id)
   })) || []
@@ -198,7 +217,8 @@ async function getLegDetails(projectId: string, legId: string): Promise<LegWithD
   leg.options = leg.options.map(option => ({
     ...option,
     option_passengers: enrichedOptionPassengers.filter(op => op.option_id === option.id)
-  }))
+  } as any))
+
 
   return leg as any
 }

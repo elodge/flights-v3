@@ -74,15 +74,38 @@ export function FlightSegmentRow({
     || segment.airline;
   const flightCode = `${segment.airline}${segment.flightNumber}`;
   
-  // CONTEXT: Format times and calculate duration
-  const dep = formatClock(segment.depTimeRaw);
-  const arr = formatClock(segment.arrTimeRaw);
-  const durMin = computeDurationMin(segment.depTimeRaw, segment.arrTimeRaw, segment.dayOffset ?? 0);
-  const dur = formatDuration(durMin);
-
   // CONTEXT: Extract enriched data for display
   const enrichmentData = enrichment?.data;
   const hasEnrichmentData = enrichment?.success && enrichmentData;
+
+  // CONTEXT: Format times and calculate duration - prefer enriched data when database times are missing
+  // ALGORITHM: Try segment times first, then enrichment, then fall back to generic display
+  let depTimeFormatted = null;
+  let arrTimeFormatted = null;
+  let duration = null;
+  
+  if (segment.depTimeRaw && segment.arrTimeRaw) {
+    // Use parsed segment times (from Navitas or manual entry)
+    depTimeFormatted = formatClock(segment.depTimeRaw);
+    arrTimeFormatted = formatClock(segment.arrTimeRaw);
+    const durMin = computeDurationMin(segment.depTimeRaw, segment.arrTimeRaw, segment.dayOffset ?? 0);
+    duration = formatDuration(durMin);
+  } else if (hasEnrichmentData && enrichmentData.dep_time && enrichmentData.arr_time) {
+    // Use enriched API data
+    depTimeFormatted = formatClock(enrichmentData.dep_time);
+    arrTimeFormatted = formatClock(enrichmentData.arr_time);
+    const durMin = computeDurationMin(enrichmentData.dep_time, enrichmentData.arr_time, 0);
+    duration = formatDuration(durMin);
+  } else {
+    // Fallback: show airports only without times
+    depTimeFormatted = null;
+    arrTimeFormatted = null;
+    duration = null;
+  }
+  
+  const dep = depTimeFormatted;
+  const arr = arrTimeFormatted;
+  const dur = duration;
 
   return (
     <div
@@ -125,7 +148,7 @@ export function FlightSegmentRow({
 
         {/* Departure time and airport */}
         <div className="col-span-3 text-right">
-          <div className="text-lg font-semibold tabular-nums">{dep}</div>
+          <div className="text-lg font-semibold tabular-nums">{dep || "—"}</div>
           <div className="text-xs text-muted-foreground">{segment.origin}</div>
         </div>
         
@@ -134,7 +157,7 @@ export function FlightSegmentRow({
         
         {/* Arrival time and airport */}
         <div className="col-span-3">
-          <div className="text-lg font-semibold tabular-nums">{arr}</div>
+          <div className="text-lg font-semibold tabular-nums">{arr || "—"}</div>
           <div className="text-xs text-muted-foreground">
             {segment.destination}
             {segment.dayOffset ? ` (+${segment.dayOffset}d)` : ""}
@@ -143,7 +166,7 @@ export function FlightSegmentRow({
 
         {/* Duration badge */}
         <div className="col-span-1 flex items-center justify-end">
-          <Badge variant="secondary" className="whitespace-nowrap">{dur}</Badge>
+          {dur && <Badge variant="secondary" className="whitespace-nowrap">{dur}</Badge>}
         </div>
       </div>
     </div>
