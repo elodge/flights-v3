@@ -25,6 +25,7 @@ import { Database } from '@/lib/database.types'
 import { AddLegDialog } from '@/components/employee/add-leg-dialog'
 import { PersonnelTab } from '@/components/employee/personnel-tab'
 import { BudgetManagement } from '@/components/employee/budget-management'
+import { ClickableLegRow } from '@/components/employee/clickable-leg-row'
 import { getProjectBudgets, getBudgetSnapshot } from '@/lib/actions/budget-actions'
 
 type TourWithDetails = Database['public']['Tables']['projects']['Row'] & {
@@ -315,7 +316,10 @@ export default async function EmployeeTourPage({ params }: PageProps) {
                   </TableHeader>
                   <TableBody>
                     {sortedLegs.map((leg) => (
-                      <TableRow key={leg.id}>
+                      <ClickableLegRow 
+                        key={leg.id}
+                        href={`/a/tour/${tour.id}/leg/${leg.id}`}
+                      >
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             <Badge variant="outline">Leg {leg.leg_order}</Badge>
@@ -370,14 +374,18 @@ export default async function EmployeeTourPage({ params }: PageProps) {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Button variant="outline" size="sm" asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            asChild
+                          >
                             <Link href={`/a/tour/${tour.id}/leg/${leg.id}`}>
                               <Settings className="mr-2 h-4 w-4" />
                               Manage
                             </Link>
                           </Button>
                         </TableCell>
-                      </TableRow>
+                      </ClickableLegRow>
                     ))}
                   </TableBody>
                 </Table>

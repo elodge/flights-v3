@@ -185,6 +185,8 @@ describe('Budget Actions', () => {
         level: 'tour',
         amount_cents: 1000000,
         notes: 'Tour budget',
+        party: null,
+        passenger_id: null,
         created_by: 'user-123'
       })
     })
@@ -216,6 +218,8 @@ describe('Budget Actions', () => {
         level: 'party',
         party: 'Artist',
         amount_cents: 500000,
+        notes: null,
+        passenger_id: null,
         created_by: 'user-123'
       })
     })
@@ -247,6 +251,8 @@ describe('Budget Actions', () => {
         level: 'person',
         passenger_id: 'person-123',
         amount_cents: 250000,
+        notes: null,
+        party: null,
         created_by: 'user-123'
       })
     })
@@ -262,7 +268,7 @@ describe('Budget Actions', () => {
       })
 
       expect(result.success).toBe(false)
-      expect(result.error).toBe('Authentication required')
+      expect(result.error).toBe('Employee access required')
     })
 
     it('should handle employee role validation', async () => {

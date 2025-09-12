@@ -21,7 +21,7 @@ export type UserRow = Db['public']['Tables']['users']['Row'];
 // Note: invites table not in generated types, using any for now
 export type InviteRow = any;
 export type ArtistRow = Db['public']['Tables']['artists']['Row'];
-// Note: employee_artists table not in generated types, using any for now
+// Note: artist_assignments table not in generated types, using any for now
 export type ArtistAssignmentRow = any;
 // Note: tours table not in generated types, using any for now
 export type TourRow = any;

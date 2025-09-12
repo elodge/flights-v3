@@ -88,7 +88,7 @@ describe('Personnel Validation Schemas', () => {
       expect(() => addPersonSchema.parse(invalidData)).toThrow('Invalid email format');
     });
 
-    it('should accept empty string email and transform to undefined', () => {
+    it('should accept empty string email and keep as empty string', () => {
       const data = {
         full_name: 'John Doe',
         party: 'A Party',
@@ -96,7 +96,7 @@ describe('Personnel Validation Schemas', () => {
       };
 
       const result = addPersonSchema.parse(data);
-      expect(result.email).toBeUndefined();
+      expect(result.email).toBe('');
     });
 
     it('should validate phone numbers using international format', () => {

@@ -20,6 +20,7 @@ import { getServerUser } from '@/lib/auth'
 import { Database } from '@/lib/database.types'
 import { getSelectedArtistIdFromSearchParams } from '@/lib/employeeArtist'
 import { getSelectedArtistIdFromCookie } from '@/lib/actions/artist-selection-actions'
+import { CreateTourDialog } from '@/components/employee/create-tour-dialog'
 
 type TourWithStats = Database['public']['Tables']['projects']['Row'] & {
   artists: {
@@ -144,21 +145,28 @@ export default async function EmployeePortalPage({
   return (
     <div className="max-w-6xl mx-auto px-4 md:px-6 space-y-6">
       <div className="space-y-2 mb-6">
-        <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100">Tour Management Dashboard</h1>
-        <p className="text-base text-slate-600 dark:text-slate-400">
-          Manage flights, tours, events, and crew coordination across all artists
-        </p>
-        {selectedArtistName && (
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="gap-2">
-              <Eye className="h-3 w-3" />
-              Viewing: {selectedArtistName}
-            </Badge>
-            <Link href="/a" className="text-xs text-muted-foreground hover:text-foreground">
-              Clear filter
-            </Link>
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100">Tour Management Dashboard</h1>
+            <p className="text-base text-slate-600 dark:text-slate-400">
+              Manage flights, tours, events, and crew coordination across all artists
+            </p>
+            {selectedArtistName && (
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="gap-2">
+                  <Eye className="h-3 w-3" />
+                  Viewing: {selectedArtistName}
+                </Badge>
+                <Link href="/a" className="text-xs text-muted-foreground hover:text-foreground">
+                  Clear filter
+                </Link>
+              </div>
+            )}
           </div>
-        )}
+          <div className="flex-shrink-0">
+            <CreateTourDialog />
+          </div>
+        </div>
       </div>
 
       {/* Stats Overview */}

@@ -498,10 +498,10 @@ export async function adminGetUserDetail(userId: string): Promise<UserDetail | n
     }
     
     // Fetch artist assignments with proper typing
-    // CONTEXT: employee_artists table exists but not in generated types
+    // CONTEXT: artist_assignments table exists but not in generated types
     // DATABASE: Using type assertion for missing table in generated types
     const { data: assignments, error: assignmentsError } = await (supabase as any)
-      .from('employee_artists')
+      .from('artist_assignments')
       .select(`
         artist_id,
         artists(id, name)
