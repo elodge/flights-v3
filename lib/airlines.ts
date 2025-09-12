@@ -24,6 +24,7 @@ const AIRLINES = [
   { "iata": "F9", "name": "Frontier Airlines", "domain": "flyfrontier.com" },
   { "iata": "HA", "name": "Hawaiian Airlines", "domain": "hawaiianairlines.com" },
   { "iata": "VX", "name": "Virgin America", "domain": "virginamerica.com" },
+  { "iata": "XE", "name": "JSX", "domain": "jsx.com" },
   
   // European Airlines
   { "iata": "LH", "name": "Lufthansa", "domain": "lufthansa.com" },

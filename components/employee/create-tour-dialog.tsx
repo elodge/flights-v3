@@ -239,7 +239,7 @@ export function CreateTourDialog() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Artist *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder={isLoadingArtists ? "Loading artists..." : "Select an artist"} />

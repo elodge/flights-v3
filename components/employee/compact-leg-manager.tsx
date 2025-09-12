@@ -39,6 +39,7 @@ import { Database } from '@/lib/database.types'
 import { PassengerGrid } from './passenger-grid'
 import { FlightGrid } from './flight-grid'
 import { EnhancedNavitasModal } from './enhanced-navitas-modal'
+import { ChatButton } from '@/components/chat/ChatButton'
 
 type LegWithDetails = Database['public']['Tables']['legs']['Row'] & {
   projects: {
@@ -108,7 +109,8 @@ interface CompactLegManagerProps {
  * Compact leg manager component
  * 
  * @description High-density interface for managing flight options on tour legs.
- * Provides passenger filtering, Navitas parsing, and dual view modes with URL state persistence.
+ * Provides passenger filtering, Navitas parsing, dual view modes with URL state persistence,
+ * and integrated team chat functionality.
  * 
  * @param leg - Complete leg data with passengers and options
  * @param projectId - Tour/project UUID for navigation
@@ -194,7 +196,7 @@ export function CompactLegManager({ leg, projectId, legId }: CompactLegManagerPr
       // Has options filter
       if (filters.hasOptions !== 'all') {
         const passengerOptions = leg.options.filter(option => 
-          option.option_passengers?.some(op => op.passenger_id === person.id)
+          (option as any).option_passengers?.some((op: any) => op.passenger_id === person.id)
         )
         const hasOptions = passengerOptions.length > 0
         
@@ -258,6 +260,7 @@ export function CompactLegManager({ leg, projectId, legId }: CompactLegManagerPr
             <Plane className="h-3 w-3" />
             {leg.options.length} options
           </Badge>
+          <ChatButton legId={legId} variant="outline" size="sm" />
         </div>
       </div>
 

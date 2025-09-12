@@ -36,6 +36,7 @@ import { createServerClient } from '@/lib/supabase-server'
 import { getServerUser } from '@/lib/auth'
 import { NavitasOption } from '@/lib/navitas'
 import { enrichFlightSegments } from '@/lib/enrichment-service'
+import { getAirlineName } from '@/lib/airlines'
 import { revalidatePath } from 'next/cache'
 
 interface CreateOptionsRequest {
@@ -185,7 +186,7 @@ export async function createOptionsForPassengers(
               flight_number: segment.flightNumber,
               airline: segment.airline,
               airline_iata: segment.airline,
-              airline_name: null, // TODO: Get airline name from enrichment if available
+              airline_name: getAirlineName(segment.airline),
               dep_iata: segment.origin,
               arr_iata: segment.destination,
               // CONTEXT: Save parsed times from Navitas for immediate display

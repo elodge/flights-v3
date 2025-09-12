@@ -31,14 +31,16 @@ function requireEmployeeRole(role?: string) {
 
 /**
  * Add new personnel to a tour
- * @description Creates a new personnel record with validated data
+ * @description Creates a new personnel record with validated data and automatically
+ * assigns them to all existing legs in the tour for immediate availability
  * @param projectId - UUID of the tour/project
  * @param raw - Raw form data to be validated
  * @returns Object with created personnel ID
  * @throws Error for validation failures or database errors
  * @security Enforces employee role and validates input
- * @database Inserts into tour_personnel table
+ * @database Inserts into tour_personnel table and creates leg_passengers assignments
  * @business_rule Personnel must have valid name and party assignment
+ * @business_rule Auto-assigns new personnel to all active legs with default group behavior
  */
 export async function addTourPerson(projectId: string, raw: unknown) {
   try {
@@ -91,6 +93,32 @@ export async function addTourPerson(projectId: string, raw: unknown) {
     if (error) {
       console.error('Error adding tour person:', error);
       throw new Error(error.message);
+    }
+
+    // BUSINESS_RULE: Auto-assign new personnel to all existing legs in the tour
+    // This matches user expectation that adding a passenger makes them available for all legs
+    const { data: legs } = await supabase
+      .from('legs')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('is_active', true);
+
+    if (legs && legs.length > 0) {
+      const legAssignments = legs.map(leg => ({
+        leg_id: leg.id,
+        passenger_id: data.id,
+        treat_as_individual: false, // Default to group behavior
+        created_by: user.id
+      }));
+
+      const { error: assignmentError } = await supabase
+        .from('leg_passengers')
+        .insert(legAssignments);
+
+      if (assignmentError) {
+        console.warn('Failed to auto-assign passenger to legs:', assignmentError);
+        // Don't fail the whole operation - passenger was created successfully
+      }
     }
 
     // CONTEXT: Revalidate the tour page to show new personnel

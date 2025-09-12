@@ -23,7 +23,9 @@ import { revalidatePath } from 'next/cache'
 const createTourSchema = z.object({
   name: z.string().min(1, 'Tour name is required').max(200, 'Tour name too long'),
   description: z.string().optional(),
-  artist_id: z.string().uuid('Invalid artist ID'),
+  artist_id: z.string()
+    .min(1, 'Artist is required')
+    .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, 'Invalid artist ID format'),
   type: z.enum(['tour', 'event']).default('tour'),
   start_date: z.string().optional().nullable(),
   end_date: z.string().optional().nullable(),

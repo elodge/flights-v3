@@ -60,9 +60,10 @@ type CreateLegInput = z.infer<typeof createLegSchema>
  * @returns Promise<{ success: boolean; legId?: string; error?: string }>
  * 
  * @security Requires authenticated employee (agent/admin role)
- * @database Inserts into legs table with project_id foreign key
+ * @database Inserts into legs table with project_id foreign key and creates leg_passengers assignments
  * @business_rule Sets created_by to current user ID
  * @business_rule Automatically calculates leg_order as next sequential number
+ * @business_rule Auto-assigns all existing tour personnel to new leg with default group behavior
  * 
  * @throws {Error} Authentication, validation, or database errors
  * 
@@ -135,6 +136,32 @@ export async function createLeg(
     if (insertError) {
       console.error('Error creating leg:', insertError)
       return { success: false, error: 'Failed to create leg' }
+    }
+    
+    // BUSINESS_RULE: Auto-assign all existing tour personnel to the new leg
+    // This matches user expectation that new legs are available for all passengers
+    const { data: personnel } = await supabase
+      .from('tour_personnel')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('is_active', true);
+
+    if (personnel && personnel.length > 0) {
+      const legAssignments = personnel.map(person => ({
+        leg_id: newLeg.id,
+        passenger_id: person.id,
+        treat_as_individual: false, // Default to group behavior
+        created_by: user.id
+      }));
+
+      const { error: assignmentError } = await supabase
+        .from('leg_passengers')
+        .insert(legAssignments);
+
+      if (assignmentError) {
+        console.warn('Failed to auto-assign personnel to new leg:', assignmentError);
+        // Don't fail the whole operation - leg was created successfully
+      }
     }
     
     // CONTEXT: Revalidate the tour page to show new leg

@@ -14,6 +14,7 @@
 
 import { createServerClient } from '@/lib/supabase-server';
 import { enrichFlightSegments } from '@/lib/enrichment-service';
+import { getAirlineName } from '@/lib/airlines';
 
 export type SegmentInput = {
   airline_iata: string;
@@ -169,7 +170,7 @@ export async function createManualFlightOption(input: CreateManualOptionInput) {
         flight_number: segment.flight_number.trim(),
         airline: segment.airline_iata.toUpperCase(),
         airline_iata: segment.airline_iata.toUpperCase(),
-        airline_name: segment.airline_name?.trim() || null,
+        airline_name: segment.airline_name?.trim() || getAirlineName(segment.airline_iata),
         dep_iata: segment.dep_iata.toUpperCase(),
         arr_iata: segment.arr_iata.toUpperCase(),
         departure_time: segment.dep_time_local,
