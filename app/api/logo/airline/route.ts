@@ -14,17 +14,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { findAirline, airlineDisplayName } from '@/lib/airlines';
 
 // CONTEXT: Simple in-memory rate limiter for development safety
-// BUSINESS_RULE: 10 requests per minute to prevent API abuse
+// BUSINESS_RULE: 100 requests per minute to allow development usage
 let rateLimiter: {
   tokens: number;
   lastRefill: number;
   maxTokens: number;
   refillRate: number;
 } = {
-  tokens: 10,
+  tokens: 100,
   lastRefill: Date.now(),
-  maxTokens: 10,
-  refillRate: 10 * 60 * 1000, // 10 requests per minute
+  maxTokens: 100,
+  refillRate: 60 * 1000, // 100 requests per minute
 };
 
 /**
@@ -34,10 +34,10 @@ let rateLimiter: {
  */
 export function resetRateLimiter() {
   rateLimiter = {
-    tokens: 10,
+    tokens: 100,
     lastRefill: Date.now(),
-    maxTokens: 10,
-    refillRate: 10 * 60 * 1000,
+    maxTokens: 100,
+    refillRate: 60 * 1000,
   };
 }
 

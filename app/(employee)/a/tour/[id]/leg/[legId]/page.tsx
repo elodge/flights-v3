@@ -249,8 +249,17 @@ export default async function EmployeeLegPage({ params }: PageProps) {
           </Link>
         </Button>
 
-        {/* Chat Button */}
-        <ChatButton legId={legId} variant="outline" size="sm" />
+        <div className="flex items-center space-x-2">
+          {/* Compact View Link */}
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/a/tour/${id}/leg/${legId}/manage`}>
+              Try Compact View (Beta)
+            </Link>
+          </Button>
+          
+          {/* Chat Button */}
+          <ChatButton legId={legId} variant="outline" size="sm" />
+        </div>
       </div>
 
       {/* Leg Info */}
