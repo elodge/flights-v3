@@ -382,6 +382,24 @@ export function FlightGrid({ passengers, options, legId }: FlightGridProps) {
                       )}
                     </div>
 
+                    {/* Flight Details */}
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium">Flight Details</h4>
+                      <div className="space-y-2">
+                        {groupedFlight.options.length > 0 && 
+                          groupedFlight.options[0].option_components
+                            .sort((a, b) => a.component_order - b.component_order)
+                            .map(component => (
+                              <FlightSegmentRow
+                                key={component.id}
+                                segment={component}
+                                className="text-sm"
+                              />
+                            ))
+                        }
+                      </div>
+                    </div>
+
                     {/* Assigned Passengers */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -404,10 +422,11 @@ export function FlightGrid({ passengers, options, legId }: FlightGridProps) {
                       ) : (
                         <div className="space-y-1">
                           {groupedFlight.assignedPassengers.map(passenger => {
-                            // CONTEXT: Find the option ID for this passenger's association
-                            const optionId = groupedFlight.options.find(option => 
+                            // CONTEXT: Find the option and its price for this passenger
+                            const passengerOption = groupedFlight.options.find(option => 
                               option.option_passengers.some(op => op.passenger_id === passenger.tour_personnel.id)
-                            )?.id || null
+                            )
+                            const optionId = passengerOption?.id || null
 
                             return (
                               <div key={passenger.tour_personnel.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-md">
@@ -422,16 +441,27 @@ export function FlightGrid({ passengers, options, legId }: FlightGridProps) {
                                     </Badge>
                                   )}
                                 </div>
-                                {optionId && (
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="text-destructive hover:text-destructive"
-                                    onClick={() => handleRemovePassenger(optionId, passenger.tour_personnel.id)}
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </Button>
-                                )}
+                                
+                                <div className="flex items-center space-x-2">
+                                  {/* Price Display */}
+                                  {passengerOption?.total_cost && (
+                                    <div className="text-sm font-medium text-green-600">
+                                      ${(passengerOption.total_cost / 100).toFixed(2)}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Remove Button */}
+                                  {optionId && (
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      className="text-destructive hover:text-destructive"
+                                      onClick={() => handleRemovePassenger(optionId, passenger.tour_personnel.id)}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             )
                           })}
